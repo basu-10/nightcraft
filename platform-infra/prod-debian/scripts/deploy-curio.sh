@@ -20,7 +20,11 @@ chown_tree "${CURIO_VENV_DIR}"
 log "Running Curio setup CLI"
 (
   cd "${CURIO_SRC_DIR}"
-  FLASK_AUTH_MODE=sso "${CURIO_VENV_DIR}/bin/flask" --app curio setup
+  # Ensure setup uses the same runtime env as systemd service.
+  set -a
+  source /etc/nightcraft/app-curio.env
+  set +a
+  FLASK_AUTH_MODE="${FLASK_AUTH_MODE:-sso}" "${CURIO_VENV_DIR}/bin/flask" --app curio setup
 )
 
 log "Curio ready from ${CURIO_SRC_DIR}"
