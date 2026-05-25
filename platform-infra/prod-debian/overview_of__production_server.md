@@ -1,6 +1,4 @@
-
-
-Here's a concise overview of how the **Nightcraft** production server is wired up on the Debian 12 server:
+# Concise overview of how the **Nightcraft** production server is wired up on the Debian 12 server:
 
 ---
 login with:
@@ -74,14 +72,21 @@ Runtime folders like:
 - Exposes public IP `31.70.85.89` on port 80.
 
 ### 6. Deployment Flow
-1. `scp -r` local source folders to platform-infra on the server.(some fodler are large, so copy only changed files or zip/unzip if needed)
-2. Run scripts (as root) in order:
+1. Preferred: run one bootstrap script from outside `/platform-infra` (for example `/usr/local/sbin/nightcraft-server-bootstrap.sh`) so git sync + install + deploy are fully scripted from one command.
+
+   Example:
+   - `sudo /usr/local/sbin/nightcraft-server-bootstrap.sh --repo-url https://github.com/basu-10/nightcraft.git --branch main --target-dir /platform-infra --adopt-existing`
+
+   The script performs baseline checks, clones/pulls git repo, runs setup scripts, deploys all apps, restarts services, and prints status.
+
+2. Legacy/manual flow: `scp -r` local source folders to platform-infra on the server.(some fodler are large, so copy only changed files or zip/unzip if needed)
+3. Run scripts (as root) in order:
    - install-env.sh — copies `.env` files from `env-examples/` to `/etc/nightcraft/`
    - setup-postgres.sh — creates DB roles & databases from SQL templates
    - install-systemd.sh — copies `.service` files to `/etc/systemd/system/` and enables them
    - install-nginx.sh — copies nginx config, tests, reloads
    - deploy-all.sh — runs per-app deploy scripts sequentially, then restarts all services
-3. Each deploy script (deploy-auth.sh, etc.) does:
+4. Each deploy script (deploy-auth.sh, etc.) does:
    - Uses the source checkout already present under `/platform-infra/<app>/`
    - Sets up virtualenv + `pip install -r requirements.txt`
    - Ensures runtime shared dirs exist under `/platform-infra/runtime/shared/<slug>/`

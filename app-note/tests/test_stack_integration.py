@@ -11,6 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 def _create_app(monkeypatch, tmp_path, *, auth_mode="local", auth_service_url="http://auth.example/auth"):
     db_path = tmp_path / "notestack.db"
     monkeypatch.setenv("NOTESTACK_DB", str(db_path))
+    monkeypatch.setenv("NOTESTACK_DB_BACKEND", "sqlite")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
     monkeypatch.setenv("AUTH_MODE", auth_mode)
     monkeypatch.setenv("AUTH_SERVICE_URL", auth_service_url)
     monkeypatch.setenv("FLASK_ENV", "development")

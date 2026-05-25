@@ -63,4 +63,22 @@ _ENV_MAP = {
 
 def get_config() -> Config:
     env = os.environ.get("FLASK_ENV", "development").lower()
-    return _ENV_MAP.get(env, DevelopmentConfig)()
+    cfg = _ENV_MAP.get(env, DevelopmentConfig)()
+
+    # Re-read env at runtime so tests and process-level config changes
+    # are reflected even if this module was imported earlier.
+    cfg.SECRET_KEY = os.environ.get("FLASK_SECRET_KEY") or _load_or_create_dev_key()
+    cfg.DB_BACKEND = (os.environ.get("NOTESTACK_DB_BACKEND") or "sqlite").strip().lower()
+    cfg.DATABASE_URL = (os.environ.get("DATABASE_URL") or "").strip()
+    cfg.DB_PATH = os.environ.get("NOTESTACK_DB") or os.path.join(_BASE_DIR, "notestack.db")
+    cfg.AUTH_MODE = os.environ.get("AUTH_MODE", "local").strip().lower() or "local"
+    cfg.AUTH_SERVICE_URL = os.environ.get("AUTH_SERVICE_URL", "http://127.0.0.1:5100")
+    cfg.AUTH_SESSION_ME_URL = (os.environ.get("AUTH_SESSION_ME_URL") or "").strip()
+    cfg.SESSION_COOKIE_NAME = os.environ.get("SESSION_COOKIE_NAME", "nightcraft_notestack_session")
+    cfg.SESSION_COOKIE_PATH = os.environ.get("SESSION_COOKIE_PATH", "/")
+    cfg.SESSION_COOKIE_SECURE = (
+        True
+        if isinstance(cfg, ProductionConfig)
+        else (os.environ.get("FLASK_SESSION_SECURE", "0") == "1")
+    )
+    return cfg

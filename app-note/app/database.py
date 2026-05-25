@@ -84,8 +84,8 @@ def _replace_qmark_params(sql: str) -> str:
 
 def _sqlite_sql_to_postgres(sql: str) -> str:
     rewritten = sql
-    rewritten = re.sub(r"\bCOLLATE\s+NOCASE\b", "", rewritten, flags=re.IGNORECASE)
-    rewritten = rewritten.replace("datetime('now')", "CURRENT_TIMESTAMP")
+    rewritten = re.sub(r"\bdatetime\s*\(\s*'now'\s*\)", "CURRENT_TIMESTAMP", rewritten, flags=re.IGNORECASE)
+    rewritten = re.sub(r"\blast_insert_rowid\s*\(\s*\)", "LASTVAL()", rewritten, flags=re.IGNORECASE)
     if re.match(r"^\s*INSERT\s+OR\s+IGNORE\s+INTO\s+", rewritten, flags=re.IGNORECASE):
         rewritten = re.sub(
             r"^\s*INSERT\s+OR\s+IGNORE\s+INTO\s+",
@@ -99,7 +99,14 @@ def _sqlite_sql_to_postgres(sql: str) -> str:
         if suffix:
             stripped = stripped[:-1].rstrip()
         rewritten = f"{stripped} ON CONFLICT DO NOTHING{suffix}"
-    return _replace_qmark_params(rewritten)
+    rewritten = _replace_qmark_params(rewritten)
+    rewritten = re.sub(
+        r"(?i)\b([a-z_][\w\.]*)\s*=\s*(%s|'(?:''|[^'])*')\s+COLLATE\s+NOCASE\b",
+        r"LOWER(\1) = LOWER(\2)",
+        rewritten,
+    )
+    rewritten = re.sub(r"\bCOLLATE\s+NOCASE\b", "", rewritten, flags=re.IGNORECASE)
+    return rewritten
 
 
 class _PgCompatCursor:
@@ -125,6 +132,11 @@ class _PgCompatCursor:
 
     def close(self) -> None:
         self._cursor.close()
+
+    @property
+    def lastrowid(self):
+        row = self._cursor.connection.cursor().execute("SELECT LASTVAL() AS id").fetchone()
+        return int(row["id"]) if row else None
 
 
 class _PgCompatConnection:
@@ -479,6 +491,10 @@ def _initialize_postgres_db() -> None:
         conn.execute(stmt)
     conn.commit()
     conn.close()
+    # SQLite migration logic below relies on PRAGMA and sqlite-specific DDL.
+    # For postgres backend we only run the bootstrap statements above.
+    return
+
     # Migrations for existing databases
     conn = get_connection()
     cur = conn.cursor()
@@ -673,6 +689,19 @@ def allocate_server_rev(conn: sqlite3.Connection) -> int:
     return next_rev
 
 
+def _get_last_insert_id(conn, cursor: Any = None) -> int:
+    if cursor is not None:
+        value = getattr(cursor, "lastrowid", None)
+        if value is not None:
+            return int(value)
+
+    if _DB_BACKEND == "postgres":
+        row = conn.execute("SELECT LASTVAL() AS id").fetchone()
+    else:
+        row = conn.execute("SELECT last_insert_rowid() AS id").fetchone()
+    return int(row["id"]) if row else 0
+
+
 def _column_exists(conn, table: str, col: str) -> bool:
     if _DB_BACKEND == "postgres":
         row = conn.execute(
@@ -773,7 +802,7 @@ def upsert_sso_user(claims: dict) -> Optional[dict]:
     ).fetchone()
     if existing is None:
         email_match = conn.execute(
-            "SELECT id FROM users WHERE email=? COLLATE NOCASE",
+            "SELECT id FROM users WHERE LOWER(email)=LOWER(?)",
             (email,),
         ).fetchone()
         if email_match is not None:
@@ -787,7 +816,7 @@ def upsert_sso_user(claims: dict) -> Optional[dict]:
             candidate = base_username
             suffix = 1
             while conn.execute(
-                "SELECT 1 FROM users WHERE username=? COLLATE NOCASE",
+                "SELECT 1 FROM users WHERE LOWER(username)=LOWER(?)",
                 (candidate,),
             ).fetchone():
                 candidate = f"{base_username}-{suffix}"
@@ -797,7 +826,7 @@ def upsert_sso_user(claims: dict) -> Optional[dict]:
                 "INSERT INTO users (username, email, password, sso_subject, is_admin) VALUES (?,?,?,?,?)",
                 (candidate, email, generate_password_hash(uuid.uuid4().hex), subject, 1 if is_admin else 0),
             )
-            user_id = int(conn.execute("SELECT last_insert_rowid() AS id").fetchone()["id"])
+            user_id = _get_last_insert_id(conn)
     else:
         user_id = int(existing["id"])
         conn.execute(
@@ -914,7 +943,7 @@ def create_folder(user_id: int, name: str, parent_id: Optional[int] = None,
         (user_id, name.strip(), parent_id, resolved, sync_id),
     )
     conn.commit()
-    row = conn.execute("SELECT last_insert_rowid() AS id").fetchone()
+    row = {"id": _get_last_insert_id(conn)}
     conn.close()
     return int(row["id"])
 
@@ -1004,7 +1033,7 @@ def upsert_folder_by_sync_id(user_id: int, sync_id: str, name: str,
             "INSERT INTO folders (user_id, name, color, sync_id, parent_id) VALUES (?,?,?,?,?)",
             (user_id, name.strip(), resolved, sync_id, parent_id),
         )
-        folder_id = int(conn.execute("SELECT last_insert_rowid() AS id").fetchone()["id"])
+        folder_id = _get_last_insert_id(conn)
         conn.commit()
         return folder_id
     finally:
@@ -1040,7 +1069,7 @@ def _ensure_tag(conn: sqlite3.Connection, user_id: int, name: str) -> int:
         "INSERT INTO tags (user_id, name, color, sync_id) VALUES (?,?,?,?)",
         (user_id, normalized, color, str(uuid.uuid4())),
     )
-    row = conn.execute("SELECT last_insert_rowid() AS id").fetchone()
+    row = {"id": _get_last_insert_id(conn)}
     return int(row["id"])
 
 
@@ -1096,7 +1125,7 @@ def upsert_tag_by_sync_id(user_id: int, sync_id: str, name: str, color: Optional
             (user_id, normalized, resolved, normalized_sync_id),
         )
         conn.commit()
-        return int(conn.execute("SELECT last_insert_rowid() AS id").fetchone()["id"])
+        return _get_last_insert_id(conn)
     finally:
         conn.close()
 
@@ -1426,7 +1455,7 @@ def create_note(user_id: int, title: str, content: str = "",
         "DELETE FROM note_tombstones WHERE user_id=? AND sync_id=?",
         (user_id, note_sync_id),
     )
-    note_id = int(conn.execute("SELECT last_insert_rowid() AS id").fetchone()["id"])
+    note_id = _get_last_insert_id(conn)
     if tag_names:
         for tag_name in tag_names:
             tag_id = _ensure_tag(conn, user_id, tag_name)
@@ -1677,7 +1706,7 @@ def _ensure_folder_path(user_id: int, path: str, conn: sqlite3.Connection) -> in
                 "INSERT INTO folders (user_id, name, parent_id, color) VALUES (?,?,?,?)",
                 (user_id, segment, parent_id, seg_color),
             )
-            leaf_id = int(cur.lastrowid)
+            leaf_id = _get_last_insert_id(conn, cur)
         parent_id = leaf_id
     return leaf_id
 
@@ -1815,7 +1844,7 @@ def import_user_backup(user_id: int, lines: list[str]) -> dict:
         if not name:
             continue
         existing = conn.execute(
-            "SELECT id, color FROM tags WHERE user_id=? AND name=? COLLATE NOCASE",
+            "SELECT id, color FROM tags WHERE user_id=? AND LOWER(name)=LOWER(?)",
             (user_id, name)
         ).fetchone()
         if existing:
@@ -1893,7 +1922,7 @@ def import_user_backup(user_id: int, lines: list[str]) -> dict:
                 (user_id, folder_id, title, content, is_favorite, note_sync_id,
                  created_at, updated_at, server_rev, 'lexical'),
             )
-            note_id = int(cur.lastrowid)
+            note_id = _get_last_insert_id(conn, cur)
             stats["notes_added"] += 1
         
         # Update tags

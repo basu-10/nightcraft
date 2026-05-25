@@ -16,6 +16,7 @@ from werkzeug.security import check_password_hash
 
 from ..database import (
     get_connection,
+    _get_last_insert_id,
     _ensure_tag,
     get_all_folders,
     get_folder_tombstones_since,
@@ -69,7 +70,7 @@ def _resolve_user_from_basic_auth() -> int | None:
         return None
     conn = get_connection()
     user = conn.execute(
-        "SELECT id, password FROM users WHERE username=? COLLATE NOCASE", (username,)
+        "SELECT id, password FROM users WHERE LOWER(username)=LOWER(?)", (username,)
     ).fetchone()
     conn.close()
     if not user:
@@ -273,7 +274,7 @@ def post_tag():
             (g.user_id, normalized, normalized_color, str(uuid4()))
         )
         conn.commit()
-        tag_id = cursor.lastrowid
+        tag_id = _get_last_insert_id(conn, cursor)
         _sync_log.info("WEB tag created  user_id=%s tag_id=%s name=%r", g.user_id, tag_id, normalized)
         return _ok({"id": tag_id}, 201)
     except Exception as e:
@@ -688,7 +689,7 @@ def _process_sync_note(conn, user_id: int, sync_id: str, item: dict, results: li
             "DELETE FROM note_tombstones WHERE user_id=? AND sync_id=?",
             (user_id, sync_id),
         )
-        note_id = int(conn.execute("SELECT last_insert_rowid() AS id").fetchone()["id"])
+        note_id = _get_last_insert_id(conn)
         if tag_sync_ids:
             for tag_sync_id in tag_sync_ids:
                 row = conn.execute(
