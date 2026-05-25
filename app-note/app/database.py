@@ -7,15 +7,25 @@ sync_id (UUID) is assigned by the desktop to track the same note across devices.
 import colorsys
 import json
 import os
+import re
 import sqlite3
 import uuid
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 from werkzeug.security import generate_password_hash
 
+try:
+    import psycopg
+    from psycopg.rows import dict_row
+except Exception:  # pragma: no cover - optional at runtime unless postgres backend is enabled
+    psycopg = None
+    dict_row = None
+
 # Overwritten by the app factory with the config-resolved path
 _DB_PATH: str = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "notestack.db")
+_DB_BACKEND: str = "sqlite"
+_DATABASE_URL: str = ""
 
 DEFAULT_ENTITY_COLORS = [
     "#4F6EF7",
@@ -36,7 +46,118 @@ DEFAULT_ENTITY_COLORS = [
 ]
 
 
-def get_connection() -> sqlite3.Connection:
+def configure_database(cfg: Any) -> None:
+    global _DB_PATH, _DB_BACKEND, _DATABASE_URL
+    _DB_PATH = cfg.DB_PATH
+    _DB_BACKEND = (getattr(cfg, "DB_BACKEND", "sqlite") or "sqlite").strip().lower()
+    _DATABASE_URL = (getattr(cfg, "DATABASE_URL", "") or "").strip()
+
+
+def _replace_qmark_params(sql: str) -> str:
+    out = []
+    in_single = False
+    in_double = False
+    i = 0
+    while i < len(sql):
+        ch = sql[i]
+        if ch == "'" and not in_double:
+            if in_single and i + 1 < len(sql) and sql[i + 1] == "'":
+                out.append("''")
+                i += 2
+                continue
+            in_single = not in_single
+            out.append(ch)
+            i += 1
+            continue
+        if ch == '"' and not in_single:
+            in_double = not in_double
+            out.append(ch)
+            i += 1
+            continue
+        if ch == "?" and not in_single and not in_double:
+            out.append("%s")
+        else:
+            out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def _sqlite_sql_to_postgres(sql: str) -> str:
+    rewritten = sql
+    rewritten = re.sub(r"\bCOLLATE\s+NOCASE\b", "", rewritten, flags=re.IGNORECASE)
+    rewritten = rewritten.replace("datetime('now')", "CURRENT_TIMESTAMP")
+    if re.match(r"^\s*INSERT\s+OR\s+IGNORE\s+INTO\s+", rewritten, flags=re.IGNORECASE):
+        rewritten = re.sub(
+            r"^\s*INSERT\s+OR\s+IGNORE\s+INTO\s+",
+            "INSERT INTO ",
+            rewritten,
+            count=1,
+            flags=re.IGNORECASE,
+        )
+        stripped = rewritten.rstrip()
+        suffix = ";" if stripped.endswith(";") else ""
+        if suffix:
+            stripped = stripped[:-1].rstrip()
+        rewritten = f"{stripped} ON CONFLICT DO NOTHING{suffix}"
+    return _replace_qmark_params(rewritten)
+
+
+class _PgCompatCursor:
+    def __init__(self, cursor: Any):
+        self._cursor = cursor
+
+    def execute(self, sql: str, params: Any = None):
+        self._cursor.execute(_sqlite_sql_to_postgres(sql), params or ())
+        return self
+
+    def executemany(self, sql: str, params_seq: Any):
+        self._cursor.executemany(_sqlite_sql_to_postgres(sql), params_seq)
+        return self
+
+    def fetchone(self):
+        return self._cursor.fetchone()
+
+    def fetchall(self):
+        return self._cursor.fetchall()
+
+    def __iter__(self):
+        return iter(self._cursor)
+
+    def close(self) -> None:
+        self._cursor.close()
+
+
+class _PgCompatConnection:
+    def __init__(self, conn: Any):
+        self._conn = conn
+
+    def cursor(self):
+        return _PgCompatCursor(self._conn.cursor())
+
+    def execute(self, sql: str, params: Any = None):
+        cur = self.cursor()
+        cur.execute(sql, params)
+        return cur
+
+    def commit(self) -> None:
+        self._conn.commit()
+
+    def rollback(self) -> None:
+        self._conn.rollback()
+
+    def close(self) -> None:
+        self._conn.close()
+
+
+def get_connection() -> Any:
+    if _DB_BACKEND == "postgres":
+        if not _DATABASE_URL:
+            raise RuntimeError("NOTESTACK_DB_BACKEND=postgres requires DATABASE_URL")
+        if psycopg is None or dict_row is None:
+            raise RuntimeError("psycopg is required for PostgreSQL backend")
+        raw_conn = psycopg.connect(_DATABASE_URL, row_factory=dict_row)
+        return _PgCompatConnection(raw_conn)
+
     conn = sqlite3.connect(_DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
@@ -45,6 +166,10 @@ def get_connection() -> sqlite3.Connection:
 
 
 def initialize_db() -> None:
+    if _DB_BACKEND == "postgres":
+        _initialize_postgres_db()
+        return
+
     conn = get_connection()
     conn.executescript(
         """
@@ -188,6 +313,170 @@ def initialize_db() -> None:
         ON sync_idempotency(user_id, method, path, idem_key)
         """
     )
+    conn.commit()
+    conn.close()
+
+
+def _initialize_postgres_db() -> None:
+    conn = get_connection()
+    statements = [
+        """
+        CREATE TABLE IF NOT EXISTS users (
+            id BIGSERIAL PRIMARY KEY,
+            username TEXT NOT NULL,
+            email TEXT NOT NULL,
+            password TEXT NOT NULL,
+            sso_subject TEXT,
+            is_admin INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """,
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_nocase_unique ON users ((lower(username)))",
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_sso_subject_unique ON users(sso_subject) WHERE sso_subject IS NOT NULL",
+        """
+        CREATE TABLE IF NOT EXISTS api_tokens (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            token TEXT NOT NULL UNIQUE,
+            label TEXT NOT NULL DEFAULT 'desktop',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS folders (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            parent_id BIGINT REFERENCES folders(id) ON DELETE SET NULL,
+            color TEXT DEFAULT NULL,
+            sync_id TEXT DEFAULT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, name, parent_id)
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS notes (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            folder_id BIGINT REFERENCES folders(id) ON DELETE SET NULL,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL DEFAULT '',
+            is_favorite INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            sync_id TEXT,
+            client_updated_at TEXT DEFAULT NULL,
+            server_rev BIGINT NOT NULL DEFAULT 0,
+            editor_type TEXT NOT NULL DEFAULT 'lexical',
+            UNIQUE(user_id, sync_id)
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS sync_meta (
+            id INTEGER PRIMARY KEY,
+            next_server_rev BIGINT NOT NULL DEFAULT 1,
+            CHECK (id = 1)
+        )
+        """,
+        "INSERT INTO sync_meta (id, next_server_rev) VALUES (1, 1) ON CONFLICT (id) DO NOTHING",
+        """
+        CREATE TABLE IF NOT EXISTS tags (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            sync_id TEXT DEFAULT NULL,
+            color TEXT DEFAULT NULL
+        )
+        """,
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_tags_user_name_nocase_unique ON tags (user_id, lower(name))",
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_tags_user_sync_id_unique ON tags (user_id, sync_id) WHERE sync_id IS NOT NULL",
+        """
+        CREATE TABLE IF NOT EXISTS note_tags (
+            note_id BIGINT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+            tag_id BIGINT NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+            PRIMARY KEY (note_id, tag_id)
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS folder_tombstones (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            sync_id TEXT NOT NULL,
+            deleted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            server_rev BIGINT NOT NULL DEFAULT 0,
+            UNIQUE(user_id, sync_id)
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS tag_tombstones (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            sync_id TEXT NOT NULL,
+            deleted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            server_rev BIGINT NOT NULL DEFAULT 0,
+            UNIQUE(user_id, sync_id)
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS note_tombstones (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            sync_id TEXT NOT NULL,
+            deleted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            server_rev BIGINT NOT NULL DEFAULT 0,
+            UNIQUE(user_id, sync_id)
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS trash (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            folder_name TEXT,
+            is_favorite INTEGER NOT NULL DEFAULT 0,
+            tag_names TEXT,
+            sync_id TEXT DEFAULT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            deleted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            editor_type TEXT NOT NULL DEFAULT 'lexical'
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS conflicts (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            note_id BIGINT REFERENCES notes(id) ON DELETE SET NULL,
+            sync_id TEXT NOT NULL,
+            server_title TEXT NOT NULL,
+            server_content TEXT NOT NULL,
+            client_title TEXT NOT NULL,
+            client_content TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            resolved INTEGER NOT NULL DEFAULT 0
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS sync_idempotency (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            method TEXT NOT NULL,
+            path TEXT NOT NULL,
+            idem_key TEXT NOT NULL,
+            response_json TEXT NOT NULL,
+            status_code INTEGER NOT NULL DEFAULT 200,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, method, path, idem_key)
+        )
+        """,
+        """
+        CREATE INDEX IF NOT EXISTS idx_sync_idempotency_lookup
+        ON sync_idempotency(user_id, method, path, idem_key)
+        """,
+    ]
+    for stmt in statements:
+        conn.execute(stmt)
     conn.commit()
     conn.close()
     # Migrations for existing databases
@@ -385,6 +674,18 @@ def allocate_server_rev(conn: sqlite3.Connection) -> int:
 
 
 def _column_exists(conn, table: str, col: str) -> bool:
+    if _DB_BACKEND == "postgres":
+        row = conn.execute(
+            """
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = %s AND column_name = %s
+            LIMIT 1
+            """,
+            (table, col),
+        ).fetchone()
+        return bool(row)
+
     rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
     return any(r[1] == col for r in rows)
 

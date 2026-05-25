@@ -15,9 +15,9 @@ def create_app() -> Flask:
     app.config.from_object(cfg)
     get_sync_logger()
 
-    # Expose DB_PATH to database helpers
+    # Expose DB configuration to database helpers
     from . import database as _db_mod
-    _db_mod._DB_PATH = cfg.DB_PATH
+    _db_mod.configure_database(cfg)
 
     with app.app_context():
         initialize_db()

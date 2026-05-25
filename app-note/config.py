@@ -30,6 +30,9 @@ def _load_or_create_dev_key() -> str:
 class Config:
     # Override with a stable secret in production via FLASK_SECRET_KEY env var
     SECRET_KEY: str = os.environ.get("FLASK_SECRET_KEY") or _load_or_create_dev_key()
+    # Phase 1 migration defaults to sqlite for backward compatibility.
+    DB_BACKEND: str = (os.environ.get("NOTESTACK_DB_BACKEND") or "sqlite").strip().lower()
+    DATABASE_URL: str = (os.environ.get("DATABASE_URL") or "").strip()
     DB_PATH: str = os.environ.get("NOTESTACK_DB") or os.path.join(_BASE_DIR, "notestack.db")
     AUTH_MODE: str = os.environ.get("AUTH_MODE", "local").strip().lower() or "local"
     AUTH_SERVICE_URL: str = os.environ.get("AUTH_SERVICE_URL", "http://127.0.0.1:5100")

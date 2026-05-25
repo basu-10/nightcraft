@@ -53,7 +53,7 @@ Runtime folders like:
 - Auth and radio are primary PostgreSQL-backed services.
 - Curio and SeekSage are now PostgreSQL-backed via `DATABASE_URL`.
 - Landing, admin, and game do not require PostgreSQL.
-- NoteStack is the remaining legacy exception with app-local SQLite internals.
+- NoteStack is the remaining legacy exception with app-local SQLite internals (PostgreSQL migration is in progress).
 - Connectivity: `127.0.0.1:5432` via psycopg2.
 
 ### 5. Nginx Reverse Proxy

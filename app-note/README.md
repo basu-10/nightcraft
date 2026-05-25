@@ -4,6 +4,10 @@ Companion web app for NoteStack desktop. Edit notes in the browser with the Lexi
 
 In the Nightcraft stack, this app is mounted under `/notestack` and uses shared session login from `service-auth` when `AUTH_MODE=sso`.
 
+Database backend note:
+- Current default is `sqlite` for backward compatibility.
+- PostgreSQL migration is in progress. See `POSTGRES_MIGRATION_PLAN.md`.
+
 ---
 
 ## Project structure
@@ -12,7 +16,7 @@ In the Nightcraft stack, this app is mounted under `/notestack` and uses shared 
 app-note/
   app/
     __init__.py        # Flask app factory
-    database.py        # SQLite schema + all CRUD / sync helpers
+    database.py        # DB schema + CRUD / sync helpers (sqlite default, postgres in progress)
     auth/routes.py     # local auth mode
     auth/sso_auth.py   # shared-auth session bridge mode
     api/routes.py      # /api   — CRUD + sync push/pull/conflicts
@@ -49,8 +53,12 @@ pip install -r requirements.txt
 
 ```powershell
 $env:FLASK_SECRET_KEY = "change-me-to-something-long-and-random"
+# Optional backend selector: sqlite (default) or postgres
+$env:NOTESTACK_DB_BACKEND = "sqlite"
 # Optional — defaults to app-note/notestack.db
 $env:NOTESTACK_DB = "D:\dev_work\web_dev\personal site\ionos-server\app-note\notestack.db"
+# Required only when NOTESTACK_DB_BACKEND=postgres
+# $env:DATABASE_URL = "postgresql://notestack_app:change_me@127.0.0.1:5432/notestack_db"
 ```
 
 ### 4. Run
@@ -84,7 +92,11 @@ FLASK_SESSION_SECURE=1
 AUTH_MODE=sso
 AUTH_SERVICE_URL=http://31.70.85.89/auth
 SESSION_COOKIE_PATH=/notestack
+NOTESTACK_DB_BACKEND=sqlite
 NOTESTACK_DB=/platform-infra/runtime/shared/app-note/notestack.db
+# When switching to postgres:
+# NOTESTACK_DB_BACKEND=postgres
+# DATABASE_URL=postgresql://notestack_app:change_me@127.0.0.1:5432/notestack_db
 LOCALAPPDATA=/platform-infra/runtime/shared/app-note/localappdata
 ```
 
@@ -125,6 +137,7 @@ import sys, os
 sys.path.insert(0, '/home/YOUR_USERNAME/notestack')
 os.environ['FLASK_ENV'] = 'production'
 os.environ['FLASK_SECRET_KEY'] = 'CHANGE_ME_TO_SOMETHING_LONG_AND_RANDOM'
+os.environ['NOTESTACK_DB_BACKEND'] = 'sqlite'
 os.environ['NOTESTACK_DB'] = '/home/YOUR_USERNAME/notestack_data/notestack.db'
 from app import create_app
 application = create_app()
