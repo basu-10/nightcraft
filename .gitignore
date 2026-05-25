@@ -88,3 +88,7 @@ pnpm-debug.log*
 resources/icons/*.png
 .releases/
 .to_upload/
+
+
+# server orchestration
+server-scripts/
