@@ -121,7 +121,7 @@ def home():
             "description": "Cross-platform notes with offline-first storage, end-to-end sync, and data portability.",
             "url": current_app.config["NOTESTACK_URL"],
             "status": "Active",
-            "stack": "Python, Flask, SQLite",
+            "stack": "Python, Flask, PostgreSQL",
         },
     ]
 

@@ -2,8 +2,8 @@ service-auth - oidc server that validates users to other apps
 app-radio - properly integrated with service-auth.
 
 app-artsy - ongoing
-app-note - dump from old project repo with its own sign in system and SQLite db.
-app-researchAgent - dump from old project repo with its own sign in system and SQLite db.
+app-note - dump from old project repo with its own sign in system and legacy SQLite internals (pending migration).
+app-researchAgent - migrated to shared auth and PostgreSQL-backed runtime config.
 
 app-landing - no code files. will hold logic to showscase different apps and provide links to visit them.
 

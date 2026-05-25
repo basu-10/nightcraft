@@ -206,7 +206,7 @@ Use `AUTH_MODE=sso` when `service-auth` is available.
 ```env
 FLASK_ENV=development
 SECRET_KEY=change-me
-DATABASE_URL=sqlite:///auth.db
+DATABASE_URL=postgresql://auth_app:change_me@127.0.0.1:5432/auth_db
 OIDC_ISSUER=http://localhost/auth
 ```
 

@@ -70,8 +70,6 @@ desktop.ini
 *.log.*
 logs/
 .log/
-*.sqlite3
-*.sqlite
 *.db
 *.db-journal
 *.cache

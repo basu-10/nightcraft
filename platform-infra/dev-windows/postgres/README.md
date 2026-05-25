@@ -2,4 +2,4 @@
 
 This folder is reserved for Windows-local Postgres bootstrap scripts and SQL files.
 
-Current app stack uses SQLite for development by default, but this folder exists so a Postgres-backed dev flow can be scripted later without changing the top-level infra layout.
+Current app stack is PostgreSQL-first. Use this folder for local Postgres bootstrap scripts and SQL helpers for Windows dev environments.

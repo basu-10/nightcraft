@@ -12,7 +12,7 @@ log "Deploying app-note (NoteStack) from ${NOTE_SRC_DIR}"
 
 setup_venv_and_deps "${NOTE_VENV_DIR}" "${NOTE_SRC_DIR}"
 
-# Keep runtime sqlite and sync logs outside the source checkout.
+# Keep runtime app data and sync logs outside the source checkout.
 ensure_dir "${NOTE_SHARED_DIR}"
 ensure_dir "${NOTE_SHARED_DIR}/localappdata"
 chown_tree "${NOTE_SHARED_DIR}"

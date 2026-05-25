@@ -38,8 +38,8 @@ Runtime folders like:
 | **radio** | 5333 | `dev-podcast-app` | `radio_db` | nightcraft-radio.service | `run:app` |
 | **landing** | 5400 | app-landing | none | nightcraft-landing.service | `wsgi:application` |
 | **admin** | 5500 | app-admin | none | nightcraft-admin.service | `wsgi:application` |
-| **curio** | 5600 | app-artsy | none | nightcraft-curio.service | `run:app` |
-| **seeksage** | 5700 | `seeksage-backend` | none | nightcraft-seeksage.service | `run:app` |
+| **curio** | 5600 | app-artsy | PostgreSQL (`DATABASE_URL`) | nightcraft-curio.service | `run:app` |
+| **seeksage** | 5700 | `seeksage-backend` | PostgreSQL (`DATABASE_URL`) | nightcraft-seeksage.service | `run:app` |
 | **game** | 5800 | app-game | none | nightcraft-game.service | `wsgi:app` |
 | **notestack** | 5900 | app-note | none | nightcraft-note.service | `wsgi:application` |
 
@@ -50,7 +50,10 @@ Runtime folders like:
 ### 4. PostgreSQL
 - Two roles: `auth_app` / `radio_app` (each with a login password).
 - Two databases: `auth_db` (owned by `auth_app`) / `radio_db` (owned by `radio_app`).
-- Only auth and radio need DBs. Other apps (curio, seeksage, landing, admin, game, notestack) do not use PostgreSQL.
+- Auth and radio are primary PostgreSQL-backed services.
+- Curio and SeekSage are now PostgreSQL-backed via `DATABASE_URL`.
+- Landing, admin, and game do not require PostgreSQL.
+- NoteStack is the remaining legacy exception with app-local SQLite internals.
 - Connectivity: `127.0.0.1:5432` via psycopg2.
 
 ### 5. Nginx Reverse Proxy

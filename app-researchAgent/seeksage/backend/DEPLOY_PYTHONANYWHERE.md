@@ -9,7 +9,7 @@ the original architecture were incompatible:
 |---|---|
 | Background worker thread picking up queued runs | Removed. Runs now execute **synchronously** inside the HTTP request (≤ 5 min timeout). |
 | Activity logger background writer thread | Replaced with direct synchronous writes to PostgreSQL. |
-| LangGraph SqliteSaver writing to SQLite | Switched to an in-memory checkpointer per process. |
+| LangGraph file-backed checkpointing per process | Switched to an in-memory checkpointer per process. |
 
 ### What "synchronous execution" means for the frontend
 
