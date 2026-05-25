@@ -1,0 +1,92 @@
+# Root .gitignore for the whole monorepo
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.python-version
+
+# Virtual environments
+.venv/
+.venvs/
+.venv*/
+venv/
+env/
+.build-venv/
+build-venv/
+
+# Local development and secrets
+.env
+.env.*
+*.env
+*.secret
+*.local
+
+# Packaging and build artifacts
+build/
+build_for_linux/
+build_for_windows/
+dist/
+.eggs/
+*.egg-info/
+*.egg
+*.whl
+pip-wheel-metadata/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Test output
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+nosetests.xml
+
+# Local application state
+instance/
+uploads/
+
+# IDE/editor files
+.vscode/
+.idea/
+*.code-workspace
+*.sublime-workspace
+*.sublime-project
+*.swp
+*.swo
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+
+# Nested Git repositories
+**/.git/
+
+# Misc
+*.log
+*.log.*
+logs/
+.log/
+*.sqlite3
+*.sqlite
+*.db
+*.db-journal
+*.cache
+.cache/
+docs/_build/
+*.zip
+
+# Node/npm artifacts
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Project-specific generated files
+resources/icons/*.png
+.releases/
+.to_upload/
