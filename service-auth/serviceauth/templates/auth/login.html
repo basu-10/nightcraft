@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Login | Service Auth{% endblock %}
+{% block content %}
+<section class="card narrow auth-card">
+  <p class="live-badge"><span class="live-dot"></span> Shared Login</p>
+  <h1>Login</h1>
+  <p class="subtle">Use your shared DevRadio account, or continue with Google.</p>
+
+  <form method="post" class="form-grid auth-form">
+    <input type="hidden" name="next" value="{{ next_url }}">
+    <label>Username or email
+      <input name="username" type="text" value="{{ form_values.get('username', '') }}" placeholder="username or email">
+    </label>
+    <label>Password
+      <input name="password" type="password" placeholder="password" required>
+    </label>
+    <button type="submit">Sign In</button>
+  </form>
+
+  <div class="divider"><span>or</span></div>
+
+  <div class="button-row auth-actions">
+    <a class="secondary-button" href="{{ google_login_url }}">Continue with Google</a>
+    <a href="{{ url_for('core.register', next=next_url) }}">Create account</a>
+  </div>
+</section>
+{% endblock %}

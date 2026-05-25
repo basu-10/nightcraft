@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Sign In — NoteStack{% endblock %}
+
+{% block body %}
+<div class="auth-page">
+  <button class="btn btn--ghost btn--sm auth-theme-toggle" data-theme-toggle type="button">Light</button>
+  <div class="auth-card">
+    <div class="auth-logo">
+      <a class="auth-logo__name" href="{{ url_for('main.index') }}">NoteStack</a>
+    </div>
+    <h1 class="auth-title">Sign in</h1>
+
+    <div id="js-error" class="form-error" hidden></div>
+
+    <form id="login-form" class="auth-form" novalidate>
+      <label class="form-label" for="username">Username</label>
+      <input class="form-input" id="username" name="username"
+             type="text" autocomplete="username" autofocus required />
+
+      <label class="form-label" for="password">Password</label>
+      <input class="form-input" id="password" name="password"
+             type="password" autocomplete="current-password" required />
+
+      <button class="btn btn--primary btn--full" type="submit">Sign in</button>
+    </form>
+
+    <p class="auth-footer">
+      No account? <a href="{{ url_for('auth.register') }}">Create one</a>
+    </p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById('js-error');
+    errEl.hidden = true;
+    const body = {
+      username: document.getElementById('username').value.trim(),
+      password: document.getElementById('password').value,
+    };
+    const res = await fetch('{{ url_for("auth.login") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) {
+      location.href = '{{ url_for("main.app_view") }}';
+    } else {
+      const data = await res.json();
+      errEl.textContent = data.error || 'Login failed.';
+      errEl.hidden = false;
+    }
+  });
+</script>
+{% endblock %}

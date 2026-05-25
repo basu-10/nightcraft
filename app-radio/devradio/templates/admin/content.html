@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Content | DevRadio{% endblock %}
+{% block content %}
+<section class="hero compact">
+  <h1>Content Workflows</h1>
+  <p>Choose between manual editorial stages or the automated source mapping workflow.</p>
+</section>
+
+<section class="grid channels">
+  <article class="card admin-card">
+    <h2>Manual</h2>
+    <p class="subtle">Run the editorial flow through the three manual stages.</p>
+    <div class="button-row">
+      <a class="btn" href="{{ url_for('admin.stage_one') }}">Stage 1</a>
+      <a class="btn ghost" href="{{ url_for('admin.stage_two') }}">Stage 2</a>
+      <a class="btn ghost" href="{{ url_for('admin.stage_three') }}">Stage 3</a>
+    </div>
+  </article>
+
+  <article class="card admin-card">
+    <h2>Automated</h2>
+    <p class="subtle">Manage source mapping and run automated ingestion.</p>
+    <div class="button-row">
+      <a class="btn" href="{{ url_for('admin.automated') }}">Open Automated</a>
+    </div>
+  </article>
+</section>
+
+<section class="hero compact">
+  <h1>Channel Status Dashboard</h1>
+  <p>Real-time queue status and breaking playback events.</p>
+</section>
+
+<section class="grid channels">
+  {% for lane in channel_board %}
+    <article class="card admin-card">
+      <h2>{{ lane.channel.name }}</h2>
+      <p class="subtle">Total queued historically: {{ lane.total_count }}</p>
+      <p><strong>Left in queue:</strong> {{ lane.queue_remaining }}</p>
+      {% if lane.current_segment %}
+        <p><strong>Currently playing:</strong> {{ lane.current_segment.article.short_headline or lane.current_segment.article.title }}</p>
+        <p class="subtle">Clip timer offset: {{ lane.current_offset }}s | Remaining: {{ lane.current_remaining }}s</p>
+        {% if lane.breaking_active %}
+          <p class="subtle"><strong>Breaking mode:</strong> Active for this channel.</p>
+        {% endif %}
+      {% else %}
+        <p><strong>Currently playing:</strong> Nothing ready yet</p>
+      {% endif %}
+
+      <h3>Closest Queue Items</h3>
+      <ul class="story-list">
+        {% for seg in lane.recent %}
+          <li>
+            {{ seg.scheduled_at_utc | app_tz('%Y-%m-%d %H:%M') }} IST -
+            {{ seg.article.short_headline or seg.article.title }}
+            {% if lane.breaking_active and seg.id in lane.breaking_segment_ids %}
+              <span class="subtle">(Breaking Now)</span>
+            {% endif %}
+            <span class="subtle">({{ seg.status }})</span>
+          </li>
+        {% else %}
+          <li>No queued items.</li>
+        {% endfor %}
+      </ul>
+    </article>
+  {% endfor %}
+</section>
+
+<section class="card admin-card">
+  <h2>Breaking Playback Debug Events</h2>
+  {% if breaking_events %}
+    <ul class="story-list">
+      {% for event in breaking_events %}
+        <li>
+          <strong>{{ event.event }}</strong>
+          <span class="subtle">{{ event.timestamp_utc | app_tz }}</span>
+          {% if event.channel_id %}
+            <span class="subtle"> | channel {{ event.channel_id }}</span>
+          {% endif %}
+          {% if event.anchor_segment_id %}
+            <span class="subtle"> | anchor {{ event.anchor_segment_id }}</span>
+          {% endif %}
+          {% if event.injected_segment_ids %}
+            <p class="subtle">segments: {{ event.injected_segment_ids }}</p>
+          {% endif %}
+          {% if event.reason %}
+            <p class="subtle">reason: {{ event.reason }}</p>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="subtle">No breaking playback events captured yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

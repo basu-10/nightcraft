@@ -1,0 +1,24 @@
+[Unit]
+Description=Nightcraft DevRadio App (Gunicorn)
+After=network.target postgresql.service nightcraft-auth.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=dev
+Group=dev
+WorkingDirectory=/platform-infra/app-radio
+EnvironmentFile=/etc/nightcraft/app-radio.env
+ExecStart=/platform-infra/runtime/venvs/dev-podcast-app/bin/gunicorn \
+  --workers 3 \
+  --bind 127.0.0.1:5333 \
+  --access-logfile - \
+  --error-logfile - \
+  run:app
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

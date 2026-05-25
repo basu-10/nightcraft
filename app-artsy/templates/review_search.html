@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Write Review | Curio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <div class="page">
+    <aside class="sidebar">
+      <h1 class="brand">Curio</h1>
+      <nav>
+        <a href="{{ url_for('main.home') }}">Home</a>
+        <a href="{{ url_for('main.items_catalog') }}">Explore</a>
+        <a href="#">Feed</a>
+        <a href="#">Search</a>
+      </nav>
+      <div class="auth-actions">
+        <a class="auth-link" href="{{ url_for('main.me') }}">My profile</a>
+      </div>
+    </aside>
+
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <section class="flash-stack">
+            {% for category_name, message in messages %}
+              <p class="flash-message flash-{{ category_name }}">{{ message }}</p>
+            {% endfor %}
+          </section>
+        {% endif %}
+      {% endwith %}
+
+      <section class="lists-head">
+        <div>
+          <h3>Write Review</h3>
+          <p>What do you want to review?</p>
+        </div>
+      </section>
+
+      <section class="composer-grid">
+        <form method="get" action="{{ url_for('main.new_review_search') }}" class="composer-card">
+          <input type="hidden" name="category" value="{{ category }}">
+          <label>
+            {{ category_label }} title search input
+            <input type="text" name="q" value="{{ query }}" placeholder="The Book That Does Not Exist" required>
+          </label>
+          <p class="items">Category: {{ category_label[:-1] if category_label.endswith('s') else category_label }}</p>
+          <button type="submit">Search</button>
+        </form>
+      </section>
+
+      {% if search_state == 'exact' %}
+        <section class="catalog-section">
+          <h4>Exact match found</h4>
+          {% for item in exact_matches %}
+            <article class="catalog-card">
+              <img src="{{ item.image_url }}" alt="{{ item.title }}">
+              <div>
+                <h5>{{ item.title }}</h5>
+                <p>{{ item.creator_display_name or 'Unknown creator' }}</p>
+                <a class="auth-link" href="{{ url_for('main.compose_review', work_id=item.id) }}">Review this</a>
+              </div>
+            </article>
+          {% endfor %}
+        </section>
+      {% elif search_state == 'similar' %}
+        <section class="catalog-section">
+          <h4>We couldn't find an exact match.</h4>
+          <p>Maybe one of these?</p>
+          <div class="reviews-grid">
+            {% for item in similar_matches %}
+              <article class="review-card">
+                <h4>{{ loop.index }}. {{ item.title }}</h4>
+                <p>{{ item.creator_display_name or 'Unknown creator' }}</p>
+                <a class="auth-link" href="{{ url_for('main.compose_review', work_id=item.id) }}">Use existing</a>
+              </article>
+            {% endfor %}
+          </div>
+          <a class="auth-link" href="{{ url_for('main.new_book_entry', title=query) }}">None of these. Create new book</a>
+        </section>
+      {% elif search_state == 'none' %}
+        <section class="catalog-section">
+          <h4>No book found.</h4>
+          <a class="auth-link" href="{{ url_for('main.new_book_entry', title=query) }}">Create new book entry</a>
+        </section>
+      {% endif %}
+    </main>
+  </div>
+</body>
+</html>

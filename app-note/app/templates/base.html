@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}NoteStack{% endblock %}</title>
+  <meta name="notestack-script-root" content="{{ request.script_root }}" />
+  <script>
+    (function () {
+      const STORAGE_KEY = 'notestack-theme';
+      const saved = localStorage.getItem(STORAGE_KEY);
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = saved === 'light' || saved === 'dark' ? saved : (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  {% block head %}{% endblock %}
+</head>
+<body>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+          <div class="flash flash--{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  {% block body %}{% endblock %}
+
+  <script>
+    (function () {
+      window.NOTESTACK_SCRIPT_ROOT = {{ request.script_root|tojson }};
+      window.NOTESTACK_API_ROOT = (window.NOTESTACK_SCRIPT_ROOT || '') + '/api';
+
+      const STORAGE_KEY = 'notestack-theme';
+
+      function getTheme() {
+        return document.documentElement.getAttribute('data-theme') || 'light';
+      }
+
+      function setTheme(nextTheme) {
+        const theme = nextTheme === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem(STORAGE_KEY, theme);
+        document.querySelectorAll('[data-theme-toggle]').forEach(updateToggleLabel);
+      }
+
+      function toggleTheme() {
+        setTheme(getTheme() === 'dark' ? 'light' : 'dark');
+      }
+
+      function updateToggleLabel(btn) {
+        const isDark = getTheme() === 'dark';
+        btn.innerHTML = isDark ? '&#9728;' : '&#9790;';
+        btn.setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
+        btn.setAttribute('title', isDark ? 'Switch to light theme' : 'Switch to dark theme');
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-theme-toggle]').forEach(function (btn) {
+          updateToggleLabel(btn);
+          btn.addEventListener('click', toggleTheme);
+        });
+      });
+
+      window.NoteStackTheme = {
+        getTheme: getTheme,
+        setTheme: setTheme,
+        toggleTheme: toggleTheme,
+      };
+    })();
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

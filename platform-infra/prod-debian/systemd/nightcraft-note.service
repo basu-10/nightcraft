@@ -1,0 +1,23 @@
+[Unit]
+Description=Nightcraft NoteStack App (Gunicorn)
+After=network.target nightcraft-auth.service
+
+[Service]
+Type=simple
+User=dev
+Group=dev
+WorkingDirectory=/platform-infra/app-note
+EnvironmentFile=/etc/nightcraft/app-note.env
+ExecStart=/platform-infra/runtime/venvs/app-note/bin/gunicorn \
+  --workers 2 \
+  --bind 127.0.0.1:5900 \
+  --access-logfile - \
+  --error-logfile - \
+  wsgi:application
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

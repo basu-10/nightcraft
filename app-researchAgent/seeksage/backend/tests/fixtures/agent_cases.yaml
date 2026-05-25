@@ -1,0 +1,81 @@
+# Agent run integration / live test cases
+# Each case is sent as a user message to a full agent run.
+#
+# Fields
+# ------
+# id          unique string ID for the test case (used in log tags and pytest IDs)
+# prompt      the user query text sent to the agent
+# expect      list of keywords/phrases that MUST appear in the final answer (case-insensitive)
+# forbid      list of strings that must NOT appear (e.g. error markers)
+# tools       optional list of tools to allow (overrides workspace default)
+# max_steps   optional step cap (default 5)
+# timeout_s   max wall-clock seconds before the test fails (default 120)
+# tags        free-form list for grouping / selective runs
+
+cases:
+  - id: simple_factual
+    prompt: "What is the capital of France?"
+    expect:
+      - "Paris"
+    forbid:
+      - "[TOOL ERROR]"
+    max_steps: 3
+    timeout_s: 60
+    tags: [smoke, fast]
+
+  - id: web_search_basic
+    prompt: "Search the web and tell me the current Python version."
+    expect:
+      - "Python"
+      - "3."
+    forbid:
+      - "[TOOL ERROR]"
+    tools: [web_search]
+    max_steps: 4
+    timeout_s: 90
+    tags: [live, tools]
+
+  - id: wiki_lookup
+    prompt: "Who invented the World Wide Web? Give a one-sentence answer."
+    expect:
+      - "Berners-Lee"
+    forbid:
+      - "[TOOL ERROR]"
+    tools: [wiki_search]
+    max_steps: 3
+    timeout_s: 60
+    tags: [live, tools]
+
+  - id: multi_step_research
+    prompt: >
+      Research the latest advancements in quantum computing in 2025 and
+      summarise in 3 bullet points.
+    expect:
+      - "quantum"
+    forbid:
+      - "[TOOL ERROR]"
+    tools: [web_search, visit_url]
+    max_steps: 6
+    timeout_s: 180
+    tags: [live, slow, tools]
+
+  - id: arxiv_lookup
+    prompt: "Find a recent arXiv paper about large language model reasoning and summarise its abstract."
+    expect:
+      - "arxiv"
+    forbid:
+      - "[TOOL ERROR]"
+    tools: [arxiv_search]
+    max_steps: 4
+    timeout_s: 90
+    tags: [live, tools]
+
+  - id: no_tool_needed
+    prompt: "Write a haiku about debugging code."
+    expect:
+      - [] # no hard keyword requirement — just check it completes
+    forbid:
+      - "[TOOL ERROR]"
+    max_steps: 2
+    timeout_s: 45
+    tags: [smoke, fast]

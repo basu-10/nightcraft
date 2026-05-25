@@ -1,0 +1,24 @@
+[Unit]
+Description=Nightcraft Service Auth (Gunicorn)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=dev
+Group=dev
+WorkingDirectory=/platform-infra/service-auth
+EnvironmentFile=/etc/nightcraft/service-auth.env
+ExecStart=/platform-infra/runtime/venvs/service-auth/bin/gunicorn \
+  --workers 3 \
+  --bind 127.0.0.1:5100 \
+  --access-logfile - \
+  --error-logfile - \
+  run:app
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

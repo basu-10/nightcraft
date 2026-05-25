@@ -1,0 +1,23 @@
+[Unit]
+Description=Nightcraft Game App (Gunicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=dev
+Group=dev
+WorkingDirectory=/platform-infra/app-game
+EnvironmentFile=/etc/nightcraft/app-game.env
+ExecStart=/platform-infra/runtime/venvs/app-game/bin/gunicorn \
+  --workers 2 \
+  --bind 127.0.0.1:5800 \
+  --access-logfile - \
+  --error-logfile - \
+  wsgi:app
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

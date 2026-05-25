@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Curio Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <div class="home-shell">
+    <header class="home-topbar">
+      <a class="home-logo" href="{{ url_for('main.home') }}">Curio</a>
+      <nav class="home-topnav">
+        <span>Hi, {{ app_user.display_name or app_user.username }} welcome</span>
+        <a href="{{ url_for('main.me') }}">My Profile</a>
+        <form method="post" action="{{ url_for('auth.logout') }}">
+          <button type="submit">Sign out</button>
+        </form>
+      </nav>
+    </header>
+
+    <main class="home-main">
+      <section class="home-hero">
+        <p class="home-kicker">Curio Admin</p>
+        <h1>Content and profile controls</h1>
+        <p>
+          Basic admin summary for Curio. This page is visible only to accounts with the
+          <strong>admin</strong> role from shared auth.
+        </p>
+      </section>
+
+      <section class="home-featured-grid">
+        <article class="home-featured-lists">
+          <p class="home-card-label">Platform Stats</p>
+          <ul>
+            <li><strong>{{ stats.profiles }}</strong> profiles</li>
+            <li><strong>{{ stats.works }}</strong> works</li>
+            <li><strong>{{ stats.reviews }}</strong> reviews</li>
+            <li><strong>{{ stats.lists }}</strong> lists</li>
+            <li><strong>{{ stats.notes }}</strong> notes</li>
+          </ul>
+        </article>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Admin Settings | DevRadio{% endblock %}
+{% block content %}
+<section class="grid two">
+  <article class="card">
+    <h1>OpenRouter Settings</h1>
+    <form method="post" class="form-grid">
+      <label>API Key
+        <input name="openrouter_api_key" placeholder="{{ masked_key or 'sk-or-v1-...' }}">
+      </label>
+      <button type="submit">Save Key</button>
+    </form>
+  </article>
+
+  <article class="card">
+    <h1>Ticker Settings</h1>
+    <p>Controls how often the player ticker re-checks for updates across the site.</p>
+    <form method="post" class="form-grid">
+      <label>Ticker refresh time (seconds)
+        <input
+          name="ticker_refresh_seconds"
+          type="number"
+          min="{{ ticker_refresh_seconds_min }}"
+          max="{{ ticker_refresh_seconds_max }}"
+          step="1"
+          value="{{ ticker_refresh_seconds }}"
+          required
+        >
+      </label>
+      <button type="submit">Save Ticker Timing</button>
+    </form>
+  </article>
+
+  <article class="card">
+    <h1>My Timezone</h1>
+    <form method="post" action="{{ url_for('admin.admin_timezone') }}" class="form-grid">
+      <label>Timezone
+        <input name="timezone_name" value="{{ app_user.timezone_name }}" required>
+      </label>
+      <button type="submit">Update Timezone</button>
+    </form>
+  </article>
+
+  <article class="card">
+    <h1>Reset Editorial Data</h1>
+    <p>Delete all staged, drafted, approved, and queued article data so admins can seed from scratch. User accounts and login credentials stay intact.</p>
+    <form method="post" action="{{ url_for('admin.reset_editorial_data') }}" class="form-grid" onsubmit="return confirm('Permanently clear all article staging and queue data? User accounts will be kept.');">
+      <button type="submit" class="danger">Clear Queues And Staging</button>
+    </form>
+  </article>
+</section>
+{% endblock %}

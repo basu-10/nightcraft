@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Listener Settings | DevRadio{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>Listener Settings</h1>
+  <form method="post" class="form-grid">
+    <label>Display Timezone
+      <input name="timezone_name" value="{{ app_user.timezone_name }}" required>
+    </label>
+    <button type="submit">Save</button>
+  </form>
+</section>
+{% endblock %}

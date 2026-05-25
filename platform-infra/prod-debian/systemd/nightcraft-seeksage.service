@@ -1,0 +1,25 @@
+[Unit]
+Description=Nightcraft SeekSage App (Gunicorn)
+After=network.target postgresql.service nightcraft-auth.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=dev
+Group=dev
+WorkingDirectory=/platform-infra/app-researchAgent/seeksage/backend
+EnvironmentFile=/etc/nightcraft/app-seeksage.env
+ExecStart=/platform-infra/runtime/venvs/seeksage-backend/bin/gunicorn \
+  --workers 2 \
+  --timeout 180 \
+  --bind 127.0.0.1:5700 \
+  --access-logfile - \
+  --error-logfile - \
+  run:app
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

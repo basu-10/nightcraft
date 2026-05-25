@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+{% block title %}NoteStack{% endblock %}
+
+{% block head %}
+{% endblock %}
+
+{% block body %}
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Main application shell — all state and rendering is handled in app.js
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="app" class="app-layout">
+
+  <!-- ── Sidebar ────────────────────────────────────────────────────────── -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar__header">
+      <span class="sidebar__logo">NoteStack</span>
+      <button id="btn-sidebar-close" class="sidebar__close-btn" title="Close menu" aria-label="Close menu">✕</button>
+      <button id="btn-new-note" class="btn btn--primary btn--sm" title="New note (Ctrl+N)">
+        + New
+      </button>
+    </div>
+
+    <nav class="sidebar__nav">
+      <button class="sidebar__item sidebar__item--active" data-filter="all">
+        <span class="sidebar__item-icon">🗒️</span> All Notes
+        <span class="sidebar__item-count" id="count-all"></span>
+      </button>
+      <button class="sidebar__item" data-filter="favorites">
+        <span class="sidebar__item-icon">⭐</span> Favorites
+        <span class="sidebar__item-count" id="count-fav"></span>
+      </button>
+      <button class="sidebar__item" data-filter="trash">
+        <span class="sidebar__item-icon">🗑️</span> Trash
+      </button>
+    </nav>
+
+    <div id="sidebar-body" class="sidebar__body">
+      <!-- Folders -->
+      <div id="sidebar-folder-section" class="sidebar__section sidebar__section--folders">
+        <div class="sidebar__section-header">
+          <span>Folders</span>
+          <button class="sidebar__add-btn" id="btn-add-folder" title="New folder">+</button>
+        </div>
+        <ul id="folder-list" class="sidebar__tree"></ul>
+      </div>
+
+      <button id="sidebar-sections-resizer" class="sidebar__sections-resizer" type="button" title="Resize folders and tags" aria-label="Resize folders and tags" aria-orientation="horizontal"></button>
+
+      <!-- Tags -->
+      <div id="sidebar-tag-section" class="sidebar__section sidebar__section--tags">
+        <div class="sidebar__section-header">
+          <span>Tags</span>
+          <button class="sidebar__add-btn" id="btn-add-tag" title="New tag">+</button>
+        </div>
+        <div id="tag-list" class="sidebar__tags"></div>
+      </div>
+    </div>
+
+    <!-- Sync status -->
+    <div class="sidebar__footer">
+      <a id="sync-status" class="sync-badge sync-badge--idle" href="{{ url_for('main.sync_log_view') }}" target="_blank" rel="noopener" title="Open sync log">
+        <span class="sync-badge__dot"></span>
+        <span class="sync-badge__label">Synced</span>
+      </a>
+      <div class="sidebar__user">
+        <span id="username-label">{{ user.username }}</span>
+        <a href="{{ url_for('main.settings_view') }}" class="sidebar__settings-btn" title="Settings" aria-label="Settings">⚙</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main content ───────────────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="topbar__left">
+        <button id="btn-sidebar-toggle" class="topbar__icon-btn topbar__menu-btn" title="Open menu" aria-label="Open menu">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/>
+          </svg>
+        </button>
+        <button id="btn-search-toggle" class="topbar__icon-btn" title="Search" aria-label="Search" aria-expanded="false">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <circle cx="6.5" cy="6.5" r="4.2"/><line x1="9.8" y1="9.8" x2="14" y2="14"/>
+          </svg>
+        </button>
+      </div>
+      <span class="topbar__brand">NoteStack</span>
+      <div id="topbar-search-wrap" class="topbar__search-wrap">
+        <input id="search-input" class="topbar__search" type="search"
+               placeholder="Search notes…" autocomplete="off" />
+      </div>
+      <div class="topbar__actions">
+        <select id="sort-select" class="topbar__select" title="Sort">
+          <option value="newest">Newest</option>
+          <option value="oldest">Oldest</option>
+          <option value="alpha">A–Z</option>
+        </select>
+        <button data-theme-toggle class="topbar__pill-btn theme-toggle" title="Toggle theme">&#9728;</button>
+        <button id="btn-toggle-view" class="topbar__icon-btn" title="Toggle view" aria-label="Toggle view">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="8.5" y="1.5" width="5" height="5" rx="1"/>
+            <rect x="1.5" y="8.5" width="5" height="5" rx="1"/><rect x="8.5" y="8.5" width="5" height="5" rx="1"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Conflict banner (hidden until conflicts exist) -->
+    <div id="conflict-banner" class="conflict-banner" hidden>
+      <span>⚠ You have <strong id="conflict-count">0</strong> unresolved sync conflict(s).</span>
+      <button id="btn-show-conflicts" class="btn btn--sm btn--warning">Resolve</button>
+    </div>
+
+    <div class="view-header">
+      <h1 id="view-title" class="view-header__title">All Notes</h1>
+      <div class="date-filter">
+        <div class="date-filter__group">
+          <button id="btn-date-today" class="date-filter__btn" title="Show today's notes" type="button">🕐</button>
+          <button id="btn-date-pick" class="date-filter__btn date-filter__btn--pick" title="Pick a specific date" type="button">▾</button>
+        </div>
+        <input id="date-filter-input" type="date" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;" tabindex="-1" aria-hidden="true" />
+        <button id="btn-date-clear" class="date-filter__clear" title="Clear date filter" type="button" hidden>✕</button>
+      </div>
+    </div>
+
+    <div id="folder-nav" class="folder-nav" hidden>
+      <button id="folder-nav-back" class="folder-nav__back" type="button">← All Notes</button>
+      <span id="folder-nav-label" class="folder-nav__label">Folders</span>
+      <div id="folder-nav-chips" class="folder-nav__chips"></div>
+    </div>
+
+    <!-- Note list / empty state -->
+    <div id="note-list" class="note-list"></div>
+    <div id="list-pagination" class="list-pagination" hidden>
+      <button id="btn-load-more" class="btn btn--ghost" type="button">Show more</button>
+    </div>
+    <div id="empty-state" class="empty-state" hidden>
+      <p>No notes here yet.</p>
+      <button class="btn btn--primary" id="btn-empty-new">+ Create a note</button>
+    </div>
+
+  </main>
+
+  <div id="sidebar-backdrop" class="sidebar-backdrop" hidden></div>
+
+  <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="Primary navigation">
+    <button class="mobile-nav__item mobile-nav__item--active" data-mobile-filter="all" title="All notes">
+      <span class="mobile-nav__icon">🗒️</span>
+      <span class="mobile-nav__label">Notes</span>
+    </button>
+    <button class="mobile-nav__item" data-mobile-filter="favorites" title="Favorites">
+      <span class="mobile-nav__icon">⭐</span>
+      <span class="mobile-nav__label">Favorites</span>
+    </button>
+    <div id="mobile-new-wrap" class="mobile-nav__item mobile-nav__split-btn" title="New note">
+      <button id="btn-mobile-new-note" class="mobile-nav__split-main" aria-label="New note">
+        <span class="mobile-nav__icon">＋</span>
+        <span class="mobile-nav__label">New</span>
+      </button>
+      <button id="btn-mobile-new-caret" class="mobile-nav__split-caret" aria-label="More options" title="More create options">▾</button>
+    </div>
+    <button class="mobile-nav__item" data-mobile-filter="trash" title="Trash">
+      <span class="mobile-nav__icon">🗑️</span>
+      <span class="mobile-nav__label">Trash</span>
+    </button>
+    <button id="btn-mobile-menu" class="mobile-nav__item" title="Menu">
+      <span class="mobile-nav__icon">☰</span>
+      <span class="mobile-nav__label">Menu</span>
+    </button>
+  </nav>
+
+  <!-- ── Editor panel (slides in) ──────────────────────────────────────── -->
+  <div id="editor-panel" class="editor-panel editor-panel--closed">
+    <div class="editor-panel__header">
+      <input id="note-title" class="editor-panel__title" type="text"
+             placeholder="Note title…" autocomplete="off" />
+      <div class="editor-panel__header-actions">
+        <button id="btn-fav" class="editor-panel__icon-btn" title="Toggle favourite">☆</button>
+        <button id="btn-delete-note" class="editor-panel__icon-btn editor-panel__icon-btn--danger"
+                title="Delete note">🗑</button>
+        <button id="btn-fullscreen-editor" class="editor-panel__icon-btn" title="Fullscreen editor">⤢</button>
+        <button id="btn-close-editor" class="editor-panel__icon-btn" title="Close">✕</button>
+      </div>
+    </div>
+    <div id="lexical-editor-mount" class="editor-panel__body"></div>
+    <div class="editor-panel__footer">
+      <span id="editor-tags-display" class="editor-tags"></span>
+      <button id="btn-edit-tags" class="btn btn--sm btn--ghost">Tags</button>
+      <button id="btn-save-note" class="btn btn--sm btn--primary">Save</button>
+      <span id="save-indicator" class="save-indicator"></span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Modals ──────────────────────────────────────────────────────────────── -->
+
+<!-- New/edit folder modal -->
+<div id="folder-modal" class="modal-overlay" hidden>
+  <div class="modal">
+    <h2 class="modal__title" id="folder-modal-title">Create Folder</h2>
+    <label class="form-label">Location
+      <div id="folder-location-label" class="form-input folder-location-readonly">Root</div>
+    </label>
+    <label class="form-label">Name
+      <input id="folder-name-input" class="form-input" type="text" />
+    </label>
+    <label class="form-label">Color</label>
+    <div class="folder-color-row">
+      <span id="folder-color-preview" class="folder-color-preview" aria-hidden="true"></span>
+      <button class="btn btn--ghost" id="btn-folder-color" type="button">Choose Color</button>
+      <input id="folder-color-input" type="color" value="#6b7280" hidden />
+    </div>
+    <div class="modal__actions">
+      <button class="btn btn--ghost" id="btn-folder-cancel">Cancel</button>
+      <button class="btn btn--primary" id="btn-folder-save">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rename folder modal -->
+<div id="rename-folder-modal" class="modal-overlay" hidden>
+  <div class="modal">
+    <h2 class="modal__title">Rename Folder</h2>
+    <label class="form-label">Name
+      <input id="rename-folder-input" class="form-input" type="text" />
+    </label>
+    <div class="modal__actions">
+      <button class="btn btn--ghost" id="btn-rename-folder-cancel">Cancel</button>
+      <button class="btn btn--primary" id="btn-rename-folder-save">Rename</button>
+    </div>
+  </div>
+</div>
+
+<!-- Context menu (shared, positioned dynamically) -->
+<div id="ctx-menu" class="ctx-menu" hidden></div>
+<!-- Manage tags modal (create/edit/delete) -->
+<div id="tag-manager-modal" class="modal-overlay" hidden>
+  <div class="modal">
+    <h2 class="modal__title">Manage Tags</h2>
+    <p class="form-hint">Create new tags or edit existing ones.</p>
+    
+    <!-- New tag section -->
+    <div style="margin-bottom: var(--space-4); padding-bottom: var(--space-4); border-bottom: 1px solid var(--border);">
+      <div style="font-weight: 600; font-size: var(--type-sm); margin-bottom: var(--space-2);">Create New Tag</div>
+      <div style="display: flex; gap: var(--space-2); margin-bottom: var(--space-3);">
+        <input id="tag-new-input" class="form-input" type="text" placeholder="Tag name…" />
+        <button id="tag-color-btn" class="btn btn--secondary" type="button" title="Pick color" style="width: 40px; height: 40px; padding: 0; border-radius: 4px; background-color: #6B7280; flex-shrink: 0;"></button>
+        <button id="btn-tag-add" class="btn btn--primary" type="button">+ Add</button>
+      </div>
+    </div>
+    
+    <!-- Existing tags list -->
+    <div>
+      <div style="font-weight: 600; font-size: var(--type-sm); margin-bottom: var(--space-2);">Existing Tags</div>
+      <div id="tag-list-manage" style="max-height: 300px; overflow-y: auto;"></div>
+    </div>
+    
+    <div class="modal__actions">
+      <button class="btn btn--ghost" id="btn-tag-manager-close">Close</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Tags editor modal -->
+<div id="tags-modal" class="modal-overlay" hidden>
+  <div class="modal">
+    <h2 class="modal__title">Edit Tags</h2>
+    <p class="form-hint">Choose from dropdown or type comma-separated tags.</p>
+    <div class="form-row">
+      <select id="tags-select" class="form-input"></select>
+      <button class="btn btn--ghost" id="btn-tags-add" type="button">Add</button>
+    </div>
+    <input id="tags-input" class="form-input" type="text"
+           placeholder="e.g. python, ideas, work" />
+    <div class="modal__actions">
+      <button class="btn btn--ghost" id="btn-tags-cancel">Cancel</button>
+      <button class="btn btn--primary" id="btn-tags-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Conflicts modal -->
+<div id="conflicts-modal" class="modal-overlay" hidden>
+  <div class="modal modal--wide">
+    <h2 class="modal__title">Sync Conflicts</h2>
+    <p class="form-hint">
+      These notes were edited on both the web and desktop since the last sync.
+      Pick one version or edit a merged result.
+    </p>
+    <div id="conflicts-list"></div>
+    <div class="modal__actions">
+      <button class="btn btn--ghost" id="btn-conflicts-close">Close</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('static', filename='js/lexical_editor.js') }}"></script>
+<script src="{{ url_for('static', filename='js/conflicts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}

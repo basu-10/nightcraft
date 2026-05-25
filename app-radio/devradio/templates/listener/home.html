@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Live Channels | DevRadio{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="live-badge"><span class="live-dot"></span> Live</div>
+      <h1 class="hero-wordmark">DEVRADIO.FM</h1>
+      <p>An interactive stream for developers. Pick a voice-like channel and jump into the current run.</p>
+      <div class="hero-cta">
+        <a class="btn primary pill" href="#channels">&#9724; Start Listening</a>
+        <a class="btn pill" href="#channels">&#8285; Browse Channels</a>
+      </div>
+    </div>
+    <div class="visualizer" aria-hidden="true">
+      <span style="--h-from:8px;--h-to:38px;--dur:0.85s;--delay:0.00s"></span>
+      <span style="--h-from:14px;--h-to:60px;--dur:0.70s;--delay:0.05s"></span>
+      <span style="--h-from:6px;--h-to:45px;--dur:0.95s;--delay:0.10s"></span>
+      <span style="--h-from:20px;--h-to:72px;--dur:0.78s;--delay:0.15s"></span>
+      <span style="--h-from:10px;--h-to:50px;--dur:0.88s;--delay:0.20s"></span>
+      <span style="--h-from:5px;--h-to:35px;--dur:0.65s;--delay:0.25s"></span>
+      <span style="--h-from:18px;--h-to:65px;--dur:0.92s;--delay:0.30s"></span>
+      <span style="--h-from:12px;--h-to:55px;--dur:0.75s;--delay:0.35s"></span>
+      <span style="--h-from:8px;--h-to:40px;--dur:0.82s;--delay:0.40s"></span>
+      <span style="--h-from:22px;--h-to:78px;--dur:0.68s;--delay:0.45s"></span>
+      <span style="--h-from:6px;--h-to:32px;--dur:0.98s;--delay:0.50s"></span>
+      <span style="--h-from:16px;--h-to:58px;--dur:0.72s;--delay:0.55s"></span>
+      <span style="--h-from:9px;--h-to:48px;--dur:0.86s;--delay:0.60s"></span>
+      <span style="--h-from:24px;--h-to:80px;--dur:0.77s;--delay:0.65s"></span>
+      <span style="--h-from:11px;--h-to:42px;--dur:0.93s;--delay:0.70s"></span>
+      <span style="--h-from:7px;--h-to:36px;--dur:0.69s;--delay:0.75s"></span>
+      <span style="--h-from:19px;--h-to:68px;--dur:0.84s;--delay:0.80s"></span>
+      <span style="--h-from:13px;--h-to:52px;--dur:0.76s;--delay:0.85s"></span>
+      <span style="--h-from:5px;--h-to:30px;--dur:0.91s;--delay:0.90s"></span>
+      <span style="--h-from:21px;--h-to:75px;--dur:0.73s;--delay:0.95s"></span>
+      <span style="--h-from:10px;--h-to:44px;--dur:0.87s;--delay:1.00s"></span>
+      <span style="--h-from:15px;--h-to:62px;--dur:0.80s;--delay:1.05s"></span>
+      <span style="--h-from:8px;--h-to:39px;--dur:0.94s;--delay:1.10s"></span>
+      <span style="--h-from:17px;--h-to:66px;--dur:0.71s;--delay:1.15s"></span>
+      <span style="--h-from:6px;--h-to:34px;--dur:0.96s;--delay:1.20s"></span>
+      <span style="--h-from:23px;--h-to:76px;--dur:0.79s;--delay:1.25s"></span>
+      <span style="--h-from:9px;--h-to:46px;--dur:0.83s;--delay:1.30s"></span>
+      <span style="--h-from:14px;--h-to:57px;--dur:0.67s;--delay:1.35s"></span>
+      <span style="--h-from:11px;--h-to:43px;--dur:0.89s;--delay:1.40s"></span>
+      <span style="--h-from:18px;--h-to:70px;--dur:0.74s;--delay:1.45s"></span>
+    </div>
+  </div>
+</section>
+
+<section id="channels" class="grid channels">
+  {% for channel in channels %}
+    {% set live = live_segments.get(channel.slug) %}
+    <article class="card channel-card">
+      <span class="channel-icon">&#9654;</span>
+      <h2>{{ channel.name }}</h2>
+      <p>{{ channel.description }}</p>
+      {% if live %}
+        <div class="live-indicator">
+          <span class="live-dot"></span> Live Now
+        </div>
+        <p class="live-headline">{{ live.article.short_headline or live.article.title }}</p>
+      {% else %}
+        <div class="live-indicator">
+          <span class="live-dot" style="background:var(--ink-muted);animation:none"></span> Queue building
+        </div>
+      {% endif %}
+      <div class="button-row" style="margin-top:auto;padding-top:0.75rem">
+        <a class="btn" href="{{ url_for('listener.player', channel_slug=channel.slug) }}">&#9654; Listen Live</a>
+        <a class="btn ghost" href="{{ url_for('listener.channel_page', channel_slug=channel.slug) }}">&#9776; Today on Channel</a>
+      </div>
+    </article>
+  {% endfor %}
+</section>
+
+{% endblock %}

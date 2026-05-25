@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% block title %}Automated | DevRadio{% endblock %}
+{% block content %}
+<section class="hero compact">
+  <h1>Automated Channel Source Mapping</h1>
+  <p>Map tested RSS sources to channels. Every hourly run scans only these mapped sources, queues only new URLs, and only keeps items where full source article text was fetched successfully.</p>
+</section>
+
+<section class="card admin-card">
+  <div class="admin-head">
+    <div>
+      <h2>Hourly Automation</h2>
+      <p class="subtle">If no new stories are queued, the player keeps looping existing queued stories in repeat-all mode.</p>
+      <p class="subtle">Feed fetch limit: {% if automated_feed_fetch_limit == 0 %}full feed{% else %}top {{ automated_feed_fetch_limit }} item(s) per feed{% endif %}. Use 0 to scan all currently published entries in each mapped RSS feed.</p>
+      {% if last_run_utc %}
+        <p class="subtle">Last run (IST): {{ last_run_utc | app_tz }}</p>
+      {% endif %}
+      {% if last_run_summary %}
+        <p class="subtle">{{ last_run_summary }}</p>
+      {% endif %}
+      {% if latest_log and latest_log.summary and latest_log.summary.fatal_error %}
+        <p class="subtle"><strong>Fatal error:</strong> {{ latest_log.summary.fatal_error }}</p>
+      {% endif %}
+    </div>
+    <div>
+      <form method="post" action="{{ url_for('admin.automated_update_settings') }}" class="form-grid automated-add-form">
+        <label>Feed fetch limit
+          <input type="number" name="feed_fetch_limit" min="0" step="1" value="{{ automated_feed_fetch_limit }}" required>
+        </label>
+        <button class="btn ghost" type="submit">Save Automation Limit</button>
+      </form>
+      <form method="post" action="{{ url_for('admin.automated_run_now') }}">
+        <label>
+          <input type="checkbox" name="skip_timestamp_gate">
+          Bypass timestamp gate (stress test)
+        </label>
+        <button class="btn" type="submit">Run Automated Fetch Now</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="card admin-card">
+  <div class="admin-head">
+    <h2>Latest Run Failures</h2>
+    {% if recent_logs %}
+      <form method="post" action="{{ url_for('admin.automated_retry_failures') }}">
+        <input type="hidden" name="run_id" value="{{ recent_logs[0].run_id }}">
+        <input type="hidden" name="retry_all" value="1">
+        <button class="btn ghost" type="submit">Retry All Retryable Failures</button>
+      </form>
+    {% endif %}
+  </div>
+
+  {% if recent_logs and latest_failures %}
+    <form method="post" action="{{ url_for('admin.automated_retry_failures') }}" class="form-grid">
+      <input type="hidden" name="run_id" value="{{ recent_logs[0].run_id }}">
+      <ul class="story-list">
+        {% for failure in latest_failures %}
+          <li>
+            <label class="source-toggle" for="failure-{{ loop.index0 }}">
+              <input id="failure-{{ loop.index0 }}" type="checkbox" name="failure_indexes" value="{{ loop.index0 }}">
+              <span>
+                <strong>{{ failure.reason }}</strong>
+                {% if failure.source_name %}
+                  | {{ failure.source_name }}
+                {% endif %}
+                {% if failure.title %}
+                  | {{ failure.title }}
+                {% endif %}
+              </span>
+            </label>
+            {% if failure.source_url %}
+              <p class="subtle">{{ failure.source_url }}</p>
+            {% endif %}
+            {% if failure.fetch_status %}
+              <p class="subtle">fetch status: {{ failure.fetch_status }}</p>
+            {% endif %}
+            {% if failure.error %}
+              <p class="subtle">error: {{ failure.error }}</p>
+            {% endif %}
+            {% if failure.retry_status %}
+              <p class="subtle">last retry: {{ failure.retry_status }}{% if failure.retry_timestamp_utc %} at {{ failure.retry_timestamp_utc | app_tz }}{% endif %}</p>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+      <div class="button-row">
+        <button class="btn" type="submit">Retry Selected Failures</button>
+      </div>
+    </form>
+  {% else %}
+    <p class="subtle">No failures recorded for the latest run.</p>
+  {% endif %}
+</section>
+
+<section class="card admin-card">
+  <h2>Recent Automated Runs</h2>
+  {% if recent_logs %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Run ID</th>
+          <th>Started (IST)</th>
+          <th>Queued</th>
+          <th>Timestamp Skipped</th>
+          <th>Duplicates</th>
+          <th>Fetch Failures</th>
+          <th>Status</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in recent_logs %}
+          <tr>
+            <td>{{ item.run_id }}</td>
+            <td>{{ item.run_started_utc | app_tz }}</td>
+            <td>{{ item.new_articles }}</td>
+            <td>{{ item.timestamp_skipped }}</td>
+            <td>{{ item.duplicates_skipped }}</td>
+            <td>{{ item.fetch_failures }}</td>
+            <td>{% if item.fatal_error %}error{% else %}ok{% endif %}</td>
+            <td><a href="{{ url_for('admin.automated_log_detail', run_id=item.run_id) }}">Open Log</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="subtle">No automated runs logged yet.</p>
+  {% endif %}
+</section>
+
+<section class="grid channels automated-columns">
+  {% for channel in channels %}
+    <article class="card admin-card automated-channel-card">
+      <h2>{{ channel.name }}</h2>
+      <p class="subtle">Allocated sources for this channel.</p>
+
+      <ul class="story-list">
+        {% for source in channel_sources.get(channel.id, []) %}
+          <li class="automated-source-row">
+            <div>
+              <strong>{{ source.name }}</strong>
+              <div class="subtle">{{ source.source_key }}</div>
+            </div>
+            <form method="post" action="{{ url_for('admin.automated_unassign_source') }}">
+              <input type="hidden" name="source_feed_id" value="{{ source.id }}">
+              <button class="btn ghost" type="submit">Remove</button>
+            </form>
+          </li>
+        {% else %}
+          <li class="subtle">No sources assigned yet.</li>
+        {% endfor %}
+      </ul>
+
+      <form method="post" action="{{ url_for('admin.automated_assign_source') }}" class="form-grid automated-add-form">
+        <input type="hidden" name="channel_id" value="{{ channel.id }}">
+        <label>Add tested source
+          <select name="source_feed_id" required>
+            <option value="">Select source</option>
+            {% for source in unassigned_sources %}
+              <option value="{{ source.id }}">{{ source.name }} ({{ source.source_key }})</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button class="btn" type="submit">Add To {{ channel.name }}</button>
+      </form>
+    </article>
+  {% endfor %}
+</section>
+
+<section class="card admin-card">
+  <h2>Tested Source Set</h2>
+  <p class="subtle">Only these sources are available for allocation on this page:</p>
+  <div class="source-key-list">
+    {% for source_key in allowed_automated_source_keys %}
+      <span class="status-pill muted">{{ source_key }}</span>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

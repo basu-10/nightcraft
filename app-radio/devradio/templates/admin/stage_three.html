@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Stage 3 | DevRadio{% endblock %}
+{% block content %}
+<section class="hero compact">
+  <h1>Stage 3: Channel Queues</h1>
+  <p>All 3 channel queues with queue counts, current loop item, and remaining items to go out.</p>
+</section>
+
+<section class="card">
+  <h2>Currently Playing If User Logs In Now</h2>
+  <ul class="story-list">
+    {% for lane in channel_board %}
+      <li>
+        <strong>{{ lane.channel.name }}</strong>
+        {% if lane.current_segment %}
+          <div>{{ lane.current_segment.article.short_headline or lane.current_segment.article.title }}</div>
+          <div class="subtle">
+            Status: {{ lane.current_segment.status }} |
+            Offset: {{ lane.current_offset }}s |
+            Remaining: {{ lane.current_remaining }}s |
+            Loop length: {{ lane.loop_total_seconds }}s
+          </div>
+        {% else %}
+          <div class="subtle">No playable items yet.</div>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

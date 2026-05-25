@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login | Curio</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <main class="content" style="max-width: 460px; margin: 36px auto;">
+    <h1>Sign in to Curio</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul>
+          {% for category, message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+    <form method="post" class="auth-form">
+      <label>
+        Username
+        <input type="text" name="username" required>
+      </label>
+      <label>
+        Password
+        <input type="password" name="password" required>
+      </label>
+      <button type="submit">Sign in</button>
+    </form>
+    {% if has_admin_login %}
+      <p>Need dashboard access? <a href="{{ admin_login_url }}">Admin Portal Login</a></p>
+    {% endif %}
+    <p>Need an account? <a href="{{ url_for('auth.register') }}">Register</a></p>
+  </main>
+</body>
+</html>

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Bookmarks | DevRadio{% endblock %}
+{% block content %}
+<div class="bookmarks-page">
+  <div class="bookmarks-header">
+    <a href="{{ url_for('listener.home') }}" class="btn ghost neo-icon-btn" aria-label="Back">←</a>
+    <h1>Bookmarks</h1>
+    <span class="subtle">{{ bookmark_rows | length }} saved</span>
+  </div>
+
+  <div class="bookmarks-toolbar">
+    <span class="subtle">Sort by</span>
+    <div class="bookmarks-sort-row">
+      <a href="{{ url_for('listener.bookmarks', sort='newest') }}" class="btn ghost pill{% if sort_by == 'newest' %} active{% endif %}">Newest</a>
+      <a href="{{ url_for('listener.bookmarks', sort='oldest') }}" class="btn ghost pill{% if sort_by == 'oldest' %} active{% endif %}">Oldest</a>
+      <a href="{{ url_for('listener.bookmarks', sort='title') }}" class="btn ghost pill{% if sort_by == 'title' %} active{% endif %}">A–Z</a>
+    </div>
+  </div>
+
+  {% if bookmark_rows %}
+    <ul class="bookmarks-list">
+      {% for row in bookmark_rows %}
+        <li class="bookmark-card">
+          <div class="bookmark-card-body">
+            <a class="bookmark-title" href="{{ url_for('listener.article_detail', article_id=row.article.id) }}">{{ row.article.short_headline or row.article.title }}</a>
+            <div class="bookmark-meta">
+              <span class="status-pill">{{ row.article.source_name }}</span>
+              <span class="subtle">Saved {{ row.created_at.strftime('%b %d, %Y') if row.created_at else '' }}</span>
+            </div>
+          </div>
+          <div class="bookmark-card-actions">
+            <a class="btn ghost pill" href="{{ url_for('listener.article_detail', article_id=row.article.id) }}" title="Open article">Open</a>
+            <a class="btn ghost pill" href="{{ row.article.source_url }}" target="_blank" rel="noreferrer" title="Original source">↗ Source</a>
+            <form method="post" action="{{ url_for('listener.remove_bookmark', saved_id=row.id) }}" class="bookmark-remove-form">
+              <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
+              <button class="btn danger pill" type="submit" aria-label="Remove bookmark" title="Remove bookmark">✕</button>
+            </form>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="card bookmarks-empty">
+      <p>No bookmarks yet.</p>
+      <a class="btn ghost pill" href="{{ url_for('listener.home') }}">Browse channels</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

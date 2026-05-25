@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rock Paper Scissors</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <header>
+        <h1>Rock Paper Scissors</h1>
+        <p>Choose rock, paper, or scissors and beat the computer.</p>
+      </header>
+
+      <section class="game-box">
+        <div class="choices">
+          <button class="choice" data-choice="rock">Rock</button>
+          <button class="choice" data-choice="paper">Paper</button>
+          <button class="choice" data-choice="scissors">Scissors</button>
+        </div>
+
+        <div id="roundResult" class="result">Make your move.</div>
+        <a class="link-button" href="{{ url_for('game.landing') }}">Back to hub</a>
+      </section>
+    </main>
+
+    <script>
+      const choices = document.querySelectorAll('.choice');
+      const result = document.getElementById('roundResult');
+      const options = ['rock', 'paper', 'scissors'];
+
+      function decide(player, computer) {
+        if (player === computer) return 'Tie';
+        if (
+          (player === 'rock' && computer === 'scissors') ||
+          (player === 'paper' && computer === 'rock') ||
+          (player === 'scissors' && computer === 'paper')
+        ) {
+          return 'Win';
+        }
+        return 'Lose';
+      }
+
+      function play(playerChoice) {
+        const computerChoice = options[Math.floor(Math.random() * options.length)];
+        const outcome = decide(playerChoice, computerChoice);
+        result.textContent = `You chose ${playerChoice}. Computer chose ${computerChoice}. ${outcome}!`;
+        result.className = 'result ' + outcome.toLowerCase();
+      }
+
+      choices.forEach((button) => {
+        button.addEventListener('click', () => play(button.dataset.choice));
+      });
+    </script>
+  </body>
+</html>

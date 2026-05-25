@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}{{ channel.name }} Stories | DevRadio{% endblock %}
+{% block content %}
+<section class="card">
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+    <div>
+      <h1>{{ channel.name }} - Stories Available Now</h1>
+      <p>Only stories that have already played are visible.</p>
+    </div>
+    <a class="btn primary" href="{{ url_for('listener.player', channel_slug=channel.slug) }}" style="flex-shrink: 0; margin-left: 1rem;">▶ Go Live</a>
+  </div>
+  <ul class="story-list compact">
+    {% for seg, local_time in segments %}
+      <li class="story-card">
+        <a class="story-card-link" href="{{ url_for('listener.article_detail', article_id=seg.article.id) }}" aria-label="Open article: {{ seg.article.short_headline or seg.article.title }}"></a>
+        <strong>{{ local_time.strftime('%H:%M') }} IST</strong>
+        <span class="story-card-title">{{ seg.article.short_headline or seg.article.title }}</span>
+        {% if seg.id in breaking_segment_ids %}
+          <span class="subtle"><strong>Breaking Now</strong></span>
+        {% endif %}
+        <span class="subtle story-card-source">{{ seg.article.source_name or 'Source' }}</span>
+        <a class="btn ghost pill story-source-btn" href="{{ seg.article.source_url }}" target="_blank" rel="noreferrer" title="Open source" aria-label="Open source: {{ seg.article.source_name or 'Source' }}">↗</a>
+      </li>
+    {% else %}
+      <li>No stories available yet.</li>
+    {% endfor %}
+  </ul>
+</section>
+
+{% if other_channels %}
+  <section class="card other-channels-section">
+    <h2>Other Channels</h2>
+    <p>Jump to another category and keep browsing the stream.</p>
+    <div class="grid channels other-channels-grid">
+      {% for other_channel in other_channels %}
+        <article class="card channel-card compact">
+          <span class="channel-icon">&#9654;</span>
+          <h3>{{ other_channel.name }}</h3>
+          <p>{{ other_channel.description }}</p>
+          <div class="button-row" style="margin-top:auto;padding-top:0.75rem">
+            <a class="btn primary" href="{{ url_for('listener.channel_page', channel_slug=other_channel.slug) }}">Open Channel</a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+{% endif %}
+{% endblock %}

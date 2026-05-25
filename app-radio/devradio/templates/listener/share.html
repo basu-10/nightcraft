@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}Share Story | DevRadio{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>Share This Story</h1>
+  <p>{{ article.short_headline or article.title }}</p>
+  <input class="share-input" type="text" value="{{ share_url }}" readonly>
+</section>
+{% endblock %}

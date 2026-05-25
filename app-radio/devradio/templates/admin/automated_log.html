@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}Automated Log | DevRadio{% endblock %}
+{% block content %}
+<section class="hero compact">
+  <h1>Automated Run Log</h1>
+  <p>Run ID: {{ log_payload.run_id }}</p>
+  <p class="subtle">Started (IST): {{ log_payload.run_started_utc | app_tz }} | Finished (IST): {{ log_payload.run_finished_utc | app_tz }}</p>
+  <div class="button-row">
+    {% if show_retryable_only %}
+      <a class="btn ghost" href="{{ url_for('admin.automated_log_detail', run_id=log_payload.run_id) }}">Show All Failures</a>
+    {% else %}
+      <a class="btn ghost" href="{{ url_for('admin.automated_log_detail', run_id=log_payload.run_id, retryable=1) }}">Show Retryable Only</a>
+    {% endif %}
+    <form method="post" action="{{ url_for('admin.automated_retry_failures') }}">
+      <input type="hidden" name="run_id" value="{{ log_payload.run_id }}">
+      <input type="hidden" name="retry_all" value="1">
+      <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
+      <button class="btn" type="submit">Retry All Retryable</button>
+    </form>
+  </div>
+</section>
+
+<section class="card admin-card">
+  <h2>Summary</h2>
+  <ul class="story-list">
+    <li>Queued new: {{ log_payload.summary.new_articles }}</li>
+    <li>Timestamp skipped: {{ log_payload.summary.timestamp_skipped or 0 }}</li>
+    <li>Duplicates skipped: {{ log_payload.summary.duplicates_skipped }}</li>
+    <li>Fetch failures: {{ log_payload.summary.fetch_failures }}</li>
+    <li>Breaking updates: {{ log_payload.summary.breaking_updates or 0 }}</li>
+    <li>Feeds processed: {{ log_payload.summary.processed_feeds }}</li>
+    <li>Channels touched: {{ log_payload.summary.processed_channels }}</li>
+    <li>Fatal error: {{ log_payload.summary.fatal_error or 'none' }}</li>
+  </ul>
+</section>
+
+<section class="card admin-card">
+  <h2>Breaking Queue Reorder</h2>
+  {% if log_payload.breaking_updates %}
+    <ul class="story-list">
+      {% for update in log_payload.breaking_updates %}
+        <li>
+          <strong>Channel {{ update.channel_id }}</strong>
+          <p class="subtle">queued segments: {{ update.segment_ids }}</p>
+          {% if update.breaking %}
+            <p class="subtle">anchor: {{ update.breaking.anchor_segment_id }} | created: {{ update.breaking.created }}</p>
+            <p class="subtle">active breaking ids: {{ update.breaking.injected_segment_ids }}</p>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="subtle">No breaking reorder updates in this run.</p>
+  {% endif %}
+</section>
+
+<section class="card admin-card">
+  <h2>Failures</h2>
+  <p class="subtle">Retryable reasons: {{ retryable_reasons | join(', ') }}</p>
+  {% if failures %}
+    <ul class="story-list">
+      {% for failure in failures %}
+        <li>
+          <strong>{{ failure.reason }}</strong>
+          {% if failure.source_name %}| {{ failure.source_name }}{% endif %}
+          {% if failure.title %}| {{ failure.title }}{% endif %}
+          {% if failure.source_url %}
+            <p class="subtle">{{ failure.source_url }}</p>
+          {% endif %}
+          {% if failure.fetch_status %}
+            <p class="subtle">fetch status: {{ failure.fetch_status }}</p>
+          {% endif %}
+          {% if failure.error %}
+            <p class="subtle">error: {{ failure.error }}</p>
+          {% endif %}
+          {% if failure.retry_status %}
+            <p class="subtle">retry: {{ failure.retry_status }}{% if failure.retry_timestamp_utc %} at {{ failure.retry_timestamp_utc | app_tz }}{% endif %}</p>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    {% if show_retryable_only %}
+      <p class="subtle">No retryable failures in this run.</p>
+    {% else %}
+      <p class="subtle">No failures in this run.</p>
+    {% endif %}
+  {% endif %}
+</section>
+
+<section class="card admin-card">
+  <h2>Events</h2>
+  {% if log_payload.events %}
+    <ul class="story-list">
+      {% for event in log_payload.events %}
+        <li>
+          <strong>{{ event.event }}</strong>
+          <span class="subtle">{{ event.timestamp_utc | app_tz }}</span>
+          {% if event.source_name %}
+            <span class="subtle"> | {{ event.source_name }}</span>
+          {% endif %}
+          {% if event.source_url %}
+            <p class="subtle">{{ event.source_url }}</p>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="subtle">No event rows captured.</p>
+  {% endif %}
+</section>
+{% endblock %}

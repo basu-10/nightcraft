@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Landing Admin Hub</title>
+    <meta name="description" content="Central admin dashboard entry for platform products.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+
+    <header class="site-header container">
+        <div class="brand">ADMIN HUB</div>
+        <nav class="header-actions">
+            <a class="btn btn-outline" href="{{ home_url }}">Back Home</a>
+            {% if shared_user %}
+            <a class="btn btn-outline" href="{{ logout_url }}">Sign Out</a>
+            {% else %}
+            <a class="btn btn-outline" href="{{ auth_url }}">Unified Login</a>
+            {% endif %}
+            <a class="btn btn-solid" href="{{ auth_admin_url }}">Admin Login</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <p class="eyebrow">Central Admin Entry</p>
+            {% if shared_user %}
+            <p class="eyebrow">Hi, {{ shared_user.username }} welcome</p>
+            {% endif %}
+            <h1>Platform Admin Dashboard</h1>
+
+            {% if not shared_user %}
+            <div class="admin-notice">
+                Sign in to access admin controls across products.
+            </div>
+            {% elif not is_admin %}
+            <div class="admin-notice admin-notice-warn">
+                Your account is signed in but does not have admin access.
+            </div>
+            {% else %}
+            <p class="hero-copy">
+                Open the admin surfaces for each product from one place.
+            </p>
+            {% endif %}
+        </section>
+
+        {% if is_admin %}
+        <section class="products" aria-label="Admin links">
+            {% for card in cards %}
+            <article class="product-card" style="--stagger: {{ loop.index0 }}">
+                <div class="card-top">
+                    <h2>{{ card.name }}</h2>
+                    <span class="status">{{ card.status }}</span>
+                </div>
+                <p class="description">{{ card.description }}</p>
+                <a class="card-link" href="{{ card.url }}">Open {{ card.name }}</a>
+            </article>
+            {% endfor %}
+        </section>
+        {% endif %}
+    </main>
+</body>
+</html>

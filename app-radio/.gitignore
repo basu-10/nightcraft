@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+instance/
+.env
+tests/harness_output/
+.coverage
+htmlcov/
+.git/
+.github/

@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Item Catalog | Curio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <div class="page">
+    <aside class="sidebar">
+      <h1 class="brand">Curio</h1>
+      <nav>
+        <a href="{{ url_for('main.home') }}">Home</a>
+        <a href="{{ url_for('main.items_catalog') }}">Explore</a>
+        <a href="#">Feed</a>
+        <a href="#">Search</a>
+      </nav>
+      <div class="auth-actions">
+        {% if app_user.is_authenticated %}
+          <a class="auth-link" href="{{ url_for('main.me') }}">My profile</a>
+        {% else %}
+          <a class="auth-link" href="{{ url_for('auth.login') }}">Sign in</a>
+        {% endif %}
+      </div>
+    </aside>
+
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <section class="flash-stack">
+            {% for category, message in messages %}
+              <p class="flash-message flash-{{ category }}">{{ message }}</p>
+            {% endfor %}
+          </section>
+        {% endif %}
+      {% endwith %}
+
+      <section class="lists-head">
+        <div>
+          <h3>Work Catalog</h3>
+          <p>Seeded works and user-submitted entries live together here for testing.</p>
+        </div>
+        {% if app_user.is_authenticated %}
+          <a class="auth-link" href="{{ url_for('main.new_review_search', category='book') }}">Write Review</a>
+        {% endif %}
+      </section>
+
+      {% if app_user.is_authenticated %}
+        <section class="composer-grid">
+          <form method="post" action="{{ url_for('main.create_item') }}" enctype="multipart/form-data" class="composer-card" data-work-form>
+            <h4>Submit a new work</h4>
+            <label>
+              Category
+              <select name="category" data-category-select>
+                {% for category in work_categories %}
+                  <option value="{{ category.value }}" {% if work_form.category == category.value %}selected{% endif %}>{{ category.label }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>
+              Title
+              <input type="text" name="title" value="{{ work_form.title }}" required>
+            </label>
+            <label>
+              Creator display name
+              <input type="text" name="creator_display_name" value="{{ work_form.creator_display_name }}" required>
+            </label>
+            <label>
+              Image URL
+              <input type="url" name="image_url" value="{{ work_form.image_url }}" placeholder="https://...">
+            </label>
+            <label>
+              Or upload cover/poster/image
+              <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.gif,.webp">
+            </label>
+            <label>
+              Description
+              <textarea name="description" rows="3">{{ work_form.description }}</textarea>
+            </label>
+
+            <section class="category-metadata-group" data-metadata-group="book">
+              <h5>Book metadata</h5>
+              <p class="items">Show only the details that fit this book entry.</p>
+              <label>Author<input type="text" name="book_author" value="{{ work_form.book_author }}"></label>
+              <label>Year<input type="number" name="book_year" value="{{ work_form.book_year }}"></label>
+              <label>Pages<input type="number" name="book_pages" value="{{ work_form.book_pages }}"></label>
+              <label>Publisher<input type="text" name="book_publisher" value="{{ work_form.book_publisher }}"></label>
+              <label>ISBN<input type="text" name="book_isbn" value="{{ work_form.book_isbn }}"></label>
+              <label>Language<input type="text" name="book_language" value="{{ work_form.book_language }}"></label>
+            </section>
+
+            <section class="category-metadata-group" data-metadata-group="film" hidden>
+              <h5>Film metadata</h5>
+              <p class="items">Show only the details that fit this film entry.</p>
+              <label>Director<input type="text" name="film_director" value="{{ work_form.film_director }}"></label>
+              <label>Year<input type="number" name="film_year" value="{{ work_form.film_year }}"></label>
+              <label>Runtime minutes<input type="number" name="film_runtime_minutes" value="{{ work_form.film_runtime_minutes }}"></label>
+              <label>Country<input type="text" name="film_country" value="{{ work_form.film_country }}"></label>
+              <label>Language<input type="text" name="film_language" value="{{ work_form.film_language }}"></label>
+            </section>
+
+            <section class="category-metadata-group" data-metadata-group="song" hidden>
+              <h5>Song metadata</h5>
+              <p class="items">Show only the details that fit this song entry.</p>
+              <label>Artist<input type="text" name="song_artist" value="{{ work_form.song_artist }}"></label>
+              <label>Album<input type="text" name="song_album" value="{{ work_form.song_album }}"></label>
+              <label>Year<input type="number" name="song_year" value="{{ work_form.song_year }}"></label>
+              <label>Duration seconds<input type="number" name="song_duration_seconds" value="{{ work_form.song_duration_seconds }}"></label>
+            </section>
+
+            <section class="category-metadata-group" data-metadata-group="art" hidden>
+              <h5>Art metadata</h5>
+              <p class="items">Show only the details that fit this artwork entry.</p>
+              <label>Artist<input type="text" name="art_artist" value="{{ work_form.art_artist }}"></label>
+              <label>Year<input type="number" name="art_year" value="{{ work_form.art_year }}"></label>
+              <label>Medium<input type="text" name="art_medium" value="{{ work_form.art_medium }}"></label>
+              <label>Movement<input type="text" name="art_movement" value="{{ work_form.art_movement }}"></label>
+              <label>Museum<input type="text" name="art_museum" value="{{ work_form.art_museum }}"></label>
+            </section>
+            <button type="submit">Submit work</button>
+          </form>
+        </section>
+      {% endif %}
+
+      {% for section in sections %}
+        <section class="catalog-section">
+          <h4>{{ section['label'] }}</h4>
+          {% if section['items'] %}
+            <div class="catalog-grid">
+              {% for item in section['items'] %}
+                <article class="catalog-card">
+                  <img src="{{ item.image_url }}" alt="{{ item.title }}">
+                  <div>
+                    <p class="meta">{{ item.category_label }}</p>
+                    <h5><a href="{{ url_for('main.item_detail', item_id=item.id) }}">{{ item.title }}</a></h5>
+                    <p>{{ item.creator_display_name }}</p>
+                    <p class="items">{{ item.year_value or 'Unknown year' }}{% if item.length_label %} · {{ item.length_label }}{% endif %}</p>
+                  </div>
+                </article>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="catalog-empty">No works available yet in this category.</p>
+          {% endif %}
+        </section>
+      {% endfor %}
+    </main>
+  </div>
+  <script>
+    (() => {
+      const form = document.querySelector("[data-work-form]");
+      if (!form) {
+        return;
+      }
+
+      const categorySelect = form.querySelector("[data-category-select]");
+      const groups = Array.from(form.querySelectorAll("[data-metadata-group]"));
+      const syncGroups = () => {
+        const activeCategory = categorySelect.value;
+        for (const group of groups) {
+          group.hidden = group.dataset.metadataGroup !== activeCategory;
+        }
+      };
+
+      categorySelect.addEventListener("change", syncGroups);
+      syncGroups();
+    })();
+  </script>
+</body>
+</html>

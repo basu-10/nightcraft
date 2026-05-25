@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin Access</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/admin/static/css/main.css">
+</head>
+<body>
+    <div class="bg-layer"></div>
+
+    <main class="container">
+        <section class="card narrow handoff-card">
+            <p class="live-badge"><span class="live-dot"></span> Admin Panel</p>
+            <h1>Centralized admin access</h1>
+            <p class="subtle">
+                Admin access is handled through the shared auth service. Continue to login,
+                then return to the admin area once your session is verified.
+            </p>
+            <div class="button-row">
+                <a class="secondary-button" href="{{ auth_handoff_url }}">Login with Shared Auth</a>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

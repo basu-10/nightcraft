@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Asesh Basu Projects</title>
+    <meta name="description" content="Landing portal for DevRadio, Curio, SeekSage, and admin access.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body class="landing-shell">
+    <main class="landing-page">
+        <header class="topbar">
+            <label class="search" aria-label="Search">
+                <span class="search-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"></circle>
+                        <path d="M20 20L16.5 16.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+                    </svg>
+                </span>
+                <input type="search" placeholder="Search apps, notes, articles...">
+                <span class="kbd">/</span>
+            </label>
+            <nav class="top-actions" aria-label="Primary actions">
+                <button class="icon-button" type="button" aria-label="Theme settings">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.8"></circle>
+                        <path d="M12 3V5.5M12 18.5V21M3 12H5.5M18.5 12H21M5.7 5.7L7.4 7.4M16.6 16.6L18.3 18.3M16.6 7.4L18.3 5.7M5.7 18.3L7.4 16.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
+                    </svg>
+                </button>
+                {% if shared_user %}
+                <a class="action-link" href="{{ logout_url }}">Sign Out</a>
+                {% else %}
+                <a class="visually-hidden" href="{{ auth_url }}">Unified Login</a>
+                {% endif %}
+                <a class="cta" href="{{ admin_url }}">Get in touch<span class="visually-hidden"> Admin Dashboard</span></a>
+            </nav>
+        </header>
+
+        <section class="hero-grid">
+            <div>
+                <p class="section-label">/ INDEX</p>
+                {% if shared_user %}
+                <p class="welcome">Hi, {{ shared_user.username }} welcome</p>
+                {% endif %}
+                <h1>Building Software That Should Already Exist.</h1>
+                <p class="hero-rule">-</p>
+                <p class="hero-text">I build practical tools for research, notes, media discovery, and automation with open systems, local-first architecture, and real-world usability.</p>
+                <div class="hero-links" aria-label="Explore links">
+                    <a href="{{ cards[1].url }}">Browse Apps</a>
+                    <a href="{{ cards[2].url }}">Read Articles</a>
+                    <a href="{{ cards[3].url }}">View Notes</a>
+                </div>
+            </div>
+
+            <aside class="philosophy" aria-label="Philosophy">
+                <p class="philosophy-title">PHILOSOPHY</p>
+                <ul>
+                    <li>
+                        <span aria-hidden="true">[+]</span>
+                        <span>Practical over fashionable</span>
+                    </li>
+                    <li>
+                        <span aria-hidden="true">[o]</span>
+                        <span>Open over restrictive</span>
+                    </li>
+                    <li>
+                        <span aria-hidden="true">[#]</span>
+                        <span>Reliable over clever</span>
+                    </li>
+                    <li>
+                        <span aria-hidden="true">[*]</span>
+                        <span>Useful over impressive</span>
+                    </li>
+                </ul>
+            </aside>
+        </section>
+
+        <section class="registry" aria-label="Product registry">
+            <div class="registry-head">
+                <p class="section-label">/ PRODUCT REGISTRY</p>
+                <a href="{{ cards[0].url }}">View all apps <span aria-hidden="true">-></span></a>
+            </div>
+            <div class="registry-table">
+                {% for card in cards %}
+                <a class="registry-row" href="{{ card.url }}" style="--stagger: {{ loop.index0 }}">
+                    <div class="product-main">
+                        <div class="product-icon">{{ card.name[0] }}</div>
+                        <div>
+                            <h2>{{ card.name }}</h2>
+                            <p>{{ card.tagline }}</p>
+                        </div>
+                    </div>
+                    <p class="product-description">{{ card.description }}</p>
+                    <div class="product-meta">
+                        <p>
+                            <span class="status-dot{% if card.status == 'In Development' %} is-building{% endif %}"></span>
+                            {{ card.status }}
+                        </p>
+                        <small>{{ card.stack }}</small>
+                    </div>
+                    <span class="row-arrow" aria-hidden="true">-></span>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+</body>
+</html>

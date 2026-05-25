@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Game Hub</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <style>
+      .card-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+      }
+      .card-actions .btn {
+        flex: 1 1 120px;
+        padding: 0.6rem 1rem;
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(30, 41, 59, 0.8);
+        color: #e2e8f0;
+        font-size: 0.85rem;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        transition: background 0.18s ease, border-color 0.18s ease;
+      }
+      .card-actions .btn:hover {
+        background: rgba(56, 189, 248, 0.15);
+        border-color: rgba(56, 189, 248, 0.4);
+      }
+      .card-actions .btn.pvp {
+        border-color: rgba(56, 189, 248, 0.35);
+        color: #38bdf8;
+      }
+      .card {
+        display: flex;
+        flex-direction: column;
+        text-align: left;
+        padding: 1.25rem;
+      }
+      .card h2 {
+        margin: 0 0 0.5rem;
+      }
+      .card p {
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header>
+        <h1>Game Hub</h1>
+        <p>Choose a game to play.</p>
+      </header>
+
+      <section class="cards">
+        <div class="card">
+          <h2>Highest Number</h2>
+          <p>Pick the larger number and test your eye for the highest digit.</p>
+          <div class="card-actions">
+            <a class="btn" href="{{ url_for('game.highest_number') }}">Play vs AI</a>
+            <a class="btn pvp" href="{{ url_for('game.lobby', game='highest_number') }}">Play vs Others</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Rock Paper Scissors</h2>
+          <p>Play a quick round against the browser.</p>
+          <div class="card-actions">
+            <a class="btn" href="{{ url_for('game.rock_paper_scissors') }}">Play vs AI</a>
+            <a class="btn pvp" href="{{ url_for('game.lobby', game='rock_paper_scissors') }}">Play vs Others</a>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ item.title }} | Curio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <div class="page">
+    <aside class="sidebar">
+      <h1 class="brand">Curio</h1>
+      <nav>
+        <a href="{{ url_for('main.home') }}">Home</a>
+        <a href="{{ url_for('main.items_catalog') }}">Explore</a>
+        <a href="#">Feed</a>
+        <a href="#">Search</a>
+      </nav>
+      <div class="auth-actions">
+        <a class="auth-link" href="{{ url_for('main.items_catalog') }}">Back to catalog</a>
+      </div>
+    </aside>
+
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <section class="flash-stack">
+            {% for category, message in messages %}
+              <p class="flash-message flash-{{ category }}">{{ message }}</p>
+            {% endfor %}
+          </section>
+        {% endif %}
+      {% endwith %}
+
+      <section class="item-page-grid">
+        <section class="item-main-column">
+          <article class="item-header">
+            <img src="{{ item.image_url }}" alt="{{ item.title }}">
+            <div>
+              <p class="meta">{{ item.category_label }}</p>
+              <h2>{{ item.title }}</h2>
+              <p>{{ item.creator_display_name }}</p>
+              <p class="items">{{ item.year_value or 'Unknown year' }}{% if item.length_label %} · {{ item.length_label }}{% endif %}</p>
+              <p>{{ item.description or 'Description is intentionally empty for now.' }}</p>
+              {% if item.is_user_submitted and item.metadata_confidence is not none %}
+                <p class="items">Metadata confidence: {{ '%.2f'|format(item.metadata_confidence) }}</p>
+              {% endif %}
+              {% if item.is_user_submitted %}
+                <span class="section-chip">User submitted</span>
+              {% endif %}
+            </div>
+          </article>
+
+          {% if item.is_user_submitted %}
+            <section class="item-subsection">
+              <h3>This {{ item.category }} page is new.</h3>
+              <p>Help improve the metadata. Info confidence: {{ item.confidence_label }}.</p>
+            </section>
+          {% endif %}
+
+          <div class="item-action-row">
+            <a class="auth-link" href="{{ url_for('main.compose_review', work_id=item.id) }}">Write a review</a>
+            <a class="auth-link" href="{{ url_for('main.items_catalog') }}">Improve Info</a>
+            <button type="button">Bookmark</button>
+          </div>
+
+          <section class="item-subsection">
+            <h3>Related Lists</h3>
+            <p>List previews are part of the Issue 17 build and will appear here.</p>
+          </section>
+
+          <section class="item-subsection">
+            <h3>Reviews</h3>
+            {% if related_reviews %}
+              <div class="reviews-grid">
+                {% for review in related_reviews %}
+                  <article class="review-card{% if review.is_highlighted %} active{% endif %}">
+                    {% if review.is_highlighted %}<p class="meta">Your review is highlighted here.</p>{% endif %}
+                    <h4>{{ review.review_title or review.subject }}</h4>
+                    <p class="items">{{ review.subject }}</p>
+                    {% if review.spoiler %}<p class="items">Spoiler</p>{% endif %}
+                    {% if review.body %}<p>{{ review.body }}</p>{% else %}<p class="items">Rating-only review.</p>{% endif %}
+                    <p class="items">{{ review.rating }}/5{% if review.is_owner %} · {{ review.status|capitalize }} · {{ review.visibility|capitalize }}{% endif %}</p>
+                  </article>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p>No reviews yet for this item. Be the first to add one.</p>
+            {% endif %}
+          </section>
+        </section>
+
+        <aside class="item-side-column">
+          <article class="item-side-card">
+            <h4>Ratings</h4>
+            <p class="item-rating-score">{{ average_rating if average_rating is not none else '-' }}</p>
+            <p class="items">Average rating</p>
+          </article>
+
+          <article class="item-side-card">
+            <h4>Your Rating</h4>
+            <p class="items">Sign in and rate this item.</p>
+          </article>
+
+          <article class="item-side-card">
+            <h4>Metadata</h4>
+            <p><strong>Creator:</strong> {{ item.creator_display_name }}</p>
+            <p><strong>Source:</strong> {{ item.source_type or 'Unknown' }}{% if item.source_id %} · {{ item.source_id }}{% endif %}</p>
+            {% if item.metadata_rows %}
+              {% for row in item.metadata_rows %}
+                <p><strong>{{ row.label }}:</strong> {{ row.value }}</p>
+              {% endfor %}
+            {% else %}
+              <p><strong>Category:</strong> {{ item.category_label }}</p>
+            {% endif %}
+          </article>
+
+          <article class="item-side-card">
+            <h4>Tags</h4>
+            <p class="items">Tag support starts in a follow-up issue.</p>
+          </article>
+
+          <article class="item-side-card">
+            <h4>Discussions</h4>
+            <p class="items">Posts that mention this item will appear here.</p>
+          </article>
+        </aside>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

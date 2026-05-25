@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ profile.name }} | Curio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <div class="page">
+    <aside class="sidebar">
+      <h1 class="brand">Curio</h1>
+      <nav>
+        <a href="{{ url_for('main.home') }}">Home</a>
+        <a href="{{ url_for('main.items_catalog') }}">Explore</a>
+        <a href="#">Feed</a>
+        <a href="#">Search</a>
+        <a href="{{ url_for('main.public_lists', username=profile.username) }}">Lists</a>
+        {% if app_user.is_authenticated %}
+          <a href="{{ url_for('main.me') }}">Profile</a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}">Profile</a>
+        {% endif %}
+      </nav>
+      <div class="auth-actions">
+        {% if app_user.is_authenticated %}
+          <p class="auth-chip">Signed in as {{ app_user.display_name or app_user.username }}</p>
+          <form method="post" action="{{ url_for('auth.logout') }}">
+            <button type="submit">Sign out</button>
+          </form>
+        {% else %}
+          <a class="auth-link" href="{{ url_for('auth.login') }}">Sign in</a>
+          <a class="auth-link" href="{{ url_for('auth.register') }}">Register</a>
+        {% endif %}
+      </div>
+    </aside>
+
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <section class="flash-stack">
+            {% for category, message in messages %}
+              <p class="flash-message flash-{{ category }}">{{ message }}</p>
+            {% endfor %}
+          </section>
+        {% endif %}
+      {% endwith %}
+
+      <header class="topbar">
+        <input type="text" placeholder="Search books, songs, films, artists..." aria-label="Search">
+      </header>
+
+      <section class="profile-hero" style="background-image: linear-gradient(180deg, rgba(4, 8, 15, 0.24), rgba(4, 8, 15, 0.95)), url('{{ profile.background_url or "https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1700&q=80" }}');">
+        <div class="profile-hero-quote">
+          <p>we are</p>
+          <p>our own</p>
+          <p>muse.</p>
+        </div>
+
+        <div class="profile-hero-main">
+          <img class="profile-avatar" src="{{ profile.avatar_url or 'https://images.unsplash.com/photo-1521119989659-a83eee488004?auto=format&fit=crop&w=300&q=80' }}" alt="{{ profile.name }} avatar">
+          <div class="profile-identity">
+            <h2>{{ profile.name }}</h2>
+            <p class="profile-handle">{{ profile.handle }}</p>
+            <p class="profile-bio">{{ profile.bio }}</p>
+            <div class="profile-meta-row">
+              <span>{{ profile.location or 'Location not set' }}</span>
+              {% if profile.profile_link %}
+                <span><a href="{{ profile.profile_link }}" target="_blank" rel="noreferrer">{{ profile.profile_link }}</a></span>
+              {% else %}
+                <span>Profile link not set</span>
+              {% endif %}
+              <span>Joined {{ profile.joined_label }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-strip">
+          <div class="profile-counters">
+            <div><strong>{{ profile.review_count }}</strong><span>Reviews</span></div>
+            <div><strong>{{ profile.list_count }}</strong><span>Lists</span></div>
+            <div><strong>{{ profile.followers }}</strong><span>Followers</span></div>
+            <div><strong>{{ profile.following }}</strong><span>Following</span></div>
+          </div>
+
+          <div class="profile-actions">
+            {% if viewer_can_edit %}
+              <button type="button" onclick="document.getElementById('profile-editor').scrollIntoView({behavior: 'smooth'});">Edit Profile</button>
+            {% endif %}
+            <button type="button">Share</button>
+          </div>
+        </div>
+      </section>
+
+      {% if viewer_can_edit %}
+        <section id="profile-editor" class="profile-editor-card">
+          <h3>Edit Header</h3>
+          <p>Update hero image, avatar, link, and location. Use direct image URLs for now.</p>
+          <form method="post" action="{{ url_for('main.update_profile_header') }}" class="profile-editor-form">
+            <label>
+              Location
+              <input type="text" name="location" value="{{ profile.location }}" placeholder="City, Country">
+            </label>
+            <label>
+              Profile link
+              <input type="url" name="profile_link" value="{{ profile.profile_link }}" placeholder="https://your-link.example">
+            </label>
+            <label>
+              Avatar image URL
+              <input type="url" name="avatar_url" value="{{ profile.avatar_url }}" placeholder="https://images.example/avatar.jpg">
+            </label>
+            <label>
+              Hero image URL
+              <input type="url" name="background_url" value="{{ profile.background_url }}" placeholder="https://images.example/hero.jpg">
+            </label>
+            <button type="submit">Save header changes</button>
+          </form>
+        </section>
+      {% endif %}
+
+      <nav class="profile-tabs">
+        {% for tab in profile.nav_tabs %}
+          <a href="{{ tab_links[tab] }}" class="{% if current_tab == tab %}active{% endif %}">{{ tab }}</a>
+        {% endfor %}
+      </nav>
+
+      <section class="highlights-head">
+        <h3>Highlights</h3>
+        <a href="#">View all</a>
+      </section>
+
+      <section class="highlights-grid">
+        <article>
+          <p class="meta">Pinned List</p>
+          {% if profile.lists %}
+            <h4>{{ profile.lists[0].title }}</h4>
+            <p>{{ profile.lists[0].description }}</p>
+          {% else %}
+            <h4>No list pinned yet</h4>
+            <p>Pin one of your curated lists to spotlight your taste map.</p>
+          {% endif %}
+        </article>
+        <article>
+          <p class="meta">Pinned Review</p>
+          {% if profile.reviews %}
+            <h4>{{ profile.reviews[0].subject }}</h4>
+            <p>{{ profile.reviews[0].body }}</p>
+          {% else %}
+            <h4>No review pinned yet</h4>
+            <p>Pin one of your strongest takes so visitors know your voice quickly.</p>
+          {% endif %}
+        </article>
+      </section>
+
+      <section class="lists-head">
+        <div>
+          {% if current_tab == 'Lists' %}
+            <h3>My Lists</h3>
+            <p>Your personal collections of the things you love.</p>
+          {% elif current_tab == 'Notes' %}
+            <h3>Notes</h3>
+            <p>Long-form notes about books, films, songs, and art.</p>
+          {% elif current_tab == 'Feed' %}
+            <h3>Feed</h3>
+            <p>Recent published review activity from this profile.</p>
+          {% elif current_tab == 'Drafts' %}
+            <h3>Drafts & Private</h3>
+            <p>Private lists, draft/private reviews, and draft/private notes stay here for owner-only management.</p>
+          {% else %}
+            <h3>Recent Reviews</h3>
+            <p>Thoughts and ratings from across your arts universe.</p>
+          {% endif %}
+        </div>
+        {% if viewer_can_edit %}
+          <span class="section-chip">Owner tools enabled</span>
+        {% endif %}
+      </section>
+
+      {% if viewer_can_edit %}
+        <section class="composer-grid">
+          {% if current_tab == 'Lists' %}
+            <form method="post" action="{{ url_for('main.create_list') }}" class="composer-card">
+              <h4>Create a list</h4>
+              <label>
+                Title
+                <input type="text" name="title" required>
+              </label>
+              <label>
+                Category
+                <select name="category">
+                  <option value="books">Books</option>
+                  <option value="songs">Songs</option>
+                  <option value="films">Films</option>
+                  <option value="art">Art</option>
+                  <option value="mixed">Mixed</option>
+                </select>
+              </label>
+              <label>
+                Description
+                <textarea name="description" rows="3"></textarea>
+              </label>
+              <label>
+                Visibility
+                <select name="visibility">
+                  <option value="public">Public</option>
+                  <option value="private">Private</option>
+                </select>
+              </label>
+              <button type="submit">Save list</button>
+            </form>
+          {% elif current_tab == 'Reviews' %}
+            <article class="composer-card">
+              <h4>Write Review</h4>
+              <p>Start by searching for the book, film, song, or artwork you want to review.</p>
+              <a class="auth-link" href="{{ url_for('main.new_review_search', category='book') }}">Write Review</a>
+            </article>
+          {% elif current_tab == 'Notes' %}
+            <form method="post" action="{{ url_for('main.create_note') }}" class="composer-card">
+              <h4>Write a note</h4>
+              <label>
+                Title
+                <input type="text" name="title" required>
+              </label>
+              <label>
+                Body
+                <textarea name="body" rows="4"></textarea>
+              </label>
+              <label>
+                Visibility
+                <select name="visibility">
+                  <option value="public">Public</option>
+                  <option value="private">Private</option>
+                </select>
+              </label>
+              <label>
+                Status
+                <select name="status">
+                  <option value="published">Published</option>
+                  <option value="draft">Draft</option>
+                </select>
+              </label>
+              <button type="submit">Save note</button>
+            </form>
+          {% endif %}
+        </section>
+      {% endif %}
+
+      {% if current_tab == 'Lists' %}
+        <section class="cards">
+          {% for item in profile.lists %}
+            <article class="card tone-{{ item.tone }}">
+              <div class="card-body">
+                <p class="meta">{{ item.category }}</p>
+                <h4>{{ item.title }}</h4>
+                <p>{{ item.description }}</p>
+                <p class="items">{{ item.items }} items · {{ item.visibility|capitalize }}</p>
+                {% if item.entries %}
+                  <ul class="card-list-items">
+                    {% for entry in item.entries %}
+                      <li>
+                        <strong>{{ entry.title }}</strong>
+                        {% if entry.creator_name %}<span>{{ entry.creator_name }}</span>{% endif %}
+                        {% if entry.notes %}<span>{{ entry.notes }}</span>{% endif %}
+                        {% if viewer_can_edit %}
+                          <div class="inline-actions">
+                            <form method="post" action="{{ url_for('main.move_list_item', list_id=item.id, item_id=entry.id) }}">
+                              <input type="hidden" name="direction" value="up">
+                              <button type="submit" {% if not entry.can_move_up %}disabled{% endif %}>Up</button>
+                            </form>
+                            <form method="post" action="{{ url_for('main.move_list_item', list_id=item.id, item_id=entry.id) }}">
+                              <input type="hidden" name="direction" value="down">
+                              <button type="submit" {% if not entry.can_move_down %}disabled{% endif %}>Down</button>
+                            </form>
+                            <form method="post" action="{{ url_for('main.delete_list_item', list_id=item.id, item_id=entry.id) }}">
+                              <button type="submit">Delete item</button>
+                            </form>
+                          </div>
+                        {% endif %}
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+
+                {% if viewer_can_edit %}
+                  <form method="post" action="{{ url_for('main.edit_list', list_id=item.id) }}" class="inline-editor">
+                    <label>
+                      Title
+                      <input type="text" name="title" value="{{ item.title }}" required>
+                    </label>
+                    <label>
+                      Category
+                      <select name="category">
+                        <option value="books" {% if item.tone == 'books' %}selected{% endif %}>Books</option>
+                        <option value="songs" {% if item.tone == 'songs' %}selected{% endif %}>Songs</option>
+                        <option value="films" {% if item.tone == 'films' %}selected{% endif %}>Films</option>
+                        <option value="art" {% if item.tone == 'art' %}selected{% endif %}>Art</option>
+                        <option value="mixed" {% if item.tone == 'mixed' %}selected{% endif %}>Mixed</option>
+                      </select>
+                    </label>
+                    <label>
+                      Description
+                      <textarea name="description" rows="2">{{ item.description }}</textarea>
+                    </label>
+                    <label>
+                      Visibility
+                      <select name="visibility">
+                        <option value="public" {% if item.visibility == 'public' %}selected{% endif %}>Public</option>
+                        <option value="private" {% if item.visibility == 'private' %}selected{% endif %}>Private</option>
+                      </select>
+                    </label>
+                    <div class="inline-actions">
+                      <button type="submit">Update list</button>
+                    </div>
+                  </form>
+                  <form method="post" action="{{ url_for('main.delete_list', list_id=item.id) }}" class="danger-form">
+                    <button type="submit">Delete list</button>
+                  </form>
+                {% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        </section>
+
+        {% if viewer_can_edit and profile.lists %}
+          <section class="lists-head" style="margin-top: 28px;">
+            <div>
+              <h3>Add List Items</h3>
+              <p>Grow one of your existing collections with ordered entries.</p>
+            </div>
+          </section>
+
+          <section class="composer-grid">
+            {% for item in profile.lists %}
+              <form method="post" action="{{ url_for('main.create_list_item', list_id=item.id) }}" class="composer-card">
+                <h4>Add to {{ item.title }}</h4>
+                <label>
+                  Item title
+                  <input type="text" name="title" required>
+                </label>
+                <label>
+                  Creator
+                  <input type="text" name="creator_name">
+                </label>
+                <label>
+                  Notes
+                  <textarea name="notes" rows="2"></textarea>
+                </label>
+                <button type="submit">Add item</button>
+              </form>
+            {% endfor %}
+          </section>
+        {% endif %}
+      {% elif current_tab == 'Reviews' %}
+        <section class="reviews-grid">
+          {% if profile.reviews %}
+            {% for review in profile.reviews %}
+              <article class="review-card">
+                <p class="meta">{{ review.category }}</p>
+                <h4>{{ review.review_title or review.subject }}</h4>
+                <p class="items">{{ review.subject }}</p>
+                {% if review.body %}<p>{{ review.body }}</p>{% endif %}
+                <p class="items">{{ review.rating }}/5 · {{ review.status|capitalize }} · {{ review.visibility|capitalize }}</p>
+                {% if viewer_can_edit %}
+                  <form method="post" action="{{ url_for('main.edit_review', review_id=review.id) }}" class="inline-editor">
+                    <label>
+                      Subject
+                      <input type="text" name="subject" value="{{ review.subject }}" required>
+                    </label>
+                    <label>
+                      Category
+                      <select name="category">
+                        <option value="books" {% if review.category_key == 'books' %}selected{% endif %}>Books</option>
+                        <option value="songs" {% if review.category_key == 'songs' %}selected{% endif %}>Songs</option>
+                        <option value="films" {% if review.category_key == 'films' %}selected{% endif %}>Films</option>
+                        <option value="art" {% if review.category_key == 'art' %}selected{% endif %}>Art</option>
+                        <option value="mixed" {% if review.category_key == 'mixed' %}selected{% endif %}>Mixed</option>
+                      </select>
+                    </label>
+                    <label>
+                      Rating
+                      <input type="number" name="rating" min="1" max="5" value="{{ review.rating }}">
+                    </label>
+                    <label>
+                      Review title
+                      <input type="text" name="review_title" value="{{ review.review_title }}">
+                    </label>
+                    <label>
+                      Review
+                      <textarea name="body" rows="3">{{ review.body }}</textarea>
+                    </label>
+                    <label>
+                      <input type="checkbox" name="spoiler" {% if review.spoiler %}checked{% endif %}>
+                      Spoiler
+                    </label>
+                    <label>
+                      Tags
+                      <input type="text" name="tags" value="{{ review.tags }}">
+                    </label>
+                    <label>
+                      Visibility
+                      <select name="visibility">
+                        <option value="private" {% if review.visibility == 'private' %}selected{% endif %}>Private</option>
+                        <option value="followers" {% if review.visibility == 'followers' %}selected{% endif %}>Followers</option>
+                        <option value="public" {% if review.visibility == 'public' %}selected{% endif %}>Public</option>
+                      </select>
+                    </label>
+                    <label>
+                      Status
+                      <select name="status">
+                        <option value="draft" {% if review.status == 'draft' %}selected{% endif %}>Draft</option>
+                        <option value="published" {% if review.status == 'published' %}selected{% endif %}>Published</option>
+                      </select>
+                    </label>
+                    <div class="inline-actions">
+                      <button type="submit">Update review</button>
+                    </div>
+                  </form>
+                  <form method="post" action="{{ url_for('main.delete_review', review_id=review.id) }}" class="danger-form">
+                    <button type="submit">Delete review</button>
+                  </form>
+                {% endif %}
+              </article>
+            {% endfor %}
+          {% else %}
+            <article class="review-card">
+              <h4>No reviews yet</h4>
+              <p>Create your first review to start your public profile timeline.</p>
+            </article>
+          {% endif %}
+        </section>
+      {% elif current_tab == 'Notes' %}
+        <section class="composer-grid" data-notes-filter-root>
+          <article class="composer-card">
+            <h4>Filter Notes</h4>
+            <label>
+              Search
+              <input type="text" data-notes-filter-text placeholder="Search title or body">
+            </label>
+            <label>
+              Status
+              <select data-notes-filter-status>
+                <option value="all">All</option>
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+              </select>
+            </label>
+            <label>
+              Visibility
+              <select data-notes-filter-visibility>
+                <option value="all">All</option>
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+              </select>
+            </label>
+          </article>
+        </section>
+
+        <section class="reviews-grid">
+          {% if profile.notes %}
+            {% for note in profile.notes %}
+              <article
+                class="review-card"
+                data-note-card
+                data-note-title="{{ note.title|lower }}"
+                data-note-body="{{ note.body|lower }}"
+                data-note-status="{{ note.status }}"
+                data-note-visibility="{{ note.visibility }}"
+              >
+                <p class="meta">NOTE</p>
+                <h4>{{ note.title }}</h4>
+                {% if note.body %}<p>{{ note.body }}</p>{% endif %}
+                <p class="items">{{ note.status|capitalize }} · {{ note.visibility|capitalize }}</p>
+                {% if viewer_can_edit %}
+                  <form method="post" action="{{ url_for('main.edit_note', note_id=note.id) }}" class="inline-editor">
+                    <label>
+                      Title
+                      <input type="text" name="title" value="{{ note.title }}" required>
+                    </label>
+                    <label>
+                      Body
+                      <textarea name="body" rows="4">{{ note.body }}</textarea>
+                    </label>
+                    <label>
+                      Visibility
+                      <select name="visibility">
+                        <option value="public" {% if note.visibility == 'public' %}selected{% endif %}>Public</option>
+                        <option value="private" {% if note.visibility == 'private' %}selected{% endif %}>Private</option>
+                      </select>
+                    </label>
+                    <label>
+                      Status
+                      <select name="status">
+                        <option value="published" {% if note.status == 'published' %}selected{% endif %}>Published</option>
+                        <option value="draft" {% if note.status == 'draft' %}selected{% endif %}>Draft</option>
+                      </select>
+                    </label>
+                    <div class="inline-actions">
+                      <button type="submit">Update note</button>
+                    </div>
+                  </form>
+                  <form method="post" action="{{ url_for('main.delete_note', note_id=note.id) }}" class="danger-form">
+                    <button type="submit">Delete note</button>
+                  </form>
+                {% endif %}
+              </article>
+            {% endfor %}
+          {% else %}
+            <article class="review-card">
+              <h4>No notes published yet</h4>
+              <p>Published notes from this profile will appear here.</p>
+            </article>
+          {% endif %}
+        </section>
+      {% elif current_tab == 'Feed' %}
+        <section class="composer-grid" data-feed-filter-root>
+          <article class="composer-card">
+            <h4>Filter Feed</h4>
+            <label>
+              Search
+              <input type="text" data-feed-filter-text placeholder="Search review title or subject">
+            </label>
+            <label>
+              Category
+              <select data-feed-filter-category>
+                <option value="all">All</option>
+                <option value="BOOKS">Books</option>
+                <option value="FILMS">Films</option>
+                <option value="SONGS">Songs</option>
+                <option value="ART">Art</option>
+              </select>
+            </label>
+          </article>
+        </section>
+
+        <section class="reviews-grid">
+          {% if profile.feed_events %}
+            {% for event in profile.feed_events %}
+              <article
+                class="review-card"
+                data-feed-card
+                data-feed-title="{{ (event.review_title or event.review_subject)|lower }}"
+                data-feed-subject="{{ event.review_subject|lower }}"
+                data-feed-category="{{ event.review_category }}"
+              >
+                <p class="meta">{{ event.review_category }} · REVIEW</p>
+                <h4>{{ event.review_title or event.review_subject }}</h4>
+                <p class="items">{{ event.review_subject }} · {{ event.review_rating }}/5</p>
+                {% if event.item_id %}
+                  <p><a href="{{ url_for('main.item_detail', item_id=event.item_id, highlight_review=event.review_id) }}">View on item page</a></p>
+                {% endif %}
+                <p class="items">{{ event.review_visibility|capitalize }} · {{ event.created_at.strftime('%b %d, %Y') }}</p>
+              </article>
+            {% endfor %}
+          {% else %}
+            <article class="review-card">
+              <h4>No feed activity yet</h4>
+              <p>Published reviews will appear here as feed events.</p>
+            </article>
+          {% endif %}
+        </section>
+      {% else %}
+        <section class="reviews-grid">
+          {% if profile.draft_reviews %}
+            {% for review in profile.draft_reviews %}
+              <article class="review-card">
+                <p class="meta">{{ review.category }}</p>
+                <h4>{{ review.review_title or review.subject }}</h4>
+                <p class="items">{{ review.subject }}</p>
+                {% if review.body %}<p>{{ review.body }}</p>{% endif %}
+                <p class="items">{{ review.rating }}/5 · {{ review.status|capitalize }} · {{ review.visibility|capitalize }}</p>
+                <form method="post" action="{{ url_for('main.edit_review', review_id=review.id) }}" class="inline-editor">
+                  <input type="hidden" name="return_tab" value="Drafts">
+                  <label>
+                    Subject
+                    <input type="text" name="subject" value="{{ review.subject }}" required>
+                  </label>
+                  <label>
+                    Category
+                    <select name="category">
+                      <option value="books" {% if review.category_key == 'books' %}selected{% endif %}>Books</option>
+                      <option value="songs" {% if review.category_key == 'songs' %}selected{% endif %}>Songs</option>
+                      <option value="films" {% if review.category_key == 'films' %}selected{% endif %}>Films</option>
+                      <option value="art" {% if review.category_key == 'art' %}selected{% endif %}>Art</option>
+                      <option value="mixed" {% if review.category_key == 'mixed' %}selected{% endif %}>Mixed</option>
+                    </select>
+                  </label>
+                  <label>
+                    Rating
+                    <input type="number" name="rating" min="1" max="5" value="{{ review.rating }}">
+                  </label>
+                  <label>
+                    Review title
+                    <input type="text" name="review_title" value="{{ review.review_title }}">
+                  </label>
+                  <label>
+                    Review
+                    <textarea name="body" rows="3">{{ review.body }}</textarea>
+                  </label>
+                  <label>
+                    <input type="checkbox" name="spoiler" {% if review.spoiler %}checked{% endif %}>
+                    Spoiler
+                  </label>
+                  <label>
+                    Tags
+                    <input type="text" name="tags" value="{{ review.tags }}">
+                  </label>
+                  <label>
+                    Visibility
+                    <select name="visibility">
+                      <option value="private" {% if review.visibility == 'private' %}selected{% endif %}>Private</option>
+                      <option value="followers" {% if review.visibility == 'followers' %}selected{% endif %}>Followers</option>
+                      <option value="public" {% if review.visibility == 'public' %}selected{% endif %}>Public</option>
+                    </select>
+                  </label>
+                  <label>
+                    Status
+                    <select name="status">
+                      <option value="draft" {% if review.status == 'draft' %}selected{% endif %}>Draft</option>
+                      <option value="published" {% if review.status == 'published' %}selected{% endif %}>Published</option>
+                    </select>
+                  </label>
+                  <div class="inline-actions">
+                    <button type="submit">Update review</button>
+                  </div>
+                </form>
+                <form method="post" action="{{ url_for('main.delete_review', review_id=review.id) }}" class="danger-form">
+                  <input type="hidden" name="return_tab" value="Drafts">
+                  <button type="submit">Delete review</button>
+                </form>
+              </article>
+            {% endfor %}
+          {% else %}
+            <article class="review-card">
+              <h4>No review drafts yet</h4>
+              <p>Private and draft reviews will appear here for owner-only editing.</p>
+            </article>
+          {% endif %}
+        </section>
+
+        <section class="reviews-grid" style="margin-top: 24px;">
+          {% if profile.draft_notes %}
+            {% for note in profile.draft_notes %}
+              <article class="review-card">
+                <p class="meta">NOTE</p>
+                <h4>{{ note.title }}</h4>
+                {% if note.body %}<p>{{ note.body }}</p>{% endif %}
+                <p class="items">{{ note.status|capitalize }} · {{ note.visibility|capitalize }}</p>
+                <form method="post" action="{{ url_for('main.edit_note', note_id=note.id) }}" class="inline-editor">
+                  <input type="hidden" name="return_tab" value="Drafts">
+                  <label>
+                    Title
+                    <input type="text" name="title" value="{{ note.title }}" required>
+                  </label>
+                  <label>
+                    Body
+                    <textarea name="body" rows="4">{{ note.body }}</textarea>
+                  </label>
+                  <label>
+                    Visibility
+                    <select name="visibility">
+                      <option value="public" {% if note.visibility == 'public' %}selected{% endif %}>Public</option>
+                      <option value="private" {% if note.visibility == 'private' %}selected{% endif %}>Private</option>
+                    </select>
+                  </label>
+                  <label>
+                    Status
+                    <select name="status">
+                      <option value="published" {% if note.status == 'published' %}selected{% endif %}>Published</option>
+                      <option value="draft" {% if note.status == 'draft' %}selected{% endif %}>Draft</option>
+                    </select>
+                  </label>
+                  <div class="inline-actions">
+                    <button type="submit">Update note</button>
+                  </div>
+                </form>
+                <form method="post" action="{{ url_for('main.delete_note', note_id=note.id) }}" class="danger-form">
+                  <input type="hidden" name="return_tab" value="Drafts">
+                  <button type="submit">Delete note</button>
+                </form>
+              </article>
+            {% endfor %}
+          {% else %}
+            <article class="review-card">
+              <h4>No note drafts yet</h4>
+              <p>Draft and private notes will appear here for owner-only editing.</p>
+            </article>
+          {% endif %}
+        </section>
+
+        <section class="cards" style="margin-top: 24px;">
+          {% if profile.draft_lists %}
+            {% for item in profile.draft_lists %}
+              <article class="card tone-{{ item.tone }}">
+                <div class="card-body">
+                  <p class="meta">{{ item.category }}</p>
+                  <h4>{{ item.title }}</h4>
+                  <p>{{ item.description }}</p>
+                  <p class="items">{{ item.items }} items · {{ item.visibility|capitalize }}</p>
+                  {% if item.entries %}
+                    <ul class="card-list-items">
+                      {% for entry in item.entries %}
+                        <li>
+                          <strong>{{ entry.title }}</strong>
+                          {% if entry.creator_name %}<span>{{ entry.creator_name }}</span>{% endif %}
+                          {% if entry.notes %}<span>{{ entry.notes }}</span>{% endif %}
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  {% endif %}
+                  <form method="post" action="{{ url_for('main.edit_list', list_id=item.id) }}" class="inline-editor">
+                    <input type="hidden" name="return_tab" value="Drafts">
+                    <label>
+                      Title
+                      <input type="text" name="title" value="{{ item.title }}" required>
+                    </label>
+                    <label>
+                      Category
+                      <select name="category">
+                        <option value="books" {% if item.tone == 'books' %}selected{% endif %}>Books</option>
+                        <option value="songs" {% if item.tone == 'songs' %}selected{% endif %}>Songs</option>
+                        <option value="films" {% if item.tone == 'films' %}selected{% endif %}>Films</option>
+                        <option value="art" {% if item.tone == 'art' %}selected{% endif %}>Art</option>
+                        <option value="mixed" {% if item.tone == 'mixed' %}selected{% endif %}>Mixed</option>
+                      </select>
+                    </label>
+                    <label>
+                      Description
+                      <textarea name="description" rows="2">{{ item.description }}</textarea>
+                    </label>
+                    <label>
+                      Visibility
+                      <select name="visibility">
+                        <option value="public" {% if item.visibility == 'public' %}selected{% endif %}>Public</option>
+                        <option value="private" {% if item.visibility == 'private' %}selected{% endif %}>Private</option>
+                      </select>
+                    </label>
+                    <div class="inline-actions">
+                      <button type="submit">Update list</button>
+                    </div>
+                  </form>
+                  <form method="post" action="{{ url_for('main.delete_list', list_id=item.id) }}" class="danger-form">
+                    <input type="hidden" name="return_tab" value="Drafts">
+                    <button type="submit">Delete list</button>
+                  </form>
+                </div>
+              </article>
+            {% endfor %}
+          {% else %}
+            <article class="review-card">
+              <h4>No private lists yet</h4>
+              <p>Lists marked private will move here for owner-only editing.</p>
+            </article>
+          {% endif %}
+        </section>
+      {% endif %}
+    </main>
+  </div>
+  <script>
+    (() => {
+      const notesRoot = document.querySelector("[data-notes-filter-root]");
+      if (notesRoot) {
+        const textInput = notesRoot.querySelector("[data-notes-filter-text]");
+        const statusSelect = notesRoot.querySelector("[data-notes-filter-status]");
+        const visibilitySelect = notesRoot.querySelector("[data-notes-filter-visibility]");
+        const cards = Array.from(document.querySelectorAll("[data-note-card]"));
+
+        const applyNotesFilter = () => {
+          const query = (textInput.value || "").trim().toLowerCase();
+          const status = statusSelect.value;
+          const visibility = visibilitySelect.value;
+
+          for (const card of cards) {
+            const title = card.dataset.noteTitle || "";
+            const body = card.dataset.noteBody || "";
+            const noteStatus = card.dataset.noteStatus || "";
+            const noteVisibility = card.dataset.noteVisibility || "";
+
+            const matchQuery = !query || title.includes(query) || body.includes(query);
+            const matchStatus = status === "all" || noteStatus === status;
+            const matchVisibility = visibility === "all" || noteVisibility === visibility;
+
+            card.hidden = !(matchQuery && matchStatus && matchVisibility);
+          }
+        };
+
+        textInput.addEventListener("input", applyNotesFilter);
+        statusSelect.addEventListener("change", applyNotesFilter);
+        visibilitySelect.addEventListener("change", applyNotesFilter);
+        applyNotesFilter();
+      }
+
+      const feedRoot = document.querySelector("[data-feed-filter-root]");
+      if (feedRoot) {
+        const textInput = feedRoot.querySelector("[data-feed-filter-text]");
+        const categorySelect = feedRoot.querySelector("[data-feed-filter-category]");
+        const cards = Array.from(document.querySelectorAll("[data-feed-card]"));
+
+        const applyFeedFilter = () => {
+          const query = (textInput.value || "").trim().toLowerCase();
+          const category = categorySelect.value;
+
+          for (const card of cards) {
+            const title = card.dataset.feedTitle || "";
+            const subject = card.dataset.feedSubject || "";
+            const feedCategory = card.dataset.feedCategory || "";
+
+            const matchQuery = !query || title.includes(query) || subject.includes(query);
+            const matchCategory = category === "all" || feedCategory === category;
+
+            card.hidden = !(matchQuery && matchCategory);
+          }
+        };
+
+        textInput.addEventListener("input", applyFeedFilter);
+        categorySelect.addEventListener("change", applyFeedFilter);
+        applyFeedFilter();
+      }
+    })();
+  </script>
+</body>
+</html>

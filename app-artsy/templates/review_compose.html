@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Write Review | Curio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <div class="page">
+    <aside class="sidebar">
+      <h1 class="brand">Curio</h1>
+      <nav>
+        <a href="{{ url_for('main.home') }}">Home</a>
+        <a href="{{ url_for('main.items_catalog') }}">Explore</a>
+        <a href="#">Feed</a>
+        <a href="#">Search</a>
+      </nav>
+      <div class="auth-actions">
+        <a class="auth-link" href="{{ url_for('main.items_catalog') }}">Back to catalog</a>
+      </div>
+    </aside>
+
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <section class="flash-stack">
+            {% for category_name, message in messages %}
+              <p class="flash-message flash-{{ category_name }}">{{ message }}</p>
+            {% endfor %}
+          </section>
+        {% endif %}
+      {% endwith %}
+
+      <section class="lists-head">
+        <div>
+          <h3>Step 2: Write your review</h3>
+          <p>Your review</p>
+        </div>
+      </section>
+
+      {% if work %}
+        <section class="catalog-section">
+          <article class="catalog-card">
+            <img src="{{ work.image_url }}" alt="{{ work.title }}">
+            <div>
+              <p class="meta">{{ work.category_label }}</p>
+              <h4>{{ work.title }}</h4>
+              <p>{{ work.creator_display_name or 'Unknown creator' }}</p>
+              <p class="items">{% if work.is_user_submitted %}User-submitted {{ work.category }} · Info confidence: {{ work.confidence_label }}{% endif %}</p>
+            </div>
+          </article>
+        </section>
+      {% endif %}
+
+      <section class="composer-grid">
+        <form method="post" action="{{ url_for('main.submit_review') }}" class="composer-card">
+          <input type="hidden" name="work_id" value="{{ review_form.work_id }}">
+          <input type="hidden" name="subject" value="{{ review_form.subject }}">
+          <input type="hidden" name="category" value="{{ review_form.category }}">
+          <label>
+            Rating
+            <input type="number" name="rating" min="1" max="5" value="{{ review_form.rating }}" required>
+          </label>
+          <label>
+            Review title
+            <input type="text" name="review_title" value="{{ review_form.review_title }}">
+          </label>
+          <label>
+            Review body
+            <textarea name="body" rows="5">{{ review_form.body }}</textarea>
+          </label>
+          <label>
+            <input type="checkbox" name="spoiler" {% if review_form.spoiler %}checked{% endif %}>
+            Spoiler
+          </label>
+          <label>
+            Tags / mood tags
+            <input type="text" name="tags" value="{{ review_form.tags }}" placeholder="cozy, haunting, hopeful">
+          </label>
+          <label>
+            Visibility
+            <select name="visibility">
+              <option value="private" {% if review_form.visibility == 'private' %}selected{% endif %}>Private</option>
+              <option value="followers" {% if review_form.visibility == 'followers' %}selected{% endif %}>Followers</option>
+              <option value="public" {% if review_form.visibility == 'public' %}selected{% endif %}>Public</option>
+            </select>
+          </label>
+          <div class="inline-actions">
+            <button type="submit" name="status" value="published">Publish Review</button>
+            <button type="submit" name="status" value="draft">Save Draft</button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}DevRadio{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  </head>
+  <body class="{% block body_class %}{% endblock %}">
+    <div class="bg-layer"></div>
+    {% block page_header %}
+    <header class="topbar">
+      <a class="brand" href="{{ url_for('listener.home') }}">DevRadio</a>
+      <nav class="topnav">
+        {% if app_user.is_authenticated and app_user.is_admin %}
+          <a href="{{ url_for('admin.content') }}">Content</a>
+          <a href="{{ url_for('admin.settings') }}">Settings</a>
+        {% endif %}
+      </nav>
+      <div class="auth-cta">
+        {% if app_user.is_authenticated %}
+          <form method="post" action="{{ url_for('auth.logout') }}" style="margin:0">
+            <button type="submit">Logout</button>
+          </form>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}">&#9751; {{ 'Listener Login' if has_admin_login else 'Sign In' }}</a>
+          {% if has_admin_login %}
+            <a href="{{ url_for('auth.admin_login') }}">&#9965; Admin Login</a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </header>
+    {% endblock %}
+
+    <main class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-wrap">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+
+    {% block page_footer %}
+    <footer class="site-footer">
+      <span>&#9703; Always on. Curated for developers. Run by the community.</span>
+      <div class="footer-icons">
+        <a href="#" title="GitHub">&#9670;</a>
+        <a href="#" title="X / Twitter">&#10006;</a>
+        <a href="#" title="YouTube">&#9654;</a>
+        <a href="#" title="RSS">&#9670;</a>
+      </div>
+    </footer>
+    {% endblock %}
+  </body>
+</html>

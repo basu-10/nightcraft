@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard | DevRadio{% endblock %}
+{% block content %}
+<section class="hero compact">
+  <h1>Editorial Staging Queue</h1>
+  <p>Approve, reject, and script each story before it reaches live channels.</p>
+</section>
+
+<section class="card admin-card">
+  <h2>Manual Article Upload</h2>
+  <p class="subtle">Paste article text directly. No search or feed discovery required.</p>
+  <form method="post" action="{{ url_for('admin.manual_article') }}" class="form-grid">
+    <label>Title
+      <input name="title" required>
+    </label>
+    <label>Channel
+      <select name="channel_id" required>
+        <option value="">Select a channel</option>
+        {% for channel in channel_options %}
+          <option value="{{ channel.id }}">{{ channel.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Source Name (optional)
+      <input name="source_name" placeholder="Manual Submission">
+    </label>
+    <label>Source URL (optional)
+      <input name="source_url" placeholder="https://example.com/original">
+    </label>
+    <label>Article Text
+      <textarea name="article_text" rows="8" required></textarea>
+    </label>
+    <div class="button-row">
+      <button class="btn" type="submit">Add to Staging Queue</button>
+    </div>
+  </form>
+</section>
+
+{% for article in staged %}
+  <article class="card admin-card">
+    <div class="admin-head">
+      <h2>{{ article.title }}</h2>
+      <span class="status-pill">{{ article.channel.name }}</span>
+    </div>
+    <p class="subtle">{{ article.source_name }} | <a href="{{ article.source_url }}" target="_blank" rel="noreferrer">Source</a></p>
+
+    <form method="post" action="{{ url_for('admin.update_article', article_id=article.id) }}" class="form-grid">
+      <label>Short headline
+        <input name="short_headline" value="{{ article.short_headline or '' }}">
+      </label>
+      <label>Bullet summary
+        <textarea name="bullet_summary" rows="4">{{ article.bullet_summary or '' }}</textarea>
+      </label>
+      <label>Narration script
+        <textarea name="narration_script" rows="4">{{ article.narration_script or '' }}</textarea>
+      </label>
+      <label>Tags (comma-separated)
+        <input name="tags" value="{{ article.tags or '' }}">
+      </label>
+      <label>Internal page content
+        <textarea name="internal_content" rows="4">{{ article.internal_content or article.raw_excerpt or '' }}</textarea>
+      </label>
+      <div class="button-row">
+        <button class="btn ghost" formaction="{{ url_for('admin.autofill_article', article_id=article.id) }}" formmethod="post">Auto-generate</button>
+        <button class="btn ghost" type="submit">Save Draft</button>
+        <button class="btn" formaction="{{ url_for('admin.approve_article', article_id=article.id) }}" formmethod="post">Approve + Queue</button>
+        <button class="btn danger" formaction="{{ url_for('admin.reject_article', article_id=article.id) }}" formmethod="post">Reject</button>
+      </div>
+    </form>
+  </article>
+{% else %}
+  <section class="card">
+    <p>No staged stories right now.</p>
+  </section>
+{% endfor %}
+{% endblock %}

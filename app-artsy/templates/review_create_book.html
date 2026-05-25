@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Add Book | Curio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <div class="page">
+    <aside class="sidebar">
+      <h1 class="brand">Curio</h1>
+      <nav>
+        <a href="{{ url_for('main.home') }}">Home</a>
+        <a href="{{ url_for('main.items_catalog') }}">Explore</a>
+        <a href="#">Feed</a>
+        <a href="#">Search</a>
+      </nav>
+      <div class="auth-actions">
+        <a class="auth-link" href="{{ url_for('main.new_review_search', category='book') }}">Back to search</a>
+      </div>
+    </aside>
+
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <section class="flash-stack">
+            {% for category_name, message in messages %}
+              <p class="flash-message flash-{{ category_name }}">{{ message }}</p>
+            {% endfor %}
+          </section>
+        {% endif %}
+      {% endwith %}
+
+      <section class="lists-head">
+        <div>
+          <h3>Step 1: Add the book</h3>
+          <p>Only the title is required. Other readers can help complete this later.</p>
+        </div>
+      </section>
+
+      {% if duplicate_warning and duplicate_matches %}
+        <section class="catalog-section">
+          <h4>Before you create this, check these possible matches:</h4>
+          <div class="reviews-grid">
+            {% for item in duplicate_matches %}
+              <article class="review-card">
+                <h4>{{ item.title }}</h4>
+                <p>{{ item.creator_display_name or 'Unknown author' }}</p>
+                <a class="auth-link" href="{{ url_for('main.compose_review', work_id=item.id) }}">Use existing</a>
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+
+      <section class="composer-grid">
+        <form method="post" action="{{ url_for('main.create_book_for_review') }}" class="composer-card">
+          <h4>About the book</h4>
+          <label>
+            Book title
+            <input type="text" name="title" value="{{ form_data.title }}" required>
+          </label>
+          <label>
+            Author
+            <input type="text" name="author" value="{{ form_data.author }}">
+          </label>
+          <label>
+            Year
+            <input type="number" name="year" value="{{ form_data.year }}">
+          </label>
+          <label>
+            Cover image
+            <input type="url" name="image_url" value="{{ form_data.image_url }}" placeholder="https://...">
+          </label>
+          <label>
+            ISBN
+            <input type="text" name="isbn" value="{{ form_data.isbn }}">
+          </label>
+          <label>
+            Publisher
+            <input type="text" name="publisher" value="{{ form_data.publisher }}">
+          </label>
+          <label>
+            Page count
+            <input type="number" name="pages" value="{{ form_data.pages }}">
+          </label>
+          <label>
+            Language
+            <input type="text" name="language" value="{{ form_data.language }}">
+          </label>
+          <label>
+            Description
+            <textarea name="description" rows="3">{{ form_data.description }}</textarea>
+          </label>
+          <label>
+            Genres / tags
+            <input type="text" name="genres" value="{{ form_data.genres }}" placeholder="Fantasy, Adventure">
+          </label>
+          {% if duplicate_warning %}
+            <input type="hidden" name="confirm_create_new" value="1">
+          {% endif %}
+          <div class="inline-actions">
+            {% if duplicate_warning %}
+              <button type="submit">Create new anyway</button>
+            {% else %}
+              <button type="submit">Continue to review</button>
+            {% endif %}
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

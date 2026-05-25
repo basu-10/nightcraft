@@ -1,0 +1,15 @@
+.build-venv
+.venv*
+build
+build_for_linux
+build_for_windows
+resources/
+.github
+.docs
+__pycache__
+resources/icons/*.png
+notestack_web/.dev_secret_key
+.releases/
+.hosting_info
+*.db
+*.zip

@@ -1,0 +1,23 @@
+[Unit]
+Description=Nightcraft Landing App (Gunicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=dev
+Group=dev
+WorkingDirectory=/platform-infra/app-landing
+EnvironmentFile=/etc/nightcraft/app-landing.env
+ExecStart=/platform-infra/runtime/venvs/app-landing/bin/gunicorn \
+  --workers 2 \
+  --bind 127.0.0.1:5400 \
+  --access-logfile - \
+  --error-logfile - \
+  wsgi:application
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

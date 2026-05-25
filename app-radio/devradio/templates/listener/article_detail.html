@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}{{ article.short_headline or article.title }} | DevRadio{% endblock %}
+{% block content %}
+<article class="article-detail-page">
+  <div class="article-detail-container">
+    <div class="article-detail-header">
+      <div class="article-category-nav">
+        <div class="article-category-links">
+          <a class="btn ghost pill category-pill" href="{{ url_for('listener.channel_page', channel_slug=channel.slug) }}">{{ channel.name }}</a>
+          {% for other_channel in other_channels[:3] %}
+            <a class="btn ghost pill category-pill" href="{{ url_for('listener.channel_page', channel_slug=other_channel.slug) }}">{{ other_channel.name }}</a>
+          {% endfor %}
+        </div>
+      </div>
+      <h1>{{ article.short_headline or article.title }}</h1>
+      <div class="article-detail-meta">
+        <span class="source-meta">{{ article.source_name }}</span>
+        <span class="article-timestamp">{{ article.created_at.strftime('%B %d, %Y') if article.created_at else 'Recently added' }}</span>
+      </div>
+    </div>
+
+    <div class="article-detail-content">
+      <div class="article-summary">
+        <h2>Summary</h2>
+        <div class="markdown">
+          {{ article.bullet_summary or article.summary or 'Summary pending.' }}
+        </div>
+      </div>
+
+      <div class="article-excerpt">
+        <h2>Article Text</h2>
+        <div class="article-rich-text">
+          {{ article_body_html|safe }}
+        </div>
+      </div>
+
+      <div class="article-actions">
+        <a class="btn primary pill" href="{{ article.source_url }}" target="_blank" rel="noreferrer">↗ Read Full Article</a>
+        <a class="btn ghost pill" href="{{ url_for('listener.share_story', article_id=article.id) }}">↗ Share</a>
+        {% if app_user.is_authenticated and not app_user.is_admin %}
+          <form method="post" action="{{ url_for('listener.toggle_bookmark', article_id=article.id) }}" class="bookmark-inline-form">
+            <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
+            <button class="btn ghost pill bookmark-pill{% if is_bookmarked %} is-bookmarked{% endif %}" type="submit">
+              {% if is_bookmarked %}★ Bookmarked{% else %}☆ Bookmark{% endif %}
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="article-navigation">
+      {% if prev_article %}
+        <a href="{{ url_for('listener.article_detail', article_id=prev_article.id) }}" class="nav-button nav-prev" title="Previous article">
+          <span class="nav-arrow">←</span>
+          <div class="nav-content">
+            <span class="nav-label">Previous</span>
+            <span class="nav-title">{{ prev_article.short_headline or prev_article.title }}</span>
+          </div>
+        </a>
+      {% else %}
+        <div class="nav-button nav-prev disabled">
+          <span class="nav-arrow">←</span>
+          <div class="nav-content">
+            <span class="nav-label">No previous</span>
+          </div>
+        </div>
+      {% endif %}
+
+      {% if next_article %}
+        <a href="{{ url_for('listener.article_detail', article_id=next_article.id) }}" class="nav-button nav-next" title="Next article">
+          <div class="nav-content">
+            <span class="nav-label">Next</span>
+            <span class="nav-title">{{ next_article.short_headline or next_article.title }}</span>
+          </div>
+          <span class="nav-arrow">→</span>
+        </a>
+      {% else %}
+        <div class="nav-button nav-next disabled">
+          <div class="nav-content">
+            <span class="nav-label">No next</span>
+          </div>
+          <span class="nav-arrow">→</span>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</article>
+{% endblock %}

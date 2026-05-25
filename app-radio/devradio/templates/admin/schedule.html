@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Schedule Queue | DevRadio{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Scheduled Segments</h1>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>IST Time</th>
+        <th>Channel</th>
+        <th>Story</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for seg in items %}
+        <tr>
+          <td>{{ seg.scheduled_at_utc | app_tz('%Y-%m-%d %H:%M') }}</td>
+          <td>{{ seg.channel.name }}</td>
+          <td><a href="{{ url_for('listener.article_detail', article_id=seg.article.id) }}">{{ seg.article.short_headline or seg.article.title }}</a></td>
+          <td>{{ seg.status }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4">No scheduled segments.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

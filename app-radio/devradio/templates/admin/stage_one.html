@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}Stage 1 | DevRadio{% endblock %}
+{% block content %}
+<section class="hero compact">
+  <h1>Stage 1: Intake</h1>
+  <p>Upload/paste manually or ingest externally, then move selected items to Stage 2.</p>
+</section>
+
+<section class="stage-one-intake-grid">
+  <article class="card admin-card">
+    <h2>Find Feed From Sources</h2>
+    <p class="subtle">Choose one or more active sources, then fetch latest stories from those toggles only.</p>
+    <form method="post" action="{{ url_for('admin.stage_one_find') }}" class="form-grid">
+      <fieldset class="source-toggle-group" data-source-toggle-group>
+        <legend>Sources</legend>
+        <div class="button-row source-toggle-actions">
+          <button class="btn ghost source-selection-btn" type="button" data-select-sources="all">Select all</button>
+          <button class="btn ghost source-selection-btn" type="button" data-select-sources="none">Select none</button>
+        </div>
+        {% for source in source_feeds %}
+          <label class="source-toggle" for="source-feed-{{ source.id }}">
+            <input id="source-feed-{{ source.id }}" type="checkbox" name="source_feed_ids" value="{{ source.id }}" checked>
+            <span>{{ source.name }}</span>
+          </label>
+        {% else %}
+          <p class="subtle">No active sources configured yet.</p>
+        {% endfor %}
+      </fieldset>
+      <label class="source-toggle" for="restage-existing">
+        <input id="restage-existing" type="checkbox" name="restage_existing" value="1">
+        <span>Re-stage existing matches (same source URL) and refresh full article text</span>
+      </label>
+      <div class="button-row">
+        <button class="btn ghost" type="submit">Find From Feed Sources</button>
+      </div>
+    </form>
+  </article>
+
+  <article class="card admin-card">
+    <h2>Manual Article Upload</h2>
+    <p class="subtle">Paste article text directly. No search or feed discovery required.</p>
+    <form method="post" action="{{ url_for('admin.manual_article') }}" class="form-grid">
+      <label>Title
+        <input name="title" required>
+      </label>
+      <label>Channel
+        <select name="channel_id" required>
+          <option value="">Select a channel</option>
+          {% for channel in channel_options %}
+            <option value="{{ channel.id }}">{{ channel.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Source Name
+        <input name="source_name" value="Manual Submission" readonly>
+      </label>
+      <label>Source URL
+        <input name="source_url" placeholder="https://example.com/original">
+      </label>
+      <label>Original Article Text
+        <textarea name="article_text" rows="8" required></textarea>
+      </label>
+      <div class="button-row">
+        <button class="btn" type="submit">Add to Stage 1</button>
+      </div>
+    </form>
+  </article>
+</section>
+
+{% for source_group in grouped_staged %}
+  <section class="card admin-card source-group-card">
+    <div class="admin-head">
+      <h2>Source: {{ source_group.source_name }}</h2>
+      <div class="button-row">
+        <form method="post" action="{{ url_for('admin.reject_source_group') }}">
+          <input type="hidden" name="source_name" value="{{ source_group.source_value }}">
+          <button class="btn danger" type="submit">Reject Source Group</button>
+        </form>
+        <form method="post" action="{{ url_for('admin.delete_source_group') }}" onsubmit="return confirm('Delete all staged items for this source group permanently? This cannot be undone.');">
+          <input type="hidden" name="source_name" value="{{ source_group.source_value }}">
+          <button class="btn danger" type="submit">Delete Source Group</button>
+        </form>
+      </div>
+    </div>
+    {% for article in source_group.articles %}
+      <article class="card stage-article-card">
+        <div class="admin-head">
+          <h3>{{ article.title }}</h3>
+          <div class="button-row">
+            <span class="status-pill">{{ article.channel.name }}</span>
+            {% if article.source_full_article %}
+              <span class="status-pill source-pill">Full Source Captured</span>
+            {% endif %}
+          </div>
+        </div>
+        <p class="subtle">{{ article.source_name }} | <a href="{{ article.source_url }}" target="_blank" rel="noreferrer">Source</a></p>
+        <p>{{ article.raw_excerpt or article.internal_content or 'No excerpt.' }}</p>
+        <div class="button-row">
+          <form method="post" action="{{ url_for('admin.move_to_stage_two', article_id=article.id) }}" class="approve-form-inline">
+            <label class="inline-control">Channel before Stage 2
+              <select name="channel_id" required>
+                {% for channel in channel_options %}
+                  <option value="{{ channel.id }}" {% if channel.id == article.channel_id %}selected{% endif %}>{{ channel.name }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <button class="btn" type="submit">Approve to Stage 2</button>
+          </form>
+          <form method="post" action="{{ url_for('admin.reject_article', article_id=article.id) }}">
+            <button class="btn danger" type="submit">Reject</button>
+          </form>
+          <form method="post" action="{{ url_for('admin.delete_article', article_id=article.id) }}" onsubmit="return confirm('Delete this article permanently? This cannot be undone.');">
+            <button class="btn danger" type="submit">Delete Permanently</button>
+          </form>
+        </div>
+      </article>
+    {% endfor %}
+  </section>
+{% else %}
+  <section class="card">
+    <p>No Stage 1 items right now.</p>
+  </section>
+{% endfor %}
+
+<section class="card admin-card">
+  <h2>Rejected Items</h2>
+  <p class="subtle">Rejected entries stay in the database and block duplicate URL ingestion until permanently deleted.</p>
+  {% for source_group in grouped_rejected %}
+    <article class="card stage-article-card source-group-card">
+      <h3>Source: {{ source_group.source_name }}</h3>
+      {% for article in source_group.articles %}
+        <div class="admin-head">
+          <div>
+            <strong>{{ article.title }}</strong>
+            <p class="subtle">{{ article.source_name }} | <a href="{{ article.source_url }}" target="_blank" rel="noreferrer">Source</a></p>
+          </div>
+          <form method="post" action="{{ url_for('admin.delete_article', article_id=article.id) }}" onsubmit="return confirm('Delete this rejected article permanently? This cannot be undone.');">
+            <button class="btn danger" type="submit">Delete Permanently</button>
+          </form>
+        </div>
+      {% endfor %}
+    </article>
+  {% else %}
+    <p class="subtle">No rejected items.</p>
+  {% endfor %}
+</section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const selectionButtons = document.querySelectorAll("[data-select-sources]");
+
+    selectionButtons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        const sourceGroup = button.closest("[data-source-toggle-group]");
+        if (!sourceGroup) {
+          return;
+        }
+
+        const shouldSelect = button.dataset.selectSources === "all";
+        const sourceCheckboxes = sourceGroup.querySelectorAll('input[name="source_feed_ids"]');
+
+        sourceCheckboxes.forEach(function (checkbox) {
+          checkbox.checked = shouldSelect;
+        });
+      });
+    });
+  });
+</script>
+{% endblock %}

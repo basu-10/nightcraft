@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block title %}Settings — NoteStack{% endblock %}
+
+{% block body %}
+<div class="settings-page">
+  <div class="settings-card">
+    <div class="settings-header">
+      <a href="{{ url_for('main.app_view') }}" class="btn btn--ghost btn--sm">← Back</a>
+      <h1 class="settings-title">Settings</h1>
+      <button data-theme-toggle class="btn btn--ghost btn--sm settings-theme-toggle" type="button">Light</button>
+    </div>
+
+    <!-- Account -->
+    <section class="settings-section">
+      <h2 class="settings-section__title">Account</h2>
+      <p>Signed in as <strong>{{ user.username }}</strong> ({{ user.email }})</p>
+      {% if user.is_admin %}
+        <div class="u-mt-sm">
+          <a href="{{ url_for('main.admin_view') }}" class="btn btn--ghost btn--sm">Open Admin</a>
+        </div>
+      {% endif %}
+      <form action="{{ url_for('auth.logout') }}" method="post" class="u-mt-sm">
+        <button type="submit" class="btn btn--ghost btn--sm">Sign out</button>
+      </form>
+    </section>
+
+    <!-- Data Backup -->
+    <section class="settings-section">
+      <h2 class="settings-section__title">Data Backup</h2>
+      <p class="form-hint">
+        Export your notes, folders, and tags to a backup file. You can import this file in the desktop app or another NoteStack account.
+      </p>
+      <div class="u-mt-md" style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button id="export-btn" class="btn btn--ghost btn--sm">Export Backup</button>
+        <button id="import-btn" class="btn btn--ghost btn--sm">Import / Restore</button>
+      </div>
+      <input type="file" id="import-file" style="display: none;" accept=".jsonl,.json" />
+      <div id="import-status" style="margin-top: 12px; display: none;" class="form-hint"></div>
+    </section>
+
+    <!-- Desktop Sync -->
+    <section class="settings-section">
+      <h2 class="settings-section__title">Desktop Sync</h2>
+      <p class="form-hint">
+        Use the base URL and API token below in the NoteStack Windows app under
+        <strong>Settings → SYNC</strong>.
+      </p>
+
+      <table class="sync-creds-table">
+        <tr>
+          <td class="sync-creds-table__label">Server URL</td>
+          <td><code id="server-url" class="token-box__value"></code></td>
+          <td><button class="btn btn--sm btn--ghost" onclick="copyField('server-url', this)">Copy</button></td>
+        </tr>
+        <tr>
+          <td class="sync-creds-table__label">API Token</td>
+          <td><code id="api-token" class="token-box__value">Loading…</code></td>
+          <td><button id="copy-token-btn" class="btn btn--sm btn--ghost" onclick="copyField('api-token', this)" type="button">Copy</button></td>
+        </tr>
+        <tr>
+          <td class="sync-creds-table__label">Token Actions</td>
+          <td colspan="2" style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button id="generate-token-btn" class="btn btn--ghost btn--sm" type="button">Generate Token</button>
+            <button id="revoke-token-btn" class="btn btn--ghost btn--sm" type="button">Revoke Token</button>
+          </td>
+        </tr>
+      </table>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const scriptRoot = window.NOTESTACK_SCRIPT_ROOT || '';
+  const apiRoot = window.NOTESTACK_API_ROOT || (scriptRoot + '/api');
+  const authRoot = scriptRoot + '/auth';
+
+  document.getElementById('server-url').textContent = location.origin + scriptRoot;
+
+  async function loadApiToken() {
+    const tokenEl = document.getElementById('api-token');
+    const copyBtn = document.getElementById('copy-token-btn');
+    const response = await fetch(authRoot + '/token', { credentials: 'include' });
+    if (!response.ok) {
+      tokenEl.textContent = 'Unavailable';
+      copyBtn.disabled = true;
+      return;
+    }
+    const data = await response.json();
+    tokenEl.textContent = data.token || 'No token generated';
+    copyBtn.disabled = !data.token;
+  }
+
+  function copyField(id, btn) {
+    const text = document.getElementById(id).textContent;
+    if (!text || text === 'No token generated' || text === 'Loading…' || text === 'Unavailable') return;
+    navigator.clipboard.writeText(text).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+  }
+
+  // Export backup
+  document.getElementById('export-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('export-btn');
+    const origText = btn.textContent;
+    btn.textContent = 'Exporting...';
+    btn.disabled = true;
+    
+    try {
+      const response = await fetch(apiRoot + '/backup/export', {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Export failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = response.headers.get('content-disposition')?.split('filename=')[1]?.replace(/"/g, '') || 'backup.jsonl';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    } catch (err) {
+      alert('Export failed: ' + err.message);
+    } finally {
+      btn.textContent = origText;
+      btn.disabled = false;
+    }
+  });
+
+  // Import backup
+  document.getElementById('import-btn').addEventListener('click', () => {
+    document.getElementById('import-file').click();
+  });
+
+  document.getElementById('import-file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const statusDiv = document.getElementById('import-status');
+    statusDiv.style.display = 'block';
+    statusDiv.textContent = 'Importing...';
+    statusDiv.style.color = 'var(--color-text-muted)';
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch(apiRoot + '/backup/import', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      const contentType = response.headers.get('content-type') || '';
+      const isJson = contentType.includes('application/json');
+      const data = isJson ? await response.json() : await response.text();
+
+      if (!response.ok) {
+        if (isJson && data && typeof data === 'object') {
+          throw new Error(data.error || 'Import failed');
+        }
+        const raw = String(data || '').trim();
+        throw new Error(raw ? raw.slice(0, 200) : 'Import failed');
+      }
+
+      if (!isJson || !data || typeof data !== 'object') {
+        throw new Error('Import endpoint returned an unexpected response format');
+      }
+      
+      const stats = data;
+      const summary = [
+        `${stats.folders_created} folder${stats.folders_created !== 1 ? 's' : ''} created`,
+        `${stats.tags_created} tag${stats.tags_created !== 1 ? 's' : ''} created`,
+        `${stats.notes_added} note${stats.notes_added !== 1 ? 's' : ''} added`,
+        `${stats.notes_updated} note${stats.notes_updated !== 1 ? 's' : ''} updated`,
+      ].join(' • ');
+      
+      statusDiv.textContent = '✓ Import successful: ' + summary;
+      statusDiv.style.color = 'var(--color-success, #22c55e)';
+      
+      // Reload after 2 seconds
+      setTimeout(() => window.location.reload(), 2000);
+    } catch (err) {
+      statusDiv.textContent = '✗ Import failed: ' + err.message;
+      statusDiv.style.color = 'var(--color-error, #ef4444)';
+    }
+    
+    // Reset file input
+    e.target.value = '';
+  });
+
+  document.getElementById('generate-token-btn').addEventListener('click', async () => {
+    const response = await fetch(authRoot + '/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label: 'desktop' }),
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      alert('Token generation failed.');
+      return;
+    }
+    await loadApiToken();
+  });
+
+  document.getElementById('revoke-token-btn').addEventListener('click', async () => {
+    const response = await fetch(authRoot + '/token', {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      alert('Token revoke failed.');
+      return;
+    }
+    await loadApiToken();
+  });
+
+  loadApiToken();
+</script>
+{% endblock %}

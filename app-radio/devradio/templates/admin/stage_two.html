@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Stage 2 | DevRadio{% endblock %}
+{% block content %}
+<section class="hero compact">
+  <h1>Stage 2: Editorial + Audio Prep</h1>
+  <p>Source data from Stage 1 is frozen. Generate scripts and preview clips before queueing.</p>
+</section>
+
+{% for article in drafting %}
+  <article class="card admin-card">
+    <div class="admin-head">
+      <h2>{{ article.title }}</h2>
+      <div class="button-row">
+        <span class="status-pill">{{ article.channel.name }}</span>
+        {% if article.source_full_article %}
+          <span class="status-pill source-pill">Full Source Captured</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="grid two">
+      <section class="card">
+        <h3>Frozen Intake Data</h3>
+        <p><strong>Source:</strong> {{ article.source_name }}</p>
+        <p><a href="{{ article.source_url }}" target="_blank" rel="noreferrer">{{ article.source_url }}</a></p>
+        <p>{{ article.raw_excerpt or article.internal_content or 'No source excerpt.' }}</p>
+        {% if article.source_full_article %}
+          <p class="subtle"><strong>Full source text captured:</strong> {{ article.source_full_article|length }} chars</p>
+        {% endif %}
+      </section>
+
+      <section class="card">
+        <h3>Generation Controls</h3>
+        <form method="post" action="{{ url_for('admin.autofill_article', article_id=article.id) }}">
+          <button class="btn ghost" type="submit">Auto-generate Content</button>
+        </form>
+        <form method="post" action="{{ url_for('admin.preview_audio', article_id=article.id) }}">
+          <button class="btn ghost" type="submit">Prepare Browser TTS Preview</button>
+        </form>
+        {% if article.summary and 'Browser TTS preview' in article.summary %}
+          <p class="subtle">{{ article.summary }}</p>
+        {% endif %}
+      </section>
+    </div>
+
+    <form method="post" action="{{ url_for('admin.update_article', article_id=article.id) }}" class="form-grid">
+      <fieldset>
+        <legend>From Source (pre-filled)</legend>
+        <label>Short headline
+          <input name="short_headline" value="{{ article.short_headline or '' }}">
+        </label>
+        <label>Full article (from source)
+          <textarea name="source_full_article" rows="8">{{ article.source_full_article or '' }}</textarea>
+        </label>
+        <label>Internal page content
+          <textarea name="internal_content" rows="6">{{ article.internal_content or '' }}</textarea>
+        </label>
+      </fieldset>
+      <fieldset>
+        <legend>AI-generated fields</legend>
+        <label>Bullet summary
+          <textarea name="bullet_summary" rows="4">{{ article.bullet_summary or '' }}</textarea>
+        </label>
+        <label>Narration script
+          <textarea name="narration_script" rows="4">{{ article.narration_script or '' }}</textarea>
+        </label>
+        <label>Tags (comma-separated)
+          <input name="tags" value="{{ article.tags or '' }}">
+        </label>
+      </fieldset>
+      <div class="button-row">
+        <button class="btn ghost" type="submit">Save Draft</button>
+        <button class="btn" formaction="{{ url_for('admin.approve_article', article_id=article.id) }}" formmethod="post">Queue to Stage 3</button>
+        <button class="btn ghost" formaction="{{ url_for('admin.approve_article_no_ai', article_id=article.id) }}" formmethod="post">Queue to Stage 3 (no AI mode)</button>
+      </div>
+    </form>
+  </article>
+{% else %}
+  <section class="card">
+    <p>No Stage 2 items right now.</p>
+  </section>
+{% endfor %}
+{% endblock %}

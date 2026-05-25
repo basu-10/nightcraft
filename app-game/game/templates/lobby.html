@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Looking for Opponent</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <style>
+      .lobby-shell {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 2rem;
+        text-align: center;
+      }
+      .spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid rgba(148, 163, 184, 0.2);
+        border-top-color: #38bdf8;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin: 2rem auto;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      .lobby-status {
+        font-size: 1.15rem;
+        margin: 1rem 0;
+        color: #cbd5e1;
+      }
+      .lobby-status.found {
+        color: #a7f3d0;
+      }
+      .lobby-status.timeout {
+        color: #fca5a5;
+      }
+      .game-label {
+        color: #94a3b8;
+        font-size: 0.95rem;
+        margin-bottom: 2rem;
+      }
+      .lobby-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 1.5rem;
+      }
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="lobby-shell">
+      <h1>Looking for opponent...</h1>
+      <p class="game-label">Playing: <strong>{{ game_type | replace('_', ' ') | title }}</strong></p>
+
+      <div id="waitingSection">
+        <div class="spinner"></div>
+        <p id="statusText" class="lobby-status">Searching for a match…</p>
+        <div class="lobby-actions">
+          <button id="cancelBtn" class="secondary" type="button">Cancel</button>
+        </div>
+      </div>
+
+      <div id="foundSection" class="hidden">
+        <p class="lobby-status found">Match found! Joining room…</p>
+      </div>
+
+      <div id="timeoutSection" class="hidden">
+        <p class="lobby-status timeout">No players found. Try again.</p>
+        <div class="lobby-actions">
+          <button id="retryBtn" type="button">Retry</button>
+          <a class="link-button" href="{{ url_for('game.landing') }}">Back to Hub</a>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const gameType = {{ game_type | tojson }};
+      const waitingSection = document.getElementById('waitingSection');
+      const foundSection = document.getElementById('foundSection');
+      const timeoutSection = document.getElementById('timeoutSection');
+      const statusText = document.getElementById('statusText');
+      const cancelBtn = document.getElementById('cancelBtn');
+      const retryBtn = document.getElementById('retryBtn');
+
+      const queueEvents = new EventSource(
+        '/game/queue/events?game=' + encodeURIComponent(gameType)
+      );
+
+      queueEvents.addEventListener('waiting', function () {
+        statusText.textContent = 'Searching for a match…';
+      });
+
+      queueEvents.addEventListener('matched', function (e) {
+        const data = JSON.parse(e.data);
+        queueEvents.close();
+        waitingSection.classList.add('hidden');
+        foundSection.classList.remove('hidden');
+        setTimeout(function () {
+          window.location.href = '/game/room/' + data.room_id;
+        }, 500);
+      });
+
+      queueEvents.addEventListener('timeout', function () {
+        queueEvents.close();
+        waitingSection.classList.add('hidden');
+        timeoutSection.classList.remove('hidden');
+      });
+
+      queueEvents.addEventListener('heartbeat', function () {
+        // keep-alive, no-op
+      });
+
+      queueEvents.onerror = function () {
+        statusText.textContent = 'Connection lost. Retrying…';
+      };
+
+      cancelBtn.addEventListener('click', function () {
+        queueEvents.close();
+        fetch('/game/queue/cancel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ game: gameType }),
+        }).finally(function () {
+          window.location.href = '{{ url_for("game.landing") }}';
+        });
+      });
+
+      retryBtn.addEventListener('click', function () {
+        window.location.reload();
+      });
+    </script>
+  </body>
+</html>

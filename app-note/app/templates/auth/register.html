@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Register — NoteStack{% endblock %}
+
+{% block body %}
+<div class="auth-page">
+  <button class="btn btn--ghost btn--sm auth-theme-toggle" data-theme-toggle type="button">Light</button>
+  <div class="auth-card">
+    <div class="auth-logo">
+      <a class="auth-logo__name" href="{{ url_for('main.index') }}">NoteStack</a>
+    </div>
+    <h1 class="auth-title">Create account</h1>
+
+    <div id="js-error" class="form-error" hidden></div>
+
+    <form id="reg-form" class="auth-form" novalidate>
+      <label class="form-label" for="username">Username</label>
+      <input class="form-input" id="username" name="username"
+             type="text" autocomplete="username" autofocus required
+             minlength="3" maxlength="40" />
+
+      <label class="form-label" for="email">Email
+        <span class="form-hint">(can be reused across multiple accounts)</span>
+      </label>
+      <input class="form-input" id="email" name="email"
+             type="email" autocomplete="email" required />
+
+      <label class="form-label" for="password">Password
+        <span class="form-hint">(min 8 characters)</span>
+      </label>
+      <input class="form-input" id="password" name="password"
+             type="password" autocomplete="new-password" required minlength="8" />
+
+      <button class="btn btn--primary btn--full" type="submit">Create account</button>
+    </form>
+
+    <p class="auth-footer">
+      Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a>
+    </p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById('reg-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById('js-error');
+    errEl.hidden = true;
+    const body = {
+      username: document.getElementById('username').value.trim(),
+      email:    document.getElementById('email').value.trim(),
+      password: document.getElementById('password').value,
+    };
+    const res = await fetch('{{ url_for("auth.register") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (res.ok || res.status === 201) {
+      location.href = '{{ url_for("main.app_view") }}';
+    } else {
+      const data = await res.json();
+      errEl.textContent = data.error || 'Registration failed.';
+      errEl.hidden = false;
+    }
+  });
+</script>
+{% endblock %}

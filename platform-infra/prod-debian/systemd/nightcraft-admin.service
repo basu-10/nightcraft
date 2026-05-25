@@ -1,0 +1,23 @@
+[Unit]
+Description=Nightcraft Admin Handoff App (Gunicorn)
+After=network.target nightcraft-auth.service
+
+[Service]
+Type=simple
+User=dev
+Group=dev
+WorkingDirectory=/platform-infra/app-admin
+EnvironmentFile=/etc/nightcraft/app-admin.env
+ExecStart=/platform-infra/runtime/venvs/app-admin/bin/gunicorn \
+  --workers 2 \
+  --bind 127.0.0.1:5500 \
+  --access-logfile - \
+  --error-logfile - \
+  wsgi:application
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target
