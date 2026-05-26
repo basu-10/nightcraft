@@ -96,6 +96,7 @@ platform-infra/prod-debian/scripts/status-deploys.sh
 - `scripts/deploy-auth.sh`: release deploy for service-auth
 - `scripts/deploy-radio.sh`: release deploy for app-radio
 - `scripts/deploy-curio.sh`: release deploy for app-artsy
+- `scripts/reset-curio-password.sh`: rotate Curio PostgreSQL password and resync `/etc/nightcraft/app-curio.env`
 - `scripts/deploy-seeksage.sh`: release deploy for seeksage backend
   - Flask UI is server-rendered; no Node/npm frontend build step is required.
 - `scripts/deploy-landing.sh`: release deploy for app-landing
@@ -291,6 +292,7 @@ In `/etc/nightcraft/app-curio.env`:
 - `FLASK_AUTH_SERVICE_URL=http://31.70.85.89/auth`
 - `FLASK_AUTHLIB_CLIENT_ID=curio-app`
 - `FLASK_AUTHLIB_CLIENT_SECRET`
+- `DATABASE_URL` (postgres URL for curio DB)
 
 In `/etc/nightcraft/app-seeksage.env`:
 
@@ -300,6 +302,7 @@ In `/etc/nightcraft/app-seeksage.env`:
 - `AUTH_SERVICE_URL=http://31.70.85.89/auth`
 - `AUTHLIB_CLIENT_ID=seeksage-app`
 - `AUTHLIB_CLIENT_SECRET`
+- `DATABASE_URL` (postgres URL for seeksage DB)
 
 In `/etc/nightcraft/app-admin.env`:
 
