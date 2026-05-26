@@ -72,10 +72,10 @@ Runtime folders like:
 - Exposes public IP `31.70.85.89` on port 80.
 
 ### 6. Deployment Flow
-1. Preferred: run one bootstrap script from outside `/platform-infra` (for example `/usr/local/sbin/nightcraft-server-bootstrap.sh`) so git sync + install + deploy are fully scripted from one command.
+1. Preferred: run one bootstrap script from outside `/platform-infra` (for example `/usr/local/sbin/server-scripts/nightcraft-server-bootstrap.sh`) so git sync + install + deploy are fully scripted from one command.
 
    Example:
-   - `sudo /usr/local/sbin/nightcraft-server-bootstrap.sh --repo-url https://github.com/basu-10/nightcraft.git --branch main --target-dir /platform-infra --adopt-existing`
+   - `sudo /usr/local/sbin/server-scripts/nightcraft-server-bootstrap.sh --repo-url https://github.com/basu-10/nightcraft.git --branch main --target-dir /platform-infra --adopt-existing`
 
    The script performs baseline checks, clones/pulls git repo, runs setup scripts, deploys all apps, restarts services, and prints status.
 

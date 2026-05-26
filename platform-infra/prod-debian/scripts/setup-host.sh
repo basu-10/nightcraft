@@ -20,8 +20,6 @@ apt-get install -y \
   python3-venv \
   python3-dev \
   build-essential \
-  nodejs \
-  npm \
   nginx \
   postgresql \
   postgresql-contrib \

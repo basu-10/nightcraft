@@ -33,13 +33,14 @@ Use `server-scripts/nightcraft-server-bootstrap.sh` to run the whole flow from o
 - runs env/postgres/systemd/nginx install scripts
 - runs app deploy and service restart via `deploy-all.sh`
 
-Recommended on the VPS: keep this script outside the checkout (for example `/usr/local/sbin`) and point it at `/platform-infra`.
+Recommended on the VPS: keep this script outside the checkout (for example under `/usr/local/sbin/server-scripts`) and point it at `/platform-infra`.
 
 Example install and run:
 
 ```bash
-sudo install -m 0755 /tmp/nightcraft-server-bootstrap.sh /usr/local/sbin/nightcraft-server-bootstrap.sh
-sudo /usr/local/sbin/nightcraft-server-bootstrap.sh \
+sudo install -d -m 0755 /usr/local/sbin/server-scripts
+sudo install -m 0755 /tmp/nightcraft-server-bootstrap.sh /usr/local/sbin/server-scripts/nightcraft-server-bootstrap.sh
+sudo /usr/local/sbin/server-scripts/nightcraft-server-bootstrap.sh \
   --repo-url https://github.com/basu-10/nightcraft.git \
   --branch main \
   --target-dir /platform-infra \
@@ -83,6 +84,7 @@ Useful flags:
 - `scripts/deploy-radio.sh`: release deploy for app-radio
 - `scripts/deploy-curio.sh`: release deploy for app-artsy
 - `scripts/deploy-seeksage.sh`: release deploy for seeksage backend
+  - Flask UI is server-rendered; no Node/npm frontend build step is required.
 - `scripts/deploy-landing.sh`: release deploy for app-landing
 - `scripts/deploy-admin.sh`: release deploy for app-admin
 - `scripts/deploy-note.sh`: release deploy for app-note
