@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Dev Profile - Asesh Basu Projects{% endblock %}
+
+{% block description %}Developer profile for Asesh Basu, projects and technical work.{% endblock %}
+
+{% block content %}
+<section class="hero-grid">
+    <div>
+        <p class="section-label">/ DEV PROFILE</p>
+        {% if shared_user %}
+        <p class="welcome">Hi, {{ shared_user.username }}</p>
+        {% endif %}
+        <h1>Asesh Basu</h1>
+        <p class="hero-rule">-</p>
+        <p class="hero-text">Software engineer building practical tools for research, notes, media discovery, and automation with open systems, local-first architecture, and real-world usability.</p>
+    </div>
+</section>
+
+<section class="registry" aria-label="Profile Details">
+    <div class="registry-head">
+        <p class="section-label">/ SKILLS & INTERESTS</p>
+    </div>
+    <div class="registry-table">
+        <div class="registry-row">
+            <div class="product-main">
+                <div class="product-icon">S</div>
+                <div>
+                    <h2>Skills</h2>
+                    <p>Python, Flask, FastAPI, React, Next.js, PostgreSQL, OIDC/OAuth, Local-first Systems</p>
+                </div>
+            </div>
+        </div>
+        <div class="registry-row">
+            <div class="product-main">
+                <div class="product-icon">I</div>
+                <div>
+                    <h2>Interests</h2>
+                    <p>Open-source, Developer Tools, Media Discovery, Research Automation, Self-hosting</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

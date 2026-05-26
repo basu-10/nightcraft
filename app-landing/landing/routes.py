@@ -215,6 +215,63 @@ def login_redirect():
     )
 
 
+@main_bp.get("/dev-profile")
+def dev_profile():
+    shared_user = _fetch_shared_auth_user()
+    return render_template(
+        "dev_profile.html",
+        shared_user=shared_user,
+        auth_url=build_auth_handoff_url(
+            current_app.config["AUTH_URL"],
+            "/dev-profile",
+            current_app.config["AUTH_RETURN_PARAM"],
+        ),
+        logout_url=build_auth_handoff_url(
+            current_app.config["LOGOUT_URL"],
+            "/dev-profile",
+            current_app.config["AUTH_RETURN_PARAM"],
+        ),
+    )
+
+
+@main_bp.get("/about")
+def about():
+    shared_user = _fetch_shared_auth_user()
+    return render_template(
+        "about.html",
+        shared_user=shared_user,
+        auth_url=build_auth_handoff_url(
+            current_app.config["AUTH_URL"],
+            "/about",
+            current_app.config["AUTH_RETURN_PARAM"],
+        ),
+        logout_url=build_auth_handoff_url(
+            current_app.config["LOGOUT_URL"],
+            "/about",
+            current_app.config["AUTH_RETURN_PARAM"],
+        ),
+    )
+
+
+@main_bp.get("/next-updates")
+def next_updates():
+    shared_user = _fetch_shared_auth_user()
+    return render_template(
+        "next_updates.html",
+        shared_user=shared_user,
+        auth_url=build_auth_handoff_url(
+            current_app.config["AUTH_URL"],
+            "/next-updates",
+            current_app.config["AUTH_RETURN_PARAM"],
+        ),
+        logout_url=build_auth_handoff_url(
+            current_app.config["LOGOUT_URL"],
+            "/next-updates",
+            current_app.config["AUTH_RETURN_PARAM"],
+        ),
+    )
+
+
 @main_bp.get("/healthz")
 def healthz():
     return {"status": "ok", "service": "landing"}, 200

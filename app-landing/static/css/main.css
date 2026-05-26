@@ -7,6 +7,21 @@
     --accent: #0d7a73;
     --accent-2: #eb5c2c;
     --shadow: 0 22px 50px rgba(32, 26, 16, 0.12);
+    --gradient-1: #fff5d6;
+    --gradient-2: #c6efe8;
+}
+
+.dark-theme {
+    --bg: #1a1a2e;
+    --ink: #e0e0e0;
+    --muted: #a0a0a0;
+    --panel: #2d2d44cc;
+    --line: #3d3d5c;
+    --accent: #0d7a73;
+    --accent-2: #eb5c2c;
+    --shadow: 0 22px 50px rgba(0, 0, 0, 0.3);
+    --gradient-1: #2a2a4a;
+    --gradient-2: #1a3a3a;
 }
 
 * {
@@ -14,12 +29,12 @@
 }
 
 body {
-    margin: 0;
+    margin:0;
     min-height: 100vh;
     font-family: "Space Grotesk", sans-serif;
     color: var(--ink);
-    background: radial-gradient(circle at 12% 8%, #fff5d6 0%, transparent 45%),
-                radial-gradient(circle at 88% 0%, #c6efe8 0%, transparent 40%),
+    background: radial-gradient(circle at 12% 8%, var(--gradient-1) 0%, transparent 45%),
+                radial-gradient(circle at 88% 0%, var(--gradient-2) 0%, transparent 40%),
                 var(--bg);
     position: relative;
     overflow-x: hidden;

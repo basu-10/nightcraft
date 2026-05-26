@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}About - Asesh Basu Projects{% endblock %}
+
+{% block description %}About the project portfolio, philosophy, and approach.{% endblock %}
+
+{% block content %}
+<section class="hero-grid">
+    <div>
+        <p class="section-label">/ ABOUT</p>
+        {% if shared_user %}
+        <p class="welcome">Hi, {{ shared_user.username }}</p>
+        {% endif %}
+        <h1>Project Philosophy</h1>
+        <p class="hero-rule">-</p>
+        <p class="hero-text">Building software that solves real problems, prioritizes user ownership, and remains open and accessible. Each project focuses on practical utility over flashy features.</p>
+    </div>
+
+    <aside class="philosophy" aria-label="Philosophy">
+        <p class="philosophy-title">CORE PRINCIPLES</p>
+        <ul>
+            <li>
+                <span aria-hidden="true">[+]</span>
+                <span>Practical over fashionable</span>
+            </li>
+            <li>
+                <span aria-hidden="true">[o]</span>
+                <span>Open over restrictive</span>
+            </li>
+            <li>
+                <span aria-hidden="true">[#]</span>
+                <span>Reliable over clever</span>
+            </li>
+            <li>
+                <span aria-hidden="true">[*]</span>
+                <span>Useful over impressive</span>
+            </li>
+            <li>
+                <span aria-hidden="true">[~]</span>
+                <span>Local-first when possible</span>
+            </li>
+        </ul>
+    </aside>
+</section>
+
+<section class="registry" aria-label="About the Portfolio">
+    <div class="registry-head">
+        <p class="section-label">/ PROJECT APPROACH</p>
+    </div>
+    <div class="registry-table">
+        <div class="registry-row">
+            <div class="product-main">
+                <div class="product-icon">O</div>
+                <div>
+                    <h2>Open Systems</h2>
+                    <p>All projects use open standards, self-hostable architectures, and avoid vendor lock-in.</p>
+                </div>
+            </div>
+        </div>
+        <div class="registry-row">
+            <div class="product-main">
+                <div class="product-icon">L</div>
+                <div>
+                    <h2>Local First</h2>
+                    <p>Prioritize offline capabilities, local storage, and user data ownership.</p>
+                </div>
+            </div>
+        </div>
+        <div class="registry-row">
+            <div class="product-main">
+                <div class="product-icon">U</div>
+                <div>
+                    <h2>Usable Tools</h2>
+                    <p>Focus on solving real user problems with minimal friction and clear workflows.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

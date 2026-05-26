@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Asesh Basu Projects{% endblock %}</title>
+    <meta name="description" content="{% block description %}Landing portal for projects and tools.{% endblock %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="landing-shell">
+    <main class="landing-page">
+        <header class="topbar">
+            <label class="search" aria-label="Search">
+                <span class="search-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"></circle>
+                        <path d="M20 20L16.5 16.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+                    </svg>
+                </span>
+                <input type="search" placeholder="Search apps, notes, articles...">
+                <span class="kbd">/</span>
+            </label>
+            <nav class="top-actions" aria-label="Primary actions">
+                <button class="icon-button" type="button" aria-label="Theme settings" id="theme-toggle">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.8"></circle>
+                        <path d="M12 3V5.5M12 18.5V21M3 12H5.5M18.5 12H21M5.7 5.7L7.4 7.4M16.6 16.6L18.3 18.3M16.6 7.4L18.3 5.7M5.7 18.3L7.4 16.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
+                    </svg>
+                </button>
+                {% if shared_user %}
+                <a class="action-link" href="{{ logout_url }}">Sign Out</a>
+                {% else %}
+                <a class="visually-hidden" href="{{ auth_url }}">Unified Login</a>
+                {% endif %}
+                {% if shared_user and shared_user.is_admin %}
+                <a class="cta" href="{{ admin_url }}">Admin Dashboard</a>
+                {% endif %}
+                <a class="action-link" href="{{ url_for('main.home') }}">Home</a>
+            </nav>
+        </header>
+
+        {% block content %}{% endblock %}
+    </main>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
