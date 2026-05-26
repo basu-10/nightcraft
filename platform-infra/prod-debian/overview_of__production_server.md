@@ -97,4 +97,34 @@ Runtime folders like:
 - deploy-all.sh seeds OAuth clients (auth, curio, seeksage, game) and user accounts after code deployment.
 - NoteStack uses shared session bridging against `/auth/session/me`, so it does not require a separate OAuth client seed step.
 
+### 8. GitHub Actions Setup
+
+- deploy.yml:
+name: Deploy Nightcraft
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run deployment script on IONOS VPS
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            sudo /usr/local/sbin/server-scripts/nightcraft-server-bootstrap.sh \
+              --repo-url https://github.com/basu-10/nightcraft.git \
+              --branch main \
+              --target-dir /platform-infra \
+              --adopt-existing \
+              --force-sync
+
+
 ---
