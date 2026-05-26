@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Flask, abort, send_from_directory
+from flask import Flask, abort, redirect, send_from_directory, url_for
 from flask_login import current_user
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -69,6 +69,9 @@ def create_app() -> Flask:
 
     @app.get("/")
     def root():
+        if app.config.get("SEEKSAGE_UI_AT_ROOT", False):
+            return redirect(url_for("main.ui_root"))
+
         if frontend_dist_dir.is_dir() and (frontend_dist_dir / "index.html").is_file():
             return send_from_directory(frontend_dist_dir, "index.html")
         return {

@@ -85,7 +85,7 @@ def notifications():
     redirect_or_none = _require_login()
     if redirect_or_none:
         return redirect_or_none
-    return render_template("main/coming_soon.html", page_title="Notifications")
+    return render_template("main/notifications.html", page_title="Notifications")
 
 
 @main_bp.get("/global-settings")
@@ -93,7 +93,7 @@ def settings():
     redirect_or_none = _require_login()
     if redirect_or_none:
         return redirect_or_none
-    return render_template("main/coming_soon.html", page_title="Global Settings")
+    return render_template("main/global_settings.html", page_title="Global Settings")
 
 
 @main_bp.get("/account")
@@ -101,7 +101,7 @@ def account():
     redirect_or_none = _require_login()
     if redirect_or_none:
         return redirect_or_none
-    return render_template("main/coming_soon.html", page_title="Account")
+    return render_template("main/account.html", page_title="Account")
 
 
 @main_bp.get("/admin")
@@ -111,4 +111,4 @@ def admin():
         return redirect_or_none
     if not current_user.is_admin:
         return redirect(url_for("main.dashboard"))
-    return render_template("main/coming_soon.html", page_title="Admin")
+    return render_template("main/admin.html", page_title="Admin")

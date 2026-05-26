@@ -1,6 +1,13 @@
 import os
 
 
+def _env_bool(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "")
@@ -22,3 +29,6 @@ class Config:
     AUTHLIB_CLIENT_ID = os.getenv("AUTHLIB_CLIENT_ID", "seeksage-app")
     AUTHLIB_CLIENT_SECRET = os.getenv("AUTHLIB_CLIENT_SECRET", "dev-secret")
     SSO_DEFAULT_NEXT = os.getenv("SSO_DEFAULT_NEXT", "/")
+
+    # When enabled, GET / redirects to the Flask-migrated UI at /ui.
+    SEEKSAGE_UI_AT_ROOT = _env_bool("SEEKSAGE_UI_AT_ROOT", default=True)
