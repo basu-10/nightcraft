@@ -26,6 +26,8 @@ All setup, deploy, seed, start, stop, and backup operations are script-driven fr
 
 Primary operations can be run through the single dispatcher command `serverctl` in that folder.
 
+Deployment runs are logged on the VPS under `/var/log/nightcraft-deploy/`, and each bootstrap run appends a CSV summary to `/platform-infra/deploy-history.csv`.
+
 ## Single-Command Server Bootstrap
 
 Use `server-scripts/nightcraft-server-bootstrap.sh` to run the whole flow from one command:
@@ -34,6 +36,8 @@ Use `server-scripts/nightcraft-server-bootstrap.sh` to run the whole flow from o
 - clones or updates repo from git
 - runs env/postgres/systemd/nginx install scripts
 - runs app deploy and service restart via `deploy-all.sh`
+
+Each run creates a timestamped log in `/var/log/nightcraft-deploy/` and appends a deployment record to `/platform-infra/deploy-history.csv` with start time, commit, duration, and success/failure.
 
 Recommended on the VPS: keep this script outside the checkout (for example under `/usr/local/sbin/server-scripts`) and point it at `/platform-infra`.
 
@@ -56,6 +60,12 @@ Useful flags:
 - `--overwrite-env` overwrite `/etc/nightcraft/*.env` from repo templates
 - `--skip-postgres`, `--skip-nginx`, `--skip-systemd`, `--skip-deploy` for partial runs
 - `--run-host-setup` or `--skip-host-setup` for setup-host control
+
+To inspect deployment history after runs:
+
+```bash
+platform-infra/prod-debian/scripts/status-deploys.sh
+```
 
 ## Folder Layout
 
@@ -104,6 +114,7 @@ Useful flags:
 - `scripts/cleanup-releases.sh`: obsolete helper kept only to report that release pruning is no longer needed
 - `scripts/reset-stack.sh`: reset app deploy state with keep-data default and explicit remove-data mode
 - `scripts/serverctl`: single command dispatcher for deploy/backup/status/restart/start/stop/reset
+- `scripts/status-deploys.sh`: summarize `/platform-infra/deploy-history.csv` into a readable deployment report
 
 ## Runtime Layout Used On Server
 
@@ -419,6 +430,11 @@ Daily/regular operations:
 Weekly backups:
 
 - `sudo platform-infra/prod-debian/scripts/serverctl backup`
+
+Deployment history:
+
+- `platform-infra/prod-debian/scripts/status-deploys.sh`
+- `/platform-infra/deploy-history.csv`
 
 Before risky change windows:
 
