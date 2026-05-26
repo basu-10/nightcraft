@@ -5,12 +5,14 @@
 Curio is a social review and curation platform for creative media. Users can review items, build lists, write notes, and post updates.
 
 Primary review categories:
+
 - Book
 - Song
 - Arts
 - Films
 
 Key principle:
+
 - Users should be able to contribute from day 1, even when an item does not yet exist in the database.
 
 ## 2. Core Experience Goals
@@ -25,6 +27,7 @@ Key principle:
 ## 2.1 Current Implementation Snapshot (May 2026)
 
 Implemented foundations:
+
 - Auth adapters support both local and shared-SSO mode.
 - Profiles, reviews, lists, list items, notes, and feed-event pointer storage exist.
 - Catalog seeding and browse experience exist (`seed-catalog`, `/items`, `/items/<id>`).
@@ -32,6 +35,7 @@ Implemented foundations:
 - Published non-private reviews emit `feed_event` rows; profile feed resolves event targets at read time.
 
 Still pending for the product contract:
+
 - Follow graph and global-vs-following feed modes.
 - Notes/posts social loop (mentions, reactions, post-only comments).
 - Per-field confidence badges for user-submitted metadata.
@@ -41,6 +45,7 @@ Still pending for the product contract:
 ## 3. Content Model
 
 Primary content types:
+
 - Item (book/song/arts/films)
 - Review
 - List
@@ -53,6 +58,7 @@ Primary content types:
 - Feed event
 
 List types:
+
 - Book
 - Song
 - Arts
@@ -60,21 +66,25 @@ List types:
 - Mixed
 
 Mixed list behavior:
+
 - Can contain items from multiple categories.
 - Can include works, notes, and posts in one ordered sequence.
 
 Typed list constraints:
+
 - Book list contains only book works.
 - Film list contains only film works.
 - Song list contains only song works.
 - Art list contains only art works.
 
 Mention/reference behavior:
+
 - Post can @ reference posts, reviews, notes, and lists.
 - Note can @ reference notes.
 - Review can @ reference notes.
 
 Appeared count behavior:
+
 - Each list, note, and review displays "appeared in <n> places".
 - The count is incremented when the entity is referenced from allowed surfaces (for example, a note referenced by a post).
 
@@ -83,33 +93,39 @@ Appeared count behavior:
 Each category starts with seeded items so users can review immediately.
 
 Seeded item behavior:
+
 - Trusted metadata.
 - Standard item display.
 - No confidence badges on metadata fields.
 
 User-submitted item behavior:
+
 - User enters metadata and review in one creation flow.
 - Description area remains empty by default to signal uncertainty.
 - Show confidence score badge at item level.
 - Show color badges per metadata field to indicate confidence quality.
 
 Metadata confidence color proposal:
+
 - Green: high confidence
 - Yellow: medium confidence
 - Red: low confidence
 
 Important distinction:
+
 - Metadata confidence badges appear only for user-submitted items, not for seeded/trusted catalog items.
 
 ## 5. Item Page Specification
 
 Two-column layout:
+
 - Left column: 65% width (primary content)
 - Right column: 35% width (summary and utilities)
 
 ### Left Column (65%)
 
 Section 1: Item header container
+
 - Image
 - Title
 - Author/Director/Creator
@@ -119,15 +135,18 @@ Section 1: Item header container
 - Confidence score badge (only for user-submitted items)
 
 Section 2: Action row (right-aligned within left column)
+
 - Write a review
 - Contribute metadata
 - Bookmark icon
 
 Section 3: Related lists preview
+
 - Show up to 5 list names containing the item
 - Show more button
 
 Section 4: Reviews stream
+
 - List of reviews with preview content
 - Each review supports hearts
 - Reviews do not have comments
@@ -135,32 +154,39 @@ Section 4: Reviews stream
 ### Right Column (35%)
 
 Section 1: Ratings box (square)
+
 - Large aggregate rating
 - Rating breakdown below
 
 Section 2: Your rating
+
 - Current user rating summary
 - Link to edit rating page
 
 Section 3: Metadata panel
+
 - Full metadata values
 - For user-submitted items, show per-field confidence color badges (red/yellow/green)
 
 Section 4: Tags
+
 - Item tags
 
 Section 5: Discussions
+
 - Posts that reference the item with @ mention
 
 ## 6. Social Actions and Interaction Rules
 
 Users can react (heart for now) on:
+
 - Reviews
 - Lists
 - Notes
 - Posts
 
 Reaction storage model (internal):
+
 - `id`
 - `user_id`
 - `target_type`
@@ -168,9 +194,11 @@ Reaction storage model (internal):
 - `reaction_type`
 
 V1 reaction type:
+
 - `reaction_type=heart`
 
 UI presentation:
+
 - `❤️ 128`
 
 Interaction matrix:
@@ -182,6 +210,7 @@ Interaction matrix:
 | Post | Yes | Yes | Post |
 
 Post behavior:
+
 - Body text
 - Visibility
 - Mentions
@@ -191,6 +220,7 @@ Post behavior:
 - Character limit: 500
 
 Comment model:
+
 - Only posts have comments.
 - Flat comments only (no nesting in v1).
 - Comment status values:
@@ -203,6 +233,7 @@ Comment model:
   - Disable comments
 
 Notes behavior:
+
 - Notes are long-form markdown content (article-like).
 - Notes allow reactions but do not allow comments.
 - Discussion happens through posts that reference notes.
@@ -211,6 +242,7 @@ Notes behavior:
 ## 7. User Profile Page Specification
 
 Top hero section:
+
 - Facebook-like hero image
 - Lower fade merge into page background
 - Circular profile image overlaid on left side of hero
@@ -223,6 +255,7 @@ Top hero section:
   - Join date
 
 Profile strip below hero:
+
 - Followers
 - Following
 - Pencil edit button
@@ -232,6 +265,7 @@ Highlights block:
 users select lists or review or notes to pin as highlights on their profile. These are curated by the user and can be changed at any time. They are a way for users to showcase their best content and express their identity through their profile.
 
 Tabbed content:
+
 - Lists (rectangular card UI)
 - Reviews (square card UI)
 - Notes (square card UI)
@@ -239,9 +273,11 @@ Tabbed content:
 - Bookmarks(only visible to the profile owner)
 
 Creation flow:
+
 - Each tab exposes create action relevant to that content type.
 
 Pin/highlight behavior:
+
 - Users can pin multiple entries.
 - Pinned entries move to top in their page section.
 - Supported for lists, reviews, notes, posts.
@@ -249,6 +285,7 @@ Pin/highlight behavior:
 ## 8. List Experience
 
 List card (overview):
+
 - Square-ish style
 - Title
 - Description
@@ -256,71 +293,86 @@ List card (overview):
 - "+ <n> more" indicator
 
 List detail page:
+
 - Full title and description (unclipped)
 - Full item list
 - Owner-only controls visible only to list owner
 
 List item enhancement:
+
 - If list includes item user has reviewed, allow toggle to show "My Review" link beside that item.
 
 Owner controls placement:
+
 - Owner admin controls and settings (public/private, highlight toggle, etc.) appear below review and before interaction controls where applicable.
 
 Mixed lists as structure-first containers:
+
 - Mixed lists can naturally hold a sequence of notes (for example, Chapter 1, Chapter 2, Chapter 3).
 - This is enabled by the generic list-item model; the UI should not introduce a separate "novel" feature label.
 
 Lists as expressive moodboards:
+
 - Mixed lists can combine books, films, songs, art, notes, and posts to represent a taste map rather than only a review index.
 
 ## 9. Feed Design
 
 Feed modes:
+
 - Global feed
 - Followed-people feed
 
 Feed content types:
+
 - Recent reviews
 - Posts
 - Notes
 - Lists
 
 Auto-post behavior:
+
 - Publishing public or followers-visible review/post/note/list creates a feed event.
 - Draft creation does not create a feed event.
 - Private content does not create a public feed event.
 - Quiet save does not create a feed event.
 
 Visibility behavior:
+
 - Public content appears in visible feed contexts.
 - Private content functions as draft/private storage and does not appear publicly.
 
 Feed-event privacy contract:
+
 - `feed_event` points to target content.
 - Target visibility is checked at read time.
 - Do not trust feed rows alone for privacy decisions.
 
 Primary reasons for public/private switch:
+
 - Draft workflow
 - Spam and visibility control
 
 ## 10. Permissions and Visibility (v1)
 
 Ownership:
+
 - Owners can edit/delete their own content.
 - Owner-only admin controls are visible only to owners.
 
 Visibility:
+
 - Every review/post/note/list supports private/public state.
 - Visibility can be changed after creation.
 
 Comment controls:
+
 - Comment controls exist only for posts.
 - Post owner can moderate by deleting comments or disabling comments entirely.
 
 ## 11. Suggested MVP Scope
 
 Phase 1 (foundation):
+
 - Category taxonomy (book/song/arts/films)
 - Seeded catalog data for all categories
 - Item page with two-column layout and review list
@@ -328,17 +380,20 @@ Phase 1 (foundation):
 - User-submitted item flow (metadata + review)
 
 Phase 2 (social core):
+
 - Lists (typed + mixed)
 - Notes and posts
 - Reactions (heart in v1) on reviews/lists/notes/posts
 - Comments on posts only with owner moderation controls
 
 Phase 3 (profile + feed):
+
 - Full profile page layout and highlight pins
 - Global feed and followed feed
 - Auto-post activity stream with visibility rules
 
 Phase 4 (quality and trust):
+
 - Metadata confidence scoring for user-submitted items
 - Field-level confidence badges in metadata panel
 - Improved ranking/discovery and anti-spam tuning
@@ -361,21 +416,28 @@ Phase 4 (quality and trust):
 ## 14. Recommended Next Course of Action (No Server Setup)
 
 1. Complete item-linked contribution flow before adding new social entities.
-  - Expand create-and-review flow beyond books to songs/films/arts.
-  - Add per-field confidence badge rendering for user-submitted metadata.
+
+- Expand create-and-review flow beyond books to songs/films/arts.
+- Add per-field confidence badge rendering for user-submitted metadata.
 
 2. Finish item page contract so each item page is fully useful.
-  - Implement related lists preview data, richer ratings breakdown, and discussion placeholders backed by real queries.
+
+- Implement related lists preview data, richer ratings breakdown, and discussion placeholders backed by real queries.
 
 3. Build social primitives in this order: follow graph -> feed modes -> post/note reactions/comments.
-  - Implement follow/unfollow persistence and queries.
-  - Add global and following feeds using the pointer-based visibility-read contract.
-  - Add heart reactions and post-only flat comments with owner moderation toggles.
+
+- Implement follow/unfollow persistence and queries.
+- Add global and following feeds using the pointer-based visibility-read contract.
+- Add heart reactions and post-only flat comments with owner moderation toggles.
 
 4. Lock privacy semantics with tests before widening discovery.
-  - Add coverage for draft/private/followers visibility transitions.
-  - Add regression tests ensuring stale feed rows cannot leak private targets.
+
+- Add coverage for draft/private/followers visibility transitions.
+- Add regression tests ensuring stale feed rows cannot leak private targets.
 
 5. Finalize discovery and taxonomy polish after social/privacy contracts stabilize.
-  - Category styling system and typed/mixed list rule enforcement.
-  - Unified search for users, lists, reviews, items, and notes/posts.
+
+- Category styling system and typed/mixed list rule enforcement.
+- Unified search for users, lists, reviews, items, and notes/posts.
+
+---
