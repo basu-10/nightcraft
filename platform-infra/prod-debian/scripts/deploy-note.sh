@@ -21,9 +21,14 @@ if [[ "${notestack_backend}" != "postgres" ]]; then
 	exit 1
 fi
 
+notestack_db_name="${NOTESTACK_DB_NAME:-notestack_db}"
+notestack_db_user="${NOTESTACK_DB_USER:-notestack_app}"
+notestack_db_password="${NOTESTACK_DB_PASSWORD:-notestack_app_db_2026_prod_secret}"
+
 if [[ -z "${DATABASE_URL:-}" ]]; then
-	echo "[deploy-note.sh] ERROR: DATABASE_URL must be set in /etc/nightcraft/app-note.env for PostgreSQL mode" >&2
-	exit 1
+	DATABASE_URL="postgresql+psycopg://${notestack_db_user}:${notestack_db_password}@127.0.0.1:5432/${notestack_db_name}"
+	export DATABASE_URL
+	log "Derived NoteStack DATABASE_URL from PostgreSQL defaults"
 fi
 
 setup_venv_and_deps "${NOTE_VENV_DIR}" "${NOTE_SRC_DIR}"
