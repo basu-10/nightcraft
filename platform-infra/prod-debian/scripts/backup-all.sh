@@ -28,12 +28,24 @@ else
   log "No shared app data directories found under ${SHARED_ROOT}"
 fi
 
+# Ensure NoteStack shared dir is included (may not be under SHARED_ROOT pattern)
+if [[ -d "${NOTE_SHARED_DIR}" ]]; then
+  tar -czf "${APP_DATA_ARCHIVE}.note" "${NOTE_SHARED_DIR}"
+  log "Saved NoteStack shared data: ${APP_DATA_ARCHIVE}.note"
+fi
+
 # Backup runtime env files
 if [[ -d /etc/nightcraft ]]; then
   tar -czf "${ENV_ARCHIVE}" /etc/nightcraft
   log "Saved env config: ${ENV_ARCHIVE}"
 else
   log "No /etc/nightcraft directory found"
+fi
+
+# Ensure NoteStack env file is backed up separately if not caught above
+if [[ -f /etc/nightcraft/app-note.env ]] && [[ ! -f "${ENV_ARCHIVE}" ]]; then
+  tar -czf "${ENV_ARCHIVE}" /etc/nightcraft/app-note.env
+  log "Saved NoteStack env config: ${ENV_ARCHIVE}"
 fi
 
 # Backup postgres logical dumps using existing script
