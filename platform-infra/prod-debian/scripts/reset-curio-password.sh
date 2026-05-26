@@ -9,6 +9,16 @@ CURIO_ENV_FILE="${CURIO_ENV_FILE:-/etc/nightcraft/app-curio.env}"
 CURIO_RESTART_SERVICE="${CURIO_RESTART_SERVICE:-nightcraft-curio.service}"
 CURIO_NEW_PASSWORD="${CURIO_NEW_PASSWORD:-}"
 
+sync_repo() {
+  if [[ ! -d "${REPO_ROOT}/.git" ]]; then
+    echo "Expected git checkout at ${REPO_ROOT}, but no .git directory was found." >&2
+    exit 1
+  fi
+
+  log "Syncing repository in ${REPO_ROOT}"
+  git -C "${REPO_ROOT}" pull --ff-only
+}
+
 usage() {
   cat <<'EOF'
 Usage:
@@ -46,6 +56,7 @@ done
 
 require_file "${CURIO_ENV_FILE}"
 require_file "${PROD_DEBIAN_DIR}/scripts/setup-postgres.sh"
+sync_repo
 
 if [[ -z "${CURIO_NEW_PASSWORD}" ]]; then
   require_cmd openssl

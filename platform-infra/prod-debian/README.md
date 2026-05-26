@@ -59,6 +59,7 @@ Useful flags:
 - `--check-only` preflight only
 - `--force-sync` force checkout to `origin/<branch>`
 - `--overwrite-env` overwrite `/etc/nightcraft/*.env` from repo templates
+- `--reset-curio-password` rotate the Curio DB password and resync PostgreSQL before deploying
 - `--skip-postgres`, `--skip-nginx`, `--skip-systemd`, `--skip-deploy` for partial runs
 - `--run-host-setup` or `--skip-host-setup` for setup-host control
 
