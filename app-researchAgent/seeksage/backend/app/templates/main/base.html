@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}SeekSage UI{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/seeksage-ui.css') }}" />
+  </head>
+  <body>
+    <div class="ui-shell">
+      <aside class="ui-sidebar">
+        <div class="brand">SeekSage</div>
+        <nav>
+          {% for item in ui_nav_items %}
+            {% if item.endpoint != 'main.admin' or (current_user.is_authenticated and current_user.is_admin) %}
+              <a
+                class="nav-link {% if request.endpoint == item.endpoint %}is-active{% endif %}"
+                href="{{ url_for(item.endpoint) }}"
+              >
+                {{ item.label }}
+              </a>
+            {% endif %}
+          {% endfor %}
+          {% if current_user.is_authenticated and current_user.is_admin %}
+            <a
+              class="nav-link {% if request.endpoint == 'main.admin' %}is-active{% endif %}"
+              href="{{ url_for('main.admin') }}"
+            >
+              Admin
+            </a>
+          {% endif %}
+        </nav>
+      </aside>
+
+      <main class="ui-main">
+        <header class="ui-header">
+          <div>
+            <h1>{% block page_heading %}SeekSage{% endblock %}</h1>
+          </div>
+          <div class="header-user-block">
+            {% if current_user.is_authenticated %}
+              <span class="user-email">{{ current_user.email }}</span>
+              <a class="btn-link" href="{{ url_for('main.logout') }}">Sign out</a>
+            {% else %}
+              <a class="btn-link" href="{{ url_for('main.login') }}">Sign in</a>
+            {% endif %}
+          </div>
+        </header>
+
+        <section class="ui-content">
+          {% block content %}{% endblock %}
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

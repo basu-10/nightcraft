@@ -1,0 +1,62 @@
+{% extends "main/base.html" %}
+
+{% block title %}SeekSage | Notes{% endblock %}
+{% block page_heading %}Notes{% endblock %}
+
+{% block content %}
+  <article class="panel">
+    <h2>Create Note</h2>
+    <p class="muted">Unified notes index across workspaces, projects, and chat sessions.</p>
+
+    <div id="notes-error" class="error-text" hidden></div>
+
+    <form id="note-form" class="notes-form">
+      <label for="note-title">Title</label>
+      <input id="note-title" name="title" type="text" required />
+
+      <label for="note-body">Body</label>
+      <textarea id="note-body" name="body" rows="4"></textarea>
+
+      <label for="note-tags">Tags</label>
+      <input id="note-tags" name="tags" type="text" placeholder="research, bug, todo" />
+
+      <div class="form-row-3">
+        <input id="note-workspace" name="workspace" type="text" placeholder="Workspace ID (optional)" />
+        <input id="note-project" name="project" type="text" placeholder="Project ID (optional)" />
+        <input id="note-session" name="session" type="text" placeholder="Session ID (optional)" />
+      </div>
+
+      <button type="submit">Save Note</button>
+    </form>
+  </article>
+
+  <article class="panel">
+    <h2>Search</h2>
+    <div class="form-row-2">
+      <input id="notes-query" type="text" placeholder="Search title/body" />
+      <input id="notes-tag-filter" type="text" placeholder="Filter by tag" />
+    </div>
+  </article>
+
+  <article class="panel">
+    <h2>Notes</h2>
+    <div class="table-wrap">
+      <table class="notes-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Tags</th>
+            <th>Location</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="notes-table-body">
+          <tr><td colspan="5">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <script type="module" src="{{ url_for('static', filename='js/seeksage-notes.js') }}"></script>
+{% endblock %}

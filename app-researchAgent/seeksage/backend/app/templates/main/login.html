@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SeekSage | Sign in</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/seeksage-ui.css') }}" />
+  </head>
+  <body class="login-body">
+    <main class="login-card">
+      <h1>Sign in to SeekSage</h1>
+      <p class="muted">Use your SeekSage account to open the Flask UI migration preview.</p>
+      <form id="login-form" class="login-form">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" required autocomplete="email" />
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required autocomplete="current-password" />
+
+        <button type="submit">Sign in</button>
+      </form>
+      <p id="login-error" class="error-text" hidden></p>
+      <p class="muted"><a href="/">Back to current React app</a></p>
+    </main>
+
+    <script>
+      const form = document.getElementById("login-form");
+      const errorNode = document.getElementById("login-error");
+      const nextTarget = {{ next_target|tojson }};
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        errorNode.hidden = true;
+
+        const body = {
+          email: form.email.value,
+          password: form.password.value,
+        };
+
+        try {
+          const response = await fetch("/auth/login", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(payload.error || "Login failed.");
+          }
+
+          window.location.href = nextTarget;
+        } catch (error) {
+          errorNode.textContent = error.message || "Login failed.";
+          errorNode.hidden = false;
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -13,6 +13,7 @@ from .auth.routes import bridge_shared_auth_session, init_sso
 from .config import Config
 from .core.activity_log import init_logger
 from .extensions import cors, db, login_manager, migrate
+from .main import main_bp
 from .models import User
 
 
@@ -59,6 +60,7 @@ def create_app() -> Flask:
     app.register_blueprint(auth_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(main_bp)
 
     if app.config.get("AUTH_MODE", "local") == "sso":
         @app.before_request
