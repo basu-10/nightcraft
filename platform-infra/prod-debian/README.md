@@ -205,6 +205,14 @@ sudo nano /etc/nightcraft/app-note.env
 
 1. Create DB users and databases.
 
+`setup-postgres.sh` now provisions and grants for auth, radio, curio, and seeksage.
+For curio/seeksage it will read `/etc/nightcraft/app-curio.env` and `/etc/nightcraft/app-seeksage.env`
+`DATABASE_URL` values when explicit `CURIO_DB_*`/`SEEKSAGE_DB_*` vars are not provided.
+For NoteStack, provisioning is conditional: when `/etc/nightcraft/app-note.env` has
+`NOTESTACK_DB_BACKEND=postgres`, the script also provisions and syncs NoteStack role/database
+from `DATABASE_URL` (or explicit `NOTESTACK_DB_*` overrides).
+Existing role passwords are also synchronized on each run.
+
 ```bash
 sudo AUTH_DB_PASSWORD='auth_app_db_2026_prod_secret' RADIO_DB_PASSWORD='radio_app_db_2026_prod_secret' \
   platform-infra/prod-debian/scripts/setup-postgres.sh
