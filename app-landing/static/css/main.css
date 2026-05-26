@@ -287,6 +287,57 @@ body.landing-shell {
     font-family: "Space Grotesk", sans-serif;
 }
 
+.dark-theme.landing-shell {
+    background: radial-gradient(circle at 12% 8%, #2a3147 0%, transparent 45%),
+                radial-gradient(circle at 88% 0%, #143c3d 0%, transparent 40%),
+                #121420;
+    color: #e6ecf7;
+}
+
+.dark-theme .topbar,
+.dark-theme .hero-grid {
+    border-bottom-color: #33405d;
+}
+
+.dark-theme .search,
+.dark-theme .icon-button,
+.dark-theme .action-link,
+.dark-theme .cta,
+.dark-theme .philosophy,
+.dark-theme .product-card {
+    background: #1b2234;
+    color: #e6ecf7;
+    border-color: #32405b;
+}
+
+.dark-theme .search input,
+.dark-theme .hero-text,
+.dark-theme .description,
+.dark-theme .philosophy li,
+.dark-theme .section-label,
+.dark-theme .product-meta small,
+.dark-theme .product-main p,
+.dark-theme .product-main h2 {
+    color: #e6ecf7;
+}
+
+.dark-theme .kbd,
+.dark-theme .status {
+    background: #23314a;
+    border-color: #3a4b67;
+    color: #d6e3f7;
+}
+
+.dark-theme .cta {
+    background: linear-gradient(180deg, #f08a4b 0%, #d65f1f 100%);
+    border-color: #d65f1f;
+}
+
+.dark-theme .row-arrow,
+.dark-theme .action-link {
+    color: #e6ecf7;
+}
+
 .landing-page {
     width: min(1280px, 94vw);
     margin: 1.25rem auto 2.2rem;

@@ -21,11 +21,11 @@ def test_root_route_renders_product_cards_and_links():
     assert "Curio" in html
     assert "SeekSage" in html
     assert "NoteStack" in html
-    assert "Unified Login" in html
-    assert "Admin Dashboard" in html
-    assert 'href="/admin"' in html
+    assert "Sign In" in html
+    assert "Sign Up" in html
     assert '/auth/login?next=%2F' in html
-    assert 'href="/notestack"' in html
+    assert 'href="/seeksage/ui"' in html
+    assert 'href="/notestack/app"' in html
 
 
 def test_root_route_shows_welcome_and_logout_when_shared_auth_is_present():
@@ -40,7 +40,8 @@ def test_root_route_shows_welcome_and_logout_when_shared_auth_is_present():
     html = response.get_data(as_text=True)
     assert "Hi, seedadmin welcome" in html
     assert "Sign Out" in html
-    assert "Unified Login" not in html
+    assert "Sign Up" not in html
+    assert "Admin Dashboard" in html
 
 
 def test_healthz_route_returns_expected_payload():

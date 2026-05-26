@@ -34,12 +34,12 @@
                 {% if shared_user %}
                 <a class="action-link" href="{{ logout_url }}">Sign Out</a>
                 {% else %}
-                <a class="visually-hidden" href="{{ auth_url }}">Unified Login</a>
+                <a class="action-link" href="{{ auth_url }}">Sign In</a>
+                <a class="cta" href="{{ register_url }}">Sign Up</a>
                 {% endif %}
                 {% if shared_user and shared_user.is_admin %}
                 <a class="cta" href="{{ admin_url }}">Admin Dashboard</a>
                 {% endif %}
-                <a class="action-link" href="{{ url_for('main.home') }}">Home</a>
             </nav>
         </header>
 
