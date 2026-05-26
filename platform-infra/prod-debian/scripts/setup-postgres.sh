@@ -25,7 +25,6 @@ SEEKSAGE_DB_NAME="${SEEKSAGE_DB_NAME:-}"
 SEEKSAGE_DB_USER="${SEEKSAGE_DB_USER:-}"
 SEEKSAGE_DB_PASSWORD="${SEEKSAGE_DB_PASSWORD:-}"
 
-NOTESTACK_DB_ENABLED="${NOTESTACK_DB_ENABLED:-}"
 NOTESTACK_DB_NAME="${NOTESTACK_DB_NAME:-}"
 NOTESTACK_DB_USER="${NOTESTACK_DB_USER:-}"
 NOTESTACK_DB_PASSWORD="${NOTESTACK_DB_PASSWORD:-}"
@@ -178,40 +177,23 @@ if [[ -z "${SEEKSAGE_DB_USER}" || -z "${SEEKSAGE_DB_NAME}" || -z "${SEEKSAGE_DB_
   fi
 fi
 
-if [[ -z "${NOTESTACK_DB_ENABLED}" ]]; then
-  if notestack_backend="$(_extract_env_value_from_file "${NOTESTACK_ENV_FILE}" "NOTESTACK_DB_BACKEND" 2>/dev/null)"; then
-    notestack_backend="$(printf '%s' "${notestack_backend}" | tr '[:upper:]' '[:lower:]' | xargs)"
-    if [[ "${notestack_backend}" == "postgres" ]]; then
-      NOTESTACK_DB_ENABLED="1"
-    else
-      NOTESTACK_DB_ENABLED="0"
-    fi
-  else
-    NOTESTACK_DB_ENABLED="0"
+if [[ -z "${NOTESTACK_DB_USER}" || -z "${NOTESTACK_DB_NAME}" || -z "${NOTESTACK_DB_PASSWORD}" ]]; then
+  if notestack_url="$(_extract_database_url_from_env_file "${NOTESTACK_ENV_FILE}" 2>/dev/null)"; then
+    _set_db_values_from_url "${notestack_url}" "NOTESTACK" || true
   fi
 fi
 
-if [[ "${NOTESTACK_DB_ENABLED}" == "1" ]]; then
-  if [[ -z "${NOTESTACK_DB_USER}" || -z "${NOTESTACK_DB_NAME}" || -z "${NOTESTACK_DB_PASSWORD}" ]]; then
-    if notestack_url="$(_extract_database_url_from_env_file "${NOTESTACK_ENV_FILE}" 2>/dev/null)"; then
-      _set_db_values_from_url "${notestack_url}" "NOTESTACK" || true
-    fi
-  fi
+NOTESTACK_DB_NAME="${NOTESTACK_DB_NAME:-notestack_db}"
+NOTESTACK_DB_USER="${NOTESTACK_DB_USER:-notestack_app}"
+NOTESTACK_DB_PASSWORD="${NOTESTACK_DB_PASSWORD:-notestack_app_db_2026_prod_secret}"
 
-  NOTESTACK_DB_NAME="${NOTESTACK_DB_NAME:-notestack_db}"
-  NOTESTACK_DB_USER="${NOTESTACK_DB_USER:-notestack_app}"
-  NOTESTACK_DB_PASSWORD="${NOTESTACK_DB_PASSWORD:-notestack_app_db_2026_prod_secret}"
-
-  if [[ -z "${NOTESTACK_DB_PASSWORD}" ]]; then
-    echo "[setup-postgres] NoteStack postgres mode is enabled but NOTESTACK_DB_PASSWORD is empty." >&2
-    echo "[setup-postgres] Set DATABASE_URL in ${NOTESTACK_ENV_FILE} with credentials or pass NOTESTACK_DB_PASSWORD." >&2
-    exit 1
-  fi
-
-  echo "[setup-postgres] NoteStack postgres provisioning enabled for ${NOTESTACK_DB_USER}@${NOTESTACK_DB_NAME}."
-else
-  echo "[setup-postgres] NoteStack postgres provisioning skipped (NOTESTACK_DB_BACKEND is not postgres)."
+if [[ -z "${NOTESTACK_DB_PASSWORD}" ]]; then
+  echo "[setup-postgres] NoteStack PostgreSQL password is empty." >&2
+  echo "[setup-postgres] Set DATABASE_URL in ${NOTESTACK_ENV_FILE} with credentials or pass NOTESTACK_DB_PASSWORD." >&2
+  exit 1
 fi
+
+echo "[setup-postgres] NoteStack PostgreSQL provisioning enabled for ${NOTESTACK_DB_USER}@${NOTESTACK_DB_NAME}."
 
 CURIO_DB_NAME="${CURIO_DB_NAME:-curio_db}"
 CURIO_DB_USER="${CURIO_DB_USER:-curio_app}"
@@ -230,7 +212,6 @@ sudo -u postgres psql \
   -v curio_db_password="${CURIO_DB_PASSWORD}" \
   -v seeksage_db_user="${SEEKSAGE_DB_USER}" \
   -v seeksage_db_password="${SEEKSAGE_DB_PASSWORD}" \
-  -v notestack_db_enabled="${NOTESTACK_DB_ENABLED}" \
   -v notestack_db_user="${NOTESTACK_DB_USER}" \
   -v notestack_db_password="${NOTESTACK_DB_PASSWORD}" \
   < "${USERS_SQL}"
@@ -244,7 +225,6 @@ sudo -u postgres psql \
   -v curio_db_user="${CURIO_DB_USER}" \
   -v seeksage_db_name="${SEEKSAGE_DB_NAME}" \
   -v seeksage_db_user="${SEEKSAGE_DB_USER}" \
-  -v notestack_db_enabled="${NOTESTACK_DB_ENABLED}" \
   -v notestack_db_name="${NOTESTACK_DB_NAME}" \
   -v notestack_db_user="${NOTESTACK_DB_USER}" \
   < "${DBS_SQL}"

@@ -205,12 +205,10 @@ sudo nano /etc/nightcraft/app-note.env
 
 1. Create DB users and databases.
 
-`setup-postgres.sh` now provisions and grants for auth, radio, curio, and seeksage.
-For curio/seeksage it will read `/etc/nightcraft/app-curio.env` and `/etc/nightcraft/app-seeksage.env`
-`DATABASE_URL` values when explicit `CURIO_DB_*`/`SEEKSAGE_DB_*` vars are not provided.
-For NoteStack, provisioning is conditional: when `/etc/nightcraft/app-note.env` has
-`NOTESTACK_DB_BACKEND=postgres`, the script also provisions and syncs NoteStack role/database
-from `DATABASE_URL` (or explicit `NOTESTACK_DB_*` overrides).
+`setup-postgres.sh` now provisions and grants for auth, radio, curio, seeksage, and notestack.
+For curio/seeksage/notestack it reads `/etc/nightcraft/app-curio.env`,
+`/etc/nightcraft/app-seeksage.env`, and `/etc/nightcraft/app-note.env`
+`DATABASE_URL` values when explicit `CURIO_DB_*`/`SEEKSAGE_DB_*`/`NOTESTACK_DB_*` vars are not provided.
 Existing role passwords are also synchronized on each run.
 
 ```bash
@@ -317,7 +315,8 @@ In `/etc/nightcraft/app-note.env`:
 - `AUTH_MODE=sso`
 - `AUTH_SERVICE_URL=http://31.70.85.89/auth`
 - `SESSION_COOKIE_PATH=/notestack`
-- `NOTESTACK_DB=/platform-infra/runtime/shared/app-note/notestack.db`
+- `NOTESTACK_DB_BACKEND=postgres`
+- `DATABASE_URL` (postgres URL for notestack DB)
 - `LOCALAPPDATA=/platform-infra/runtime/shared/app-note/localappdata`
 
 ## Runtime Operations
