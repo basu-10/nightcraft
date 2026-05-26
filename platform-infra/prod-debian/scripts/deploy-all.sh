@@ -32,4 +32,4 @@ systemctl restart nightcraft-game.service
 systemctl restart nightcraft-note.service
 systemctl reload nginx
 
-systemctl status --no-pager nightcraft-auth.service nightcraft-radio.service nightcraft-curio.service nightcraft-seeksage.service nightcraft-landing.service nightcraft-admin.service nightcraft-game.service nightcraft-note.service nginx
+systemctl status --no-pager nightcraft-auth.service nightcraft-radio.service nightcraft-curio.service nightcraft-seeksage.service nightcraft-landing.service nightcraft-admin.service nightcraft-game.service nightcraft-note.service nginx || true
