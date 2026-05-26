@@ -17,18 +17,6 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            set -eu
-            TMP_BOOTSTRAP="/tmp/nightcraft-server-bootstrap.sh"
-            if command -v curl >/dev/null 2>&1; then
-              curl -fsSL https://raw.githubusercontent.com/basu-10/nightcraft/main/server-scripts/nightcraft-server-bootstrap.sh -o "${TMP_BOOTSTRAP}"
-            elif command -v wget >/dev/null 2>&1; then
-              wget -qO "${TMP_BOOTSTRAP}" https://raw.githubusercontent.com/basu-10/nightcraft/main/server-scripts/nightcraft-server-bootstrap.sh
-            else
-              echo "Neither curl nor wget is available on VPS" >&2
-              exit 1
-            fi
-            sudo install -d -m 0755 /usr/local/sbin/server-scripts
-            sudo install -m 0755 "${TMP_BOOTSTRAP}" /usr/local/sbin/server-scripts/nightcraft-server-bootstrap.sh
             sudo /usr/local/sbin/server-scripts/nightcraft-server-bootstrap.sh \
               --repo-url https://github.com/basu-10/nightcraft.git \
               --branch main \

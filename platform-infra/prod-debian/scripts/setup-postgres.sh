@@ -116,7 +116,16 @@ _extract_env_value_from_file() {
 
 _extract_database_url_from_env_file() {
   local env_file="$1"
-  _extract_env_value_from_file "${env_file}" "DATABASE_URL"
+  local key value
+
+  for key in DATABASE_URL FLASK_SQLALCHEMY_DATABASE_URI SQLALCHEMY_DATABASE_URI; do
+    if value="$(_extract_env_value_from_file "${env_file}" "${key}")"; then
+      printf '%s' "${value}"
+      return 0
+    fi
+  done
+
+  return 1
 }
 
 _set_db_values_from_url() {
