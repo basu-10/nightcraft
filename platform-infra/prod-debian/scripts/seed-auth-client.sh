@@ -29,7 +29,7 @@ AUTH_SEED_CLIENT_SECRET="${AUTH_SEED_CLIENT_SECRET:-radio-app-client-secret-2026
 redirect_uri="${RADIO_PUBLIC_URL%/}${RADIO_PUBLIC_PATH}/auth/callback"
 
 cd "${AUTH_SRC_DIR}"
-"${AUTH_VENV_DIR}/bin/flask" --app run.py seed-dev \
+"${AUTH_VENV_DIR}/bin/python" -m flask --app run.py seed-dev \
   --username "${AUTH_SEED_USERNAME}" \
   --email "${AUTH_SEED_EMAIL}" \
   --password "${AUTH_SEED_PASSWORD}" \

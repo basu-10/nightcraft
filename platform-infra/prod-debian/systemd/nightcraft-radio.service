@@ -9,7 +9,7 @@ User=dev
 Group=dev
 WorkingDirectory=/nightcraft-source-code/app-radio
 EnvironmentFile=/etc/nightcraft/app-radio.env
-ExecStart=/runtime/venvs/dev-podcast-app/bin/gunicorn \
+ExecStart=/runtime/venvs/dev-podcast-app/bin/python -m gunicorn \
   --workers 3 \
   --bind 127.0.0.1:5333 \
   --access-logfile - \

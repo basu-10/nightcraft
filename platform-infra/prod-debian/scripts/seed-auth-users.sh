@@ -27,7 +27,7 @@ AUTH_ROLE_ADMIN_EMAIL="${AUTH_ROLE_ADMIN_EMAIL:-seedadmin@example.com}"
 AUTH_ROLE_ADMIN_PASSWORD="${AUTH_ROLE_ADMIN_PASSWORD:-seedadmin123}"
 
 cd "${AUTH_SRC_DIR}"
-"${AUTH_VENV_DIR}/bin/flask" --app run.py seed-role-users \
+"${AUTH_VENV_DIR}/bin/python" -m flask --app run.py seed-role-users \
   --user-username "${AUTH_ROLE_USER_USERNAME}" \
   --user-email "${AUTH_ROLE_USER_EMAIL}" \
   --user-password "${AUTH_ROLE_USER_PASSWORD}" \

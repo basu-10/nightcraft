@@ -8,7 +8,7 @@ User=dev
 Group=dev
 WorkingDirectory=/nightcraft-source-code/app-landing
 EnvironmentFile=/etc/nightcraft/app-landing.env
-ExecStart=/runtime/venvs/app-landing/bin/gunicorn \
+ExecStart=/runtime/venvs/app-landing/bin/python -m gunicorn \
   --workers 2 \
   --bind 127.0.0.1:5400 \
   --access-logfile - \

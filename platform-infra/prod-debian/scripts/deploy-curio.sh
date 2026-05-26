@@ -24,7 +24,7 @@ log "Running Curio setup CLI"
   set -a
   source /etc/nightcraft/app-curio.env
   set +a
-  FLASK_AUTH_MODE="${FLASK_AUTH_MODE:-sso}" "${CURIO_VENV_DIR}/bin/flask" --app curio setup
+  FLASK_AUTH_MODE="${FLASK_AUTH_MODE:-sso}" "${CURIO_VENV_DIR}/bin/python" -m flask --app curio setup
 )
 
 log "Curio ready from ${CURIO_SRC_DIR}"

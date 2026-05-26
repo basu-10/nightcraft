@@ -8,7 +8,7 @@ User=dev
 Group=dev
 WorkingDirectory=/nightcraft-source-code/app-note
 EnvironmentFile=/etc/nightcraft/app-note.env
-ExecStart=/runtime/venvs/app-note/bin/gunicorn \
+ExecStart=/runtime/venvs/app-note/bin/python -m gunicorn \
   --workers 2 \
   --bind 127.0.0.1:5900 \
   --access-logfile - \

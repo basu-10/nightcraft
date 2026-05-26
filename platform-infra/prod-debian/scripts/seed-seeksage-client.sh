@@ -28,7 +28,7 @@ AUTH_SEED_CLIENT_SECRET="${AUTH_SEED_CLIENT_SECRET:-seeksage-app-client-secret-2
 redirect_uri="${SEEKSAGE_PUBLIC_URL%/}${SEEKSAGE_PUBLIC_PATH}/auth/sso/callback"
 
 cd "${AUTH_SRC_DIR}"
-"${AUTH_VENV_DIR}/bin/flask" --app run.py seed-dev \
+"${AUTH_VENV_DIR}/bin/python" -m flask --app run.py seed-dev \
   --username "${AUTH_SEED_USERNAME}" \
   --email "${AUTH_SEED_EMAIL}" \
   --password "${AUTH_SEED_PASSWORD}" \

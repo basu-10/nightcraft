@@ -25,7 +25,7 @@ log "Running app-radio setup CLI"
 	. /etc/nightcraft/app-radio.env
 	set +a
 	cd "${RADIO_SRC_DIR}"
-	"${RADIO_VENV_DIR}/bin/flask" --app devradio setup
+	"${RADIO_VENV_DIR}/bin/python" -m flask --app devradio setup
 )
 
 log "app-radio ready from ${RADIO_SRC_DIR}"
