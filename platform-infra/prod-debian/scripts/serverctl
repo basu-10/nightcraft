@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+usage() {
+  cat <<'EOF'
+Nightcraft stack command dispatcher
+
+Usage:
+  serverctl <command> [args]
+
+Commands:
+  deploy            Run full deploy flow (deploy-all.sh)
+  backup            Run full backup flow (backup-all.sh)
+  status            Show service status (status-all.sh)
+  restart           Restart all services (restart-all.sh)
+  start             Start all services (start-all.sh)
+  stop              Stop all services (stop-all.sh)
+  reset [args...]   Reset stack (reset-stack.sh --yes [args...])
+  help              Show this help text
+
+Examples:
+  serverctl deploy
+  serverctl backup
+  serverctl status
+  serverctl restart
+  serverctl reset
+  serverctl reset --remove-shared-data --with-postgres
+EOF
+}
+
+if [[ "$#" -lt 1 ]]; then
+  usage
+  exit 1
+fi
+
+command="$1"
+shift || true
+
+case "${command}" in
+  deploy)
+    exec "${SCRIPT_DIR}/deploy-all.sh" "$@"
+    ;;
+  backup)
+    exec "${SCRIPT_DIR}/backup-all.sh" "$@"
+    ;;
+  status)
+    exec "${SCRIPT_DIR}/status-all.sh" "$@"
+    ;;
+  restart)
+    exec "${SCRIPT_DIR}/restart-all.sh" "$@"
+    ;;
+  start)
+    exec "${SCRIPT_DIR}/start-all.sh" "$@"
+    ;;
+  stop)
+    exec "${SCRIPT_DIR}/stop-all.sh" "$@"
+    ;;
+  reset)
+    exec "${SCRIPT_DIR}/reset-stack.sh" --yes "$@"
+    ;;
+  help|-h|--help)
+    usage
+    ;;
+  *)
+    echo "Unknown command: ${command}" >&2
+    usage
+    exit 1
+    ;;
+esac

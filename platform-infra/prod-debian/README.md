@@ -24,6 +24,8 @@ Production routing on the server is path-based on the single host `31.70.85.89`:
 
 All setup, deploy, seed, start, stop, and backup operations are script-driven from `platform-infra/prod-debian/scripts`.
 
+Primary operations can be run through the single dispatcher command `serverctl` in that folder.
+
 ## Single-Command Server Bootstrap
 
 Use `server-scripts/nightcraft-server-bootstrap.sh` to run the whole flow from one command:
@@ -101,6 +103,7 @@ Useful flags:
 - `scripts/backup-all.sh`: backup postgres + `/etc/nightcraft` + `/platform-infra/runtime/shared/*`
 - `scripts/cleanup-releases.sh`: obsolete helper kept only to report that release pruning is no longer needed
 - `scripts/reset-stack.sh`: reset app deploy state with keep-data default and explicit remove-data mode
+- `scripts/serverctl`: single command dispatcher for deploy/backup/status/restart/start/stop/reset
 
 ## Runtime Layout Used On Server
 
@@ -151,6 +154,7 @@ Run from your uploaded repo root on the Debian server.
 
 ```bash
 chmod +x platform-infra/prod-debian/scripts/*.sh
+chmod +x platform-infra/prod-debian/scripts/serverctl
 ```
 
 1. Install host dependencies.
@@ -204,13 +208,31 @@ sudo platform-infra/prod-debian/scripts/install-nginx.sh
 1. Deploy app code and run seed scripts (role users + OAuth clients).
 
 ```bash
-platform-infra/prod-debian/scripts/deploy-all.sh
+platform-infra/prod-debian/scripts/serverctl deploy
 ```
 
 1. Verify status.
 
 ```bash
-platform-infra/prod-debian/scripts/status-all.sh
+platform-infra/prod-debian/scripts/serverctl status
+```
+
+## Server Control Entrypoint
+
+Run from repo root (or from `platform-infra/prod-debian/scripts` directly):
+
+```bash
+platform-infra/prod-debian/scripts/serverctl deploy
+platform-infra/prod-debian/scripts/serverctl backup
+platform-infra/prod-debian/scripts/serverctl status
+platform-infra/prod-debian/scripts/serverctl restart
+platform-infra/prod-debian/scripts/serverctl reset
+```
+
+`serverctl reset` automatically forwards `--yes` to `reset-stack.sh`. Extra flags are passed through, for example:
+
+```bash
+platform-infra/prod-debian/scripts/serverctl reset --remove-shared-data --with-postgres
 ```
 
 ## Minimal Required Env Values
@@ -281,11 +303,11 @@ In `/etc/nightcraft/app-note.env`:
 ## Runtime Operations
 
 ```bash
-platform-infra/prod-debian/scripts/start-all.sh
-platform-infra/prod-debian/scripts/stop-all.sh
-platform-infra/prod-debian/scripts/restart-all.sh
-platform-infra/prod-debian/scripts/status-all.sh
-sudo platform-infra/prod-debian/scripts/backup-postgres.sh
+platform-infra/prod-debian/scripts/serverctl start
+platform-infra/prod-debian/scripts/serverctl stop
+platform-infra/prod-debian/scripts/serverctl restart
+platform-infra/prod-debian/scripts/serverctl status
+platform-infra/prod-debian/scripts/serverctl backup
 ```
 
 ## Re-run vs Reset
@@ -321,7 +343,7 @@ This mode removes venvs, but keeps:
 - postgres data
 
 ```bash
-sudo platform-infra/prod-debian/scripts/reset-stack.sh --yes
+sudo platform-infra/prod-debian/scripts/serverctl reset
 ```
 
 ### Reset mode: remove app shared data
@@ -329,7 +351,7 @@ sudo platform-infra/prod-debian/scripts/reset-stack.sh --yes
 This mode also deletes `/platform-infra/runtime/shared/*` runtime data:
 
 ```bash
-sudo platform-infra/prod-debian/scripts/reset-stack.sh --yes --remove-shared-data
+sudo platform-infra/prod-debian/scripts/serverctl reset --remove-shared-data
 ```
 
 ### Reset mode: full wipe (infra + config + DB)
@@ -337,7 +359,7 @@ sudo platform-infra/prod-debian/scripts/reset-stack.sh --yes --remove-shared-dat
 This is the most destructive mode. It also removes env files, systemd units, nginx site config, and postgres DB/roles:
 
 ```bash
-sudo platform-infra/prod-debian/scripts/reset-stack.sh --yes --remove-shared-data --with-env --with-systemd --with-nginx --with-postgres
+sudo platform-infra/prod-debian/scripts/serverctl reset --remove-shared-data --with-env --with-systemd --with-nginx --with-postgres
 ```
 
 ### Backup all user data before destructive operations
@@ -345,7 +367,7 @@ sudo platform-infra/prod-debian/scripts/reset-stack.sh --yes --remove-shared-dat
 Backup everything relevant in one command:
 
 ```bash
-sudo platform-infra/prod-debian/scripts/backup-all.sh
+sudo platform-infra/prod-debian/scripts/serverctl backup
 ```
 
 This includes:
@@ -360,13 +382,14 @@ Use this when provisioning a new server or after a full wipe:
 
 ```bash
 chmod +x platform-infra/prod-debian/scripts/*.sh
+chmod +x platform-infra/prod-debian/scripts/serverctl
 sudo platform-infra/prod-debian/scripts/setup-host.sh
 sudo platform-infra/prod-debian/scripts/install-env.sh
 sudo platform-infra/prod-debian/scripts/setup-postgres.sh
 sudo platform-infra/prod-debian/scripts/install-systemd.sh
 sudo platform-infra/prod-debian/scripts/install-nginx.sh
-platform-infra/prod-debian/scripts/deploy-all.sh
-platform-infra/prod-debian/scripts/status-all.sh
+platform-infra/prod-debian/scripts/serverctl deploy
+platform-infra/prod-debian/scripts/serverctl status
 ```
 
 Then bootstrap again:
@@ -376,7 +399,7 @@ sudo platform-infra/prod-debian/scripts/setup-host.sh
 sudo platform-infra/prod-debian/scripts/setup-postgres.sh
 sudo platform-infra/prod-debian/scripts/install-systemd.sh
 sudo platform-infra/prod-debian/scripts/install-nginx.sh
-platform-infra/prod-debian/scripts/deploy-all.sh
+platform-infra/prod-debian/scripts/serverctl deploy
 ```
 
 If you need to refresh env values from repo defaults:
@@ -389,20 +412,20 @@ sudo platform-infra/prod-debian/scripts/install-env.sh --overwrite
 
 Daily/regular operations:
 
-- `platform-infra/prod-debian/scripts/status-all.sh`
-- `platform-infra/prod-debian/scripts/restart-all.sh`
+- `platform-infra/prod-debian/scripts/serverctl status`
+- `platform-infra/prod-debian/scripts/serverctl restart`
 - `platform-infra/prod-debian/scripts/cleanup-releases.sh 5`
 
 Weekly backups:
 
-- `sudo platform-infra/prod-debian/scripts/backup-all.sh`
+- `sudo platform-infra/prod-debian/scripts/serverctl backup`
 
 Before risky change windows:
 
-- run `backup-all.sh`
+- run `serverctl backup`
 - apply update/reset
-- run `deploy-all.sh`
-- verify via `status-all.sh` and smoke URLs
+- run `serverctl deploy`
+- verify via `serverctl status` and smoke URLs
 
 If you clone/copy fresh files, ensure scripts are executable:
 
