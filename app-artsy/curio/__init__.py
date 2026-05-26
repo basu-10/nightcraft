@@ -84,5 +84,15 @@ def _enforce_postgres_database_uri(app):
     if not database_uri:
         raise RuntimeError("DATABASE_URL must be set to a PostgreSQL DSN.")
 
-    if not database_uri.startswith(("postgresql://", "postgresql+psycopg://", "postgres://")):
+    if not database_uri.startswith(
+        ("postgresql://", "postgresql+psycopg://", "postgresql+psycopg2://", "postgres://")
+    ):
         raise RuntimeError("DATABASE_URL must use a PostgreSQL DSN (postgresql://...).")
+
+    # Prefer psycopg v3 driver URLs so SQLAlchemy does not attempt psycopg2 imports.
+    if database_uri.startswith("postgres://"):
+        database_uri = "postgresql+psycopg://" + database_uri[len("postgres://") :]
+    elif database_uri.startswith("postgresql://"):
+        database_uri = "postgresql+psycopg://" + database_uri[len("postgresql://") :]
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_uri

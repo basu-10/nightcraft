@@ -96,11 +96,22 @@ def _start_automated_worker(app):
 
 
 def _enforce_postgres_database_uri(app):
-    database_uri = app.config.get("SQLALCHEMY_DATABASE_URI", "")
+    database_uri = (app.config.get("SQLALCHEMY_DATABASE_URI") or "").strip()
     if not database_uri:
         raise RuntimeError("FLASK_SQLALCHEMY_DATABASE_URI must be set to a PostgreSQL DSN.")
-    if not database_uri.startswith("postgresql"):
+
+    if not database_uri.startswith(
+        ("postgresql://", "postgresql+psycopg://", "postgresql+psycopg2://", "postgres://")
+    ):
         raise RuntimeError("DevRadio supports PostgreSQL only. Set FLASK_SQLALCHEMY_DATABASE_URI to a PostgreSQL DSN.")
+
+    # Prefer psycopg v3 driver URLs so SQLAlchemy does not attempt psycopg2 imports.
+    if database_uri.startswith("postgres://"):
+        database_uri = "postgresql+psycopg://" + database_uri[len("postgres://") :]
+    elif database_uri.startswith("postgresql://"):
+        database_uri = "postgresql+psycopg://" + database_uri[len("postgresql://") :]
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_uri
 
 
 def _ensure_schema_compatibility(app):

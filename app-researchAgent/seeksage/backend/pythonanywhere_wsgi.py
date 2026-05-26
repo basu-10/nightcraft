@@ -27,7 +27,7 @@ if VENV_SITE not in sys.path:
 # ── Environment variables ─────────────────────────────────────────────────────
 # Set sensitive values here (or load from a .env file with python-dotenv).
 os.environ.setdefault("SECRET_KEY",     "CHANGE-ME-to-a-long-random-string")
-os.environ.setdefault("DATABASE_URL",   "postgresql://USER:PASSWORD@HOST:5432/nightcraft_seeksage")
+os.environ.setdefault("DATABASE_URL",   "postgresql+psycopg://USER:PASSWORD@HOST:5432/nightcraft_seeksage")
 os.environ.setdefault("CORS_ORIGINS",   "https://YOURUSER.pythonanywhere.com")
 # If you serve the frontend from the same origin, set CORS_ORIGINS to that URL.
 # For a separate Vite/React app hosted elsewhere, add its URL here (comma-separated).
