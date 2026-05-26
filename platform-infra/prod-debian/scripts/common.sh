@@ -72,17 +72,24 @@ ensure_dir() {
 setup_venv_and_deps() {
   local venv_dir="$1"
   local app_dir="$2"
+  local venv_python="${venv_dir}/bin/python"
 
   require_cmd python3
   ensure_dir "${venv_dir}"
 
-  if [[ ! -x "${venv_dir}/bin/python" ]]; then
+  if [[ ! -x "${venv_python}" ]] || ! "${venv_python}" -c 'import sys' >/dev/null 2>&1; then
+    rm -rf "${venv_dir}"
     python3 -m venv "${venv_dir}"
+    venv_python="${venv_dir}/bin/python"
   fi
 
-  "${venv_dir}/bin/pip" install --upgrade pip wheel setuptools
-  "${venv_dir}/bin/pip" install -r "${app_dir}/requirements.txt"
-  "${venv_dir}/bin/pip" install 'gunicorn>=22.0.0' 'psycopg[binary]>=3.1.0'
+  if ! "${venv_python}" -m pip --version >/dev/null 2>&1; then
+    "${venv_python}" -m ensurepip --upgrade
+  fi
+
+  "${venv_python}" -m pip install --upgrade pip wheel setuptools
+  "${venv_python}" -m pip install -r "${app_dir}/requirements.txt"
+  "${venv_python}" -m pip install 'gunicorn>=22.0.0' 'psycopg[binary]>=3.1.0'
 }
 
 chown_tree() {
