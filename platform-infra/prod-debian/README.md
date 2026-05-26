@@ -228,7 +228,7 @@ platform-infra/prod-debian/scripts/serverctl deploy
 platform-infra/prod-debian/scripts/serverctl status
 ```
 
-## Server Control Entrypoint
+## Server Control Entrypoint.....
 
 Run from repo root (or from `platform-infra/prod-debian/scripts` directly):
 
