@@ -20,6 +20,10 @@ chown_tree "${RADIO_VENV_DIR}"
 
 log "Running app-radio setup CLI"
 (
+	set -a
+	# Load production env so setup CLI sees PostgreSQL settings.
+	. /etc/nightcraft/app-radio.env
+	set +a
 	cd "${RADIO_SRC_DIR}"
 	"${RADIO_VENV_DIR}/bin/flask" --app devradio setup
 )
