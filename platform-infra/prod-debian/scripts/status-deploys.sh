@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEPLOY_HISTORY_FILE="${DEPLOY_HISTORY_FILE:-/platform-infra/deploy-history.csv}"
+DEPLOY_HISTORY_FILE="${DEPLOY_HISTORY_FILE:-/runtime/deploy-history.csv}"
 RECENT_LIMIT="${RECENT_LIMIT:-5}"
 
 usage() {
@@ -10,7 +10,7 @@ Usage:
   status-deploys.sh [--history-file PATH] [--limit N]
 
 Options:
-  --history-file PATH   CSV file to read (default: /platform-infra/deploy-history.csv)
+  --history-file PATH   CSV file to read (default: /runtime/deploy-history.csv)
   --limit N             Number of recent deployments to show (default: 5)
   -h, --help            Show this help text
 EOF

@@ -20,6 +20,6 @@ jobs:
             sudo /usr/local/sbin/server-scripts/nightcraft-server-bootstrap.sh \
               --repo-url https://github.com/basu-10/nightcraft.git \
               --branch main \
-              --target-dir /platform-infra \
+              --target-dir /nightcraft-source-code \
               --adopt-existing \
               --force-sync

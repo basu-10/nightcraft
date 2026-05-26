@@ -7,9 +7,10 @@ REPO_ROOT="${REPO_ROOT:-$(cd "${SCRIPT_DIR}/../.." && pwd)}"
 
 APP_USER="${APP_USER:-dev}"
 APP_GROUP="${APP_GROUP:-${APP_USER}}"
-INFRA_ROOT="${INFRA_ROOT:-/platform-infra}"
-SHARED_ROOT="${SHARED_ROOT:-${INFRA_ROOT}/runtime/shared}"
-VENV_ROOT="${VENV_ROOT:-${INFRA_ROOT}/runtime/venvs}"
+SOURCE_ROOT="${SOURCE_ROOT:-/nightcraft-source-code}"
+RUNTIME_ROOT="${RUNTIME_ROOT:-/runtime}"
+SHARED_ROOT="${SHARED_ROOT:-${RUNTIME_ROOT}/shared}"
+VENV_ROOT="${VENV_ROOT:-${RUNTIME_ROOT}/venvs}"
 
 RADIO_SLUG="${RADIO_SLUG:-dev-podcast-app}"
 AUTH_SLUG="${AUTH_SLUG:-service-auth}"

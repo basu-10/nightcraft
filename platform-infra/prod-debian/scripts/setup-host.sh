@@ -2,15 +2,16 @@
 set -euo pipefail
 
 if [[ "${EUID}" -ne 0 ]]; then
-  echo "Run as root: sudo ./platform-infra/prod-debian/scripts/setup-host.sh"
+  echo "Run as root: sudo ./nightcraft-source-code/platform-infra/prod-debian/scripts/setup-host.sh"
   exit 1
 fi
 
 APP_USER="${APP_USER:-dev}"
 APP_GROUP="${APP_GROUP:-${APP_USER}}"
-INFRA_ROOT="${INFRA_ROOT:-/platform-infra}"
-SHARED_ROOT="${SHARED_ROOT:-${INFRA_ROOT}/runtime/shared}"
-VENV_ROOT="${VENV_ROOT:-${INFRA_ROOT}/runtime/venvs}"
+SOURCE_ROOT="${SOURCE_ROOT:-/nightcraft-source-code}"
+RUNTIME_ROOT="${RUNTIME_ROOT:-/runtime}"
+SHARED_ROOT="${SHARED_ROOT:-${RUNTIME_ROOT}/shared}"
+VENV_ROOT="${VENV_ROOT:-${RUNTIME_ROOT}/venvs}"
 
 export DEBIAN_FRONTEND=noninteractive
 
@@ -29,8 +30,8 @@ apt-get install -y \
   jq
 
 install -d -m 0755 /etc/nightcraft
-install -d -m 0755 "${INFRA_ROOT}"
-install -d -m 0755 "${INFRA_ROOT}/runtime"
+install -d -m 0755 "${SOURCE_ROOT}"
+install -d -m 0755 "${RUNTIME_ROOT}"
 install -d -m 0755 "${SHARED_ROOT}"
 install -d -m 0755 "${VENV_ROOT}"
 

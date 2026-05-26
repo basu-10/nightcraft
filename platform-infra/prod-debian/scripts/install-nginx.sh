@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROD_DEBIAN_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 if [[ "${EUID}" -ne 0 ]]; then
-  echo "Run as root: sudo ./platform-infra/prod-debian/scripts/install-nginx.sh"
+  echo "Run as root: sudo ./nightcraft-source-code/platform-infra/prod-debian/scripts/install-nginx.sh"
   exit 1
 fi
 

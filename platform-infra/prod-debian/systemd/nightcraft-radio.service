@@ -7,9 +7,9 @@ Wants=postgresql.service
 Type=simple
 User=dev
 Group=dev
-WorkingDirectory=/platform-infra/app-radio
+WorkingDirectory=/nightcraft-source-code/app-radio
 EnvironmentFile=/etc/nightcraft/app-radio.env
-ExecStart=/platform-infra/runtime/venvs/dev-podcast-app/bin/gunicorn \
+ExecStart=/runtime/venvs/dev-podcast-app/bin/gunicorn \
   --workers 3 \
   --bind 127.0.0.1:5333 \
   --access-logfile - \

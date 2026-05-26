@@ -7,9 +7,9 @@ Wants=postgresql.service
 Type=simple
 User=dev
 Group=dev
-WorkingDirectory=/platform-infra/app-researchAgent/seeksage/backend
+WorkingDirectory=/nightcraft-source-code/app-researchAgent/seeksage/backend
 EnvironmentFile=/etc/nightcraft/app-seeksage.env
-ExecStart=/platform-infra/runtime/venvs/seeksage-backend/bin/gunicorn \
+ExecStart=/runtime/venvs/seeksage-backend/bin/gunicorn \
   --workers 2 \
   --timeout 180 \
   --bind 127.0.0.1:5700 \

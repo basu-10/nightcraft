@@ -6,9 +6,9 @@ After=network.target
 Type=simple
 User=dev
 Group=dev
-WorkingDirectory=/platform-infra/app-landing
+WorkingDirectory=/nightcraft-source-code/app-landing
 EnvironmentFile=/etc/nightcraft/app-landing.env
-ExecStart=/platform-infra/runtime/venvs/app-landing/bin/gunicorn \
+ExecStart=/runtime/venvs/app-landing/bin/gunicorn \
   --workers 2 \
   --bind 127.0.0.1:5400 \
   --access-logfile - \

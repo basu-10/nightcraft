@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/common.sh"
 
 if [[ "${EUID}" -ne 0 ]]; then
-  echo "Run as root: sudo ./platform-infra/prod-debian/scripts/backup-all.sh" >&2
+  echo "Run as root: sudo ./nightcraft-source-code/platform-infra/prod-debian/scripts/backup-all.sh" >&2
   exit 1
 fi
 

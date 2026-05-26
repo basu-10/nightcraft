@@ -6,9 +6,9 @@ After=network.target nightcraft-auth.service
 Type=simple
 User=dev
 Group=dev
-WorkingDirectory=/platform-infra/app-admin
+WorkingDirectory=/nightcraft-source-code/app-admin
 EnvironmentFile=/etc/nightcraft/app-admin.env
-ExecStart=/platform-infra/runtime/venvs/app-admin/bin/gunicorn \
+ExecStart=/runtime/venvs/app-admin/bin/gunicorn \
   --workers 2 \
   --bind 127.0.0.1:5500 \
   --access-logfile - \

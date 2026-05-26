@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/common.sh"
 
 if [[ "${EUID}" -ne 0 ]]; then
-  echo "Run as root: sudo ./platform-infra/prod-debian/scripts/reset-stack.sh --yes [options]" >&2
+  echo "Run as root: sudo ./nightcraft-source-code/platform-infra/prod-debian/scripts/reset-stack.sh --yes [options]" >&2
   exit 1
 fi
 
@@ -24,12 +24,12 @@ Usage:
 
 Default behavior (with only --yes):
   - stop stack services
-  - keep /platform-infra source checkouts intact
-  - keep /platform-infra/runtime/shared/* data directories
-  - delete /platform-infra/runtime/venvs virtualenv directories for those apps
+  - keep /nightcraft-source-code source checkouts intact
+  - keep /runtime/shared/* data directories
+  - delete /runtime/venvs virtualenv directories for those apps
 
 Optional destructive flags:
-  --remove-shared-data Remove /platform-infra/runtime/shared/* data directories too
+  --remove-shared-data Remove /runtime/shared/* data directories too
   --with-postgres   Drop auth/radio databases and roles (using env defaults/overrides)
   --with-env        Remove /etc/nightcraft/*.env files used by this stack
   --with-systemd    Disable and remove nightcraft-*.service unit files

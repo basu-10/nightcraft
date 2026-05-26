@@ -7,9 +7,9 @@ Wants=postgresql.service
 Type=simple
 User=dev
 Group=dev
-WorkingDirectory=/platform-infra/service-auth
+WorkingDirectory=/nightcraft-source-code/service-auth
 EnvironmentFile=/etc/nightcraft/service-auth.env
-ExecStart=/platform-infra/runtime/venvs/service-auth/bin/gunicorn \
+ExecStart=/runtime/venvs/service-auth/bin/gunicorn \
   --workers 3 \
   --bind 127.0.0.1:5100 \
   --access-logfile - \

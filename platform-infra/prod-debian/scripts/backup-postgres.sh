@@ -8,7 +8,7 @@ AUTH_DB_NAME="${AUTH_DB_NAME:-auth_db}"
 RADIO_DB_NAME="${RADIO_DB_NAME:-radio_db}"
 
 if [[ "${EUID}" -ne 0 ]]; then
-  echo "Run as root: sudo ./platform-infra/prod-debian/scripts/backup-postgres.sh"
+  echo "Run as root: sudo ./nightcraft-source-code/platform-infra/prod-debian/scripts/backup-postgres.sh"
   exit 1
 fi
 

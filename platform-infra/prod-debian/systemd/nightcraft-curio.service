@@ -7,9 +7,9 @@ Wants=postgresql.service
 Type=simple
 User=dev
 Group=dev
-WorkingDirectory=/platform-infra/app-artsy
+WorkingDirectory=/nightcraft-source-code/app-artsy
 EnvironmentFile=/etc/nightcraft/app-curio.env
-ExecStart=/platform-infra/runtime/venvs/app-artsy/bin/gunicorn \
+ExecStart=/runtime/venvs/app-artsy/bin/gunicorn \
   --workers 2 \
   --bind 127.0.0.1:5600 \
   --access-logfile - \
