@@ -36,7 +36,7 @@ class Config:
     LOGOUT_URL: str = os.environ.get("LANDING_LOGOUT_URL", "/auth/logout")
     AUTH_SESSION_ME_URL: str = os.environ.get("LANDING_AUTH_SESSION_ME_URL", "/auth/session/me")
     AUTH_RETURN_PARAM: str = os.environ.get("LANDING_AUTH_RETURN_PARAM", "next")
-    ADMIN_URL: str = os.environ.get("LANDING_ADMIN_URL", "/admin")
+    ADMIN_URL: str = os.environ.get("LANDING_ADMIN_URL", "/platform-admin")
     DEVRADIO_URL: str = os.environ.get("LANDING_DEVRADIO_URL", "/devradio")
     CURIO_URL: str = os.environ.get("LANDING_CURIO_URL", "/curio")
     SEEKSAGE_URL: str = os.environ.get("LANDING_SEEKSAGE_URL", "/seeksage")

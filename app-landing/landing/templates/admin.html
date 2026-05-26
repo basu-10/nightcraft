@@ -23,7 +23,9 @@
             {% else %}
             <a class="btn btn-outline" href="{{ auth_url }}">Unified Login</a>
             {% endif %}
+            {% if not (shared_user and is_admin) %}
             <a class="btn btn-solid" href="{{ auth_admin_url }}">Admin Login</a>
+            {% endif %}
         </nav>
     </header>
 

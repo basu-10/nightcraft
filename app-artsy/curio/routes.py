@@ -782,7 +782,7 @@ def home():
         featured_profile=profile_payload,
         featured_lists=featured_lists,
         featured_reviews=featured_reviews,
-        central_admin_url=current_app.config.get("LANDING_ADMIN_URL", "/admin"),
+        central_admin_url=current_app.config.get("LANDING_ADMIN_URL", "/platform-admin"),
     )
 
 

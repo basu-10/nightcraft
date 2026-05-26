@@ -85,6 +85,14 @@ def _admin_target(base_url: str) -> str:
     return f"{candidate.rstrip('/')}/admin"
 
 
+def _central_admin_url() -> str:
+    """Return the central admin hub path, normalizing legacy /admin config."""
+    configured = (current_app.config.get("ADMIN_URL", "") or "").strip()
+    if not configured or configured == "/admin":
+        return "/platform-admin"
+    return configured
+
+
 @main_bp.get("/")
 def home():
     shared_user = _fetch_shared_auth_user()
@@ -125,6 +133,8 @@ def home():
         },
     ]
 
+    admin_url = _central_admin_url()
+
     return render_template(
         "home.html",
         cards=cards,
@@ -141,7 +151,7 @@ def home():
         ),
         auth_admin_url=build_auth_handoff_url(
             current_app.config["AUTH_URL"],
-            current_app.config["ADMIN_URL"],
+            admin_url,
             current_app.config["AUTH_RETURN_PARAM"],
         ),
         logout_url=build_auth_handoff_url(
@@ -149,14 +159,16 @@ def home():
             home_path,
             current_app.config["AUTH_RETURN_PARAM"],
         ),
-        admin_url=current_app.config["ADMIN_URL"],
+        admin_url=admin_url,
     )
 
 
+@main_bp.get("/platform-admin")
 @main_bp.get("/admin")
 def admin_dashboard():
     shared_user = _fetch_shared_auth_user()
     home_path = "/"
+    admin_url = _central_admin_url()
 
     admin_cards = [
         {
@@ -172,9 +184,15 @@ def admin_dashboard():
             "status": "Live",
         },
         {
-            "name": "SeekSage",
-            "description": "Open the workspace; admin actions are available from the product home.",
-            "url": current_app.config["SEEKSAGE_URL"],
+            "name": "SeekSage Admin",
+            "description": "Manage users, activity logs, and workspace-level operations.",
+            "url": _admin_target(current_app.config["SEEKSAGE_URL"]),
+            "status": "Live",
+        },
+        {
+            "name": "NoteStack Admin",
+            "description": "Manage note users, roles, and account operations.",
+            "url": _admin_target(current_app.config["NOTESTACK_URL"]),
             "status": "Live",
         },
         {
@@ -197,7 +215,7 @@ def admin_dashboard():
         ),
         auth_admin_url=build_auth_handoff_url(
             current_app.config["AUTH_URL"],
-            current_app.config["ADMIN_URL"],
+            admin_url,
             current_app.config["AUTH_RETURN_PARAM"],
         ),
         logout_url=build_auth_handoff_url(

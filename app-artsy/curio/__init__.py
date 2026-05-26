@@ -34,7 +34,7 @@ def create_app(test_config=None, instance_path=None):
         AUTHLIB_CLIENT_SECRET="dev-secret",
         AUTH_LOGIN_PATH="/auth/login",
         ADMIN_APP_PATH="/admin",
-        LANDING_ADMIN_URL="/admin",
+        LANDING_ADMIN_URL="/platform-admin",
         AUTH_RETURN_PARAM="next",
         UPLOADS_DIR="uploads",
     )

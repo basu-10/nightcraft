@@ -21,6 +21,7 @@ Production routing on the server is path-based on the single host `31.70.85.89`:
 - `http://31.70.85.89/seeksage` -> app-researchAgent/seeksage/backend (SeekSage)
 - `http://31.70.85.89/notestack` -> app-note (NoteStack)
 - `http://31.70.85.89/admin` -> app-admin
+- `http://31.70.85.89/platform-admin` -> app-landing (central admin hub)
 
 All setup, deploy, seed, start, stop, and backup operations are script-driven from `platform-infra/prod-debian/scripts`.
 
@@ -270,7 +271,7 @@ In `/etc/nightcraft/app-landing.env`:
 - `FLASK_ENV=production`
 - `FLASK_SECRET_KEY`
 - `LANDING_AUTH_URL=/auth/login`
-- `LANDING_ADMIN_URL=/admin`
+- `LANDING_ADMIN_URL=/platform-admin`
 - `LANDING_DEVRADIO_URL=/devradio`
 - `LANDING_CURIO_URL=/curio`
 - `LANDING_SEEKSAGE_URL=/seeksage`

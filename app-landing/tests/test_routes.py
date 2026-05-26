@@ -28,6 +28,19 @@ def test_root_route_renders_product_cards_and_links():
     assert 'href="/notestack/app"' in html
 
 
+def test_root_route_admin_link_uses_platform_admin_path_for_admin_user():
+    app = create_app()
+    app.config.update(TESTING=True)
+
+    with patch("landing.routes._fetch_shared_auth_user", return_value={"username": "seedadmin", "is_admin": True}):
+        client = app.test_client()
+        response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert 'href="/platform-admin"' in html
+
+
 def test_root_route_shows_welcome_and_logout_when_shared_auth_is_present():
     app = create_app()
     app.config.update(TESTING=True)
@@ -56,7 +69,7 @@ def test_healthz_route_returns_expected_payload():
 def test_admin_route_prompts_login_when_not_authenticated():
     client = _client()
 
-    response = client.get("/admin")
+    response = client.get("/platform-admin")
 
     assert response.status_code == 200
     html = response.get_data(as_text=True)
@@ -73,11 +86,22 @@ def test_admin_route_renders_admin_cards_for_admin_user():
 
     with patch("landing.routes._fetch_shared_auth_user", return_value={"username": "seedadmin", "is_admin": True}):
         client = app.test_client()
-        response = client.get("/admin")
+        response = client.get("/platform-admin")
 
     assert response.status_code == 200
     html = response.get_data(as_text=True)
     assert "Hi, seedadmin welcome" in html
     assert "Open DevRadio Admin" in html
     assert "Open Curio Admin" in html
-    assert "Open SeekSage" in html
+    assert "Open SeekSage Admin" in html
+    assert "Open NoteStack Admin" in html
+
+
+def test_platform_admin_alias_route_still_works_for_local_usage():
+    client = _client()
+
+    response = client.get("/admin")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Platform Admin Dashboard" in html

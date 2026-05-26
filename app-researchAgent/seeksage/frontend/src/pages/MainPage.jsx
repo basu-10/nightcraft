@@ -261,7 +261,7 @@ export default function MainPage({ user, onLogout, workspaces = [], activeWorksp
   );
 
   const displayName = user?.email ? user.email.split("@")[0] : "User";
-  const centralAdminUrl = import.meta.env.VITE_LANDING_ADMIN_URL || "/admin";
+  const centralAdminUrl = import.meta.env.VITE_LANDING_ADMIN_URL || "/platform-admin";
 
   return (
     <div className="main-page-shell">
