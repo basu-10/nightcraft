@@ -5,8 +5,14 @@ const passwordForm = document.getElementById("password-form");
 const successNode = document.getElementById("account-success");
 const errorNode = document.getElementById("account-error");
 
+const API_BASE = window.SEEK_API_BASE || "";
+
+function apiPath(path) {
+  return path.startsWith("/") ? `${API_BASE}${path}` : path;
+}
+
 async function request(path, options = {}) {
-  const response = await fetch(path, {
+  const response = await fetch(apiPath(path), {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",

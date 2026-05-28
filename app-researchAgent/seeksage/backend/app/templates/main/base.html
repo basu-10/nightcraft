@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}SeekSage UI{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/seeksage-ui.css') }}" />
+    <script>window.SEEK_API_BASE = window.location.pathname.startsWith("/seeksage") ? "/seeksage" : "";</script>
   </head>
   <body>
     <div class="ui-shell">

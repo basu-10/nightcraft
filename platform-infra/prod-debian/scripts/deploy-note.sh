@@ -26,9 +26,22 @@ notestack_db_user="${NOTESTACK_DB_USER:-notestack_app}"
 notestack_db_password="${NOTESTACK_DB_PASSWORD:-notestack_app_db_2026_prod_secret}"
 
 if [[ -z "${DATABASE_URL:-}" ]]; then
-	DATABASE_URL="postgresql+psycopg://${notestack_db_user}:${notestack_db_password}@127.0.0.1:5432/${notestack_db_name}"
+	DATABASE_URL="postgresql://${notestack_db_user}:${notestack_db_password}@127.0.0.1:5432/${notestack_db_name}"
 	export DATABASE_URL
 	log "Derived NoteStack DATABASE_URL from PostgreSQL defaults"
+fi
+
+# Persist derived DATABASE_URL back to env file so systemd service picks it up.
+if ! grep -qE "^DATABASE_URL=" /etc/nightcraft/app-note.env 2>/dev/null; then
+	# Replace commented-out DATABASE_URL line; else append.
+	if grep -qE "^\s*#\s*DATABASE_URL=" /etc/nightcraft/app-note.env 2>/dev/null; then
+		awk -v val="DATABASE_URL=${DATABASE_URL}" \
+			'{if (/^\s*#\s*DATABASE_URL=/) print val; else print}' \
+			/etc/nightcraft/app-note.env > /tmp/app-note.env.tmp \
+			&& mv /tmp/app-note.env.tmp /etc/nightcraft/app-note.env
+	else
+		echo "DATABASE_URL=${DATABASE_URL}" >> /etc/nightcraft/app-note.env
+	fi
 fi
 
 setup_venv_and_deps "${NOTE_VENV_DIR}" "${NOTE_SRC_DIR}"

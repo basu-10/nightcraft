@@ -24,9 +24,11 @@ function renderList(id, items) {
   }
 }
 
+const API_BASE = window.SEEK_API_BASE || "";
+
 async function loadStats() {
   try {
-    const response = await fetch("/api/dashboard/stats", {
+    const response = await fetch(`${API_BASE}/api/dashboard/stats`, {
       credentials: "include",
       headers: { "Accept": "application/json" },
     });
