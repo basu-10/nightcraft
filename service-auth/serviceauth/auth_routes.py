@@ -232,7 +232,6 @@ def _normalize_post_login_redirect(next_url, default_target):
         return default_target
 
     parsed = urlparse(candidate)
-    # Only allow local absolute paths to avoid open redirects.
     if parsed.scheme or parsed.netloc or not candidate.startswith("/"):
         return default_target
 
@@ -242,8 +241,11 @@ def _normalize_post_login_redirect(next_url, default_target):
         normalized_prefix = ""
 
     path = parsed.path or "/"
-    if normalized_prefix and path != normalized_prefix and not path.startswith(f"{normalized_prefix}/"):
-        path = f"{normalized_prefix}{path}" if path.startswith("/") else f"{normalized_prefix}/{path}"
+
+    _auth_internal_prefixes = ("/oauth/", "/login", "/register", "/logout", "/session/", "/healthz")
+    if normalized_prefix and any(path.startswith(p) for p in _auth_internal_prefixes):
+        if path != normalized_prefix and not path.startswith(f"{normalized_prefix}/"):
+            path = f"{normalized_prefix}{path}" if path.startswith("/") else f"{normalized_prefix}/{path}"
 
     query = f"?{parsed.query}" if parsed.query else ""
     fragment = f"#{parsed.fragment}" if parsed.fragment else ""
