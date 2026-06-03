@@ -11,9 +11,15 @@ def get_sync_log_path() -> Path:
     if not base_dir:
         base_dir = os.path.join(os.path.expanduser("~"), "AppData", "Local")
     path = Path(base_dir) / "ABasu_apps" / "NoteStack" / "sync.log"
-    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass
     if not path.exists():
-        path.touch()
+        try:
+            path.touch()
+        except OSError:
+            pass
     return path
 
 

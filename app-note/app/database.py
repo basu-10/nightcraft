@@ -330,7 +330,17 @@ def initialize_db() -> None:
 
 
 def _initialize_postgres_db() -> None:
-    conn = get_connection()
+    import time
+    max_attempts = 5
+    for attempt in range(max_attempts):
+        try:
+            conn = get_connection()
+            break
+        except Exception:
+            if attempt < max_attempts - 1:
+                time.sleep(1 + attempt * 0.5)
+            else:
+                raise
     statements = [
         """
         CREATE TABLE IF NOT EXISTS users (
@@ -488,7 +498,20 @@ def _initialize_postgres_db() -> None:
         """,
     ]
     for stmt in statements:
-        conn.execute(stmt)
+        for attempt in range(3):
+            try:
+                conn.execute(stmt)
+                break
+            except psycopg.errors.UniqueViolation:
+                conn.rollback()
+                import time
+                if attempt < 2:
+                    time.sleep(0.5 * (attempt + 1))
+                else:
+                    raise
+            except Exception:
+                conn.rollback()
+                raise
     conn.commit()
     conn.close()
     # SQLite migration logic below relies on PRAGMA and sqlite-specific DDL.
