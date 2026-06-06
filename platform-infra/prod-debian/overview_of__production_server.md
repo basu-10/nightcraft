@@ -77,7 +77,7 @@ Runtime folders like:
    Example (matches what GitHub Actions runs):
    - `sudo /usr/local/sbin/server-scripts/nightcraft-server-bootstrap.sh --repo-url https://github.com/basu-10/nightcraft.git --branch main --target-dir /nightcraft-source-code --adopt-existing --force-sync`
 
-   The script performs baseline checks, clones/pulls git repo into `/nightcraft-source-code/`, runs setup scripts, deploys all apps, restarts services, and prints status.
+  The script performs baseline checks, clones/pulls git repo into `/nightcraft-source-code/`, runs setup scripts, deploys all apps, resyncs Neera PostgreSQL provisioning from `/etc/nightcraft/app-neera.env` during deploy, restarts services, and prints status.
 
 2. Legacy/manual flow: `scp -r` local source folders to `/nightcraft-source-code/` on the server (some folders are large, so copy only changed files or zip/unzip if needed).
 3. Run scripts (as root) in order:

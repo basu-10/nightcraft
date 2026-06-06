@@ -96,7 +96,7 @@ platform-infra/prod-debian/scripts/status-deploys.sh
 - `scripts/install-env.sh`: install env files from `env-examples/*.env` into `/etc/nightcraft`
 - `scripts/deploy-auth.sh`: release deploy for service-auth
 - `scripts/deploy-radio.sh`: release deploy for app-radio
-- `scripts/deploy-neera.sh`: release deploy for app-artsy
+- `scripts/deploy-neera.sh`: release deploy for app-artsy; syncs PostgreSQL provisioning from `/etc/nightcraft/app-neera.env` before Flask setup
 - `scripts/reset-neera-password.sh`: rotate neera PostgreSQL password and resync `/etc/nightcraft/app-neera.env`
 - `scripts/deploy-seeksage.sh`: release deploy for seeksage backend
   - Flask UI is server-rendered; no Node/npm frontend build step is required.

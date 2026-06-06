@@ -17,6 +17,9 @@ ensure_dir "${NEERA_SHARED_DIR}/instance/uploads/works"
 chown_tree "${NEERA_SHARED_DIR}"
 chown_tree "${NEERA_VENV_DIR}"
 
+log "Synchronizing Neera PostgreSQL provisioning"
+"${SCRIPT_DIR}/setup-postgres.sh"
+
 log "Running Neera setup CLI"
 (
   cd "${NEERA_SRC_DIR}"
