@@ -17,15 +17,15 @@ set -a
 source /etc/nightcraft/service-auth.env
 set +a
 
-CURIO_PUBLIC_URL="${CURIO_PUBLIC_URL:-http://31.70.85.89}"
-CURIO_PUBLIC_PATH="${CURIO_PUBLIC_PATH:-/curio}"
+NEERA_PUBLIC_URL="${NEERA_PUBLIC_URL:-http://31.70.85.89}"
+NEERA_PUBLIC_PATH="${NEERA_PUBLIC_PATH:-/neera}"
 AUTH_SEED_USERNAME="${AUTH_SEED_USERNAME:-devuser}"
 AUTH_SEED_EMAIL="${AUTH_SEED_EMAIL:-devuser@example.com}"
 AUTH_SEED_PASSWORD="${AUTH_SEED_PASSWORD:-devpass123}"
-AUTH_SEED_CLIENT_ID="${AUTH_SEED_CLIENT_ID:-curio-app}"
-AUTH_SEED_CLIENT_SECRET="${AUTH_SEED_CLIENT_SECRET:-curio-app-client-secret-2026}"
+AUTH_SEED_CLIENT_ID="${AUTH_SEED_CLIENT_ID:-neera-app}"
+AUTH_SEED_CLIENT_SECRET="${AUTH_SEED_CLIENT_SECRET:-neera-app-client-secret-2026}"
 
-redirect_uri="${CURIO_PUBLIC_URL%/}${CURIO_PUBLIC_PATH}/auth/callback"
+redirect_uri="${NEERA_PUBLIC_URL%/}${NEERA_PUBLIC_PATH}/auth/callback"
 
 cd "${AUTH_SRC_DIR}"
 "${AUTH_VENV_DIR}/bin/python" -m flask --app run.py seed-dev \

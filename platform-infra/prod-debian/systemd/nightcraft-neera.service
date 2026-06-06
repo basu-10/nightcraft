@@ -1,5 +1,5 @@
 [Unit]
-Description=Nightcraft Curio App (Gunicorn)
+Description=Nightcraft Neera App (Gunicorn)
 After=network.target postgresql.service nightcraft-auth.service
 Wants=postgresql.service
 
@@ -8,7 +8,7 @@ Type=simple
 User=dev
 Group=dev
 WorkingDirectory=/nightcraft-source-code/app-artsy
-EnvironmentFile=/etc/nightcraft/app-curio.env
+EnvironmentFile=/etc/nightcraft/app-neera.env
 ExecStart=/runtime/venvs/app-artsy/bin/python -m gunicorn \
   --workers 2 \
   --bind 127.0.0.1:5600 \

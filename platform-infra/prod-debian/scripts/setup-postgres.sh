@@ -17,9 +17,9 @@ RADIO_DB_NAME="${RADIO_DB_NAME:-radio_db}"
 RADIO_DB_USER="${RADIO_DB_USER:-radio_app}"
 RADIO_DB_PASSWORD="${RADIO_DB_PASSWORD:-radio_app_db_2026_prod_secret}"
 
-CURIO_DB_NAME="${CURIO_DB_NAME:-}"
-CURIO_DB_USER="${CURIO_DB_USER:-}"
-CURIO_DB_PASSWORD="${CURIO_DB_PASSWORD:-}"
+NEERA_DB_NAME="${NEERA_DB_NAME:-}"
+NEERA_DB_USER="${NEERA_DB_USER:-}"
+NEERA_DB_PASSWORD="${NEERA_DB_PASSWORD:-}"
 
 SEEKSAGE_DB_NAME="${SEEKSAGE_DB_NAME:-}"
 SEEKSAGE_DB_USER="${SEEKSAGE_DB_USER:-}"
@@ -29,7 +29,7 @@ NOTESTACK_DB_NAME="${NOTESTACK_DB_NAME:-}"
 NOTESTACK_DB_USER="${NOTESTACK_DB_USER:-}"
 NOTESTACK_DB_PASSWORD="${NOTESTACK_DB_PASSWORD:-}"
 
-CURIO_ENV_FILE="${CURIO_ENV_FILE:-/etc/nightcraft/app-curio.env}"
+NEERA_ENV_FILE="${NEERA_ENV_FILE:-/etc/nightcraft/app-neera.env}"
 SEEKSAGE_ENV_FILE="${SEEKSAGE_ENV_FILE:-/etc/nightcraft/app-seeksage.env}"
 NOTESTACK_ENV_FILE="${NOTESTACK_ENV_FILE:-/etc/nightcraft/app-note.env}"
 
@@ -174,9 +174,9 @@ _set_db_values_from_url() {
   printf -v "${prefix}_DB_NAME" '%s' "${db_name}"
 }
 
-if [[ -z "${CURIO_DB_USER}" || -z "${CURIO_DB_NAME}" || -z "${CURIO_DB_PASSWORD}" ]]; then
-  if curio_url="$(_extract_database_url_from_env_file "${CURIO_ENV_FILE}")"; then
-    _set_db_values_from_url "${curio_url}" "CURIO" || true
+if [[ -z "${NEERA_DB_USER}" || -z "${NEERA_DB_NAME}" || -z "${NEERA_DB_PASSWORD}" ]]; then
+  if neera_url="$(_extract_database_url_from_env_file "${NEERA_ENV_FILE}")"; then
+    _set_db_values_from_url "${neera_url}" "Neera" || true
   fi
 fi
 
@@ -204,9 +204,9 @@ fi
 
 echo "[setup-postgres] NoteStack PostgreSQL provisioning enabled for ${NOTESTACK_DB_USER}@${NOTESTACK_DB_NAME}."
 
-CURIO_DB_NAME="${CURIO_DB_NAME:-curio_db}"
-CURIO_DB_USER="${CURIO_DB_USER:-curio_app}"
-CURIO_DB_PASSWORD="${CURIO_DB_PASSWORD:-curio_app_db_2026_prod_secret}"
+NEERA_DB_NAME="${NEERA_DB_NAME:-neera_db}"
+NEERA_DB_USER="${NEERA_DB_USER:-neera_app}"
+NEERA_DB_PASSWORD="${NEERA_DB_PASSWORD:-neera_app_db_2026_prod_secret}"
 
 SEEKSAGE_DB_NAME="${SEEKSAGE_DB_NAME:-seeksage_db}"
 SEEKSAGE_DB_USER="${SEEKSAGE_DB_USER:-seeksage_app}"
@@ -217,8 +217,8 @@ sudo -u postgres psql \
   -v auth_db_password="${AUTH_DB_PASSWORD}" \
   -v radio_db_user="${RADIO_DB_USER}" \
   -v radio_db_password="${RADIO_DB_PASSWORD}" \
-  -v curio_db_user="${CURIO_DB_USER}" \
-  -v curio_db_password="${CURIO_DB_PASSWORD}" \
+  -v neera_db_user="${NEERA_DB_USER}" \
+  -v neera_db_password="${NEERA_DB_PASSWORD}" \
   -v seeksage_db_user="${SEEKSAGE_DB_USER}" \
   -v seeksage_db_password="${SEEKSAGE_DB_PASSWORD}" \
   -v notestack_db_user="${NOTESTACK_DB_USER}" \
@@ -230,8 +230,8 @@ sudo -u postgres psql \
   -v auth_db_user="${AUTH_DB_USER}" \
   -v radio_db_name="${RADIO_DB_NAME}" \
   -v radio_db_user="${RADIO_DB_USER}" \
-  -v curio_db_name="${CURIO_DB_NAME}" \
-  -v curio_db_user="${CURIO_DB_USER}" \
+  -v neera_db_name="${NEERA_DB_NAME}" \
+  -v neera_db_user="${NEERA_DB_USER}" \
   -v seeksage_db_name="${SEEKSAGE_DB_NAME}" \
   -v seeksage_db_user="${SEEKSAGE_DB_USER}" \
   -v notestack_db_name="${NOTESTACK_DB_NAME}" \

@@ -169,7 +169,7 @@ def init_sso(app):
     oauth = OAuth(app)
     oauth.register(
         "auth_service",
-        client_id=app.config.get("AUTHLIB_CLIENT_ID", "curio-app"),
+        client_id=app.config.get("AUTHLIB_CLIENT_ID", "neera-app"),
         client_secret=app.config.get("AUTHLIB_CLIENT_SECRET", "dev-secret"),
         server_metadata_url=(
             f"{app.config.get('AUTH_SERVICE_URL', 'http://127.0.0.1:5100')}"

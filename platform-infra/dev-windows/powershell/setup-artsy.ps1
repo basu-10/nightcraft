@@ -20,6 +20,6 @@ else {
 
 Write-Host '[setup-artsy] Running app-artsy setup command...'
 $artsyPython = Get-VenvPython -AppPath $appArtsyPath
-Invoke-Checked -Action 'app-artsy setup' -Command { & $artsyPython -m flask --app curio setup }
+Invoke-Checked -Action 'app-artsy setup' -Command { & $artsyPython -m flask --app neera setup }
 
 Write-Host '[setup-artsy] Setup complete.'

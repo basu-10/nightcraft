@@ -7,7 +7,7 @@ Current target in this phase:
 - `app-landing` (root product hub)
 - `service-auth` (OIDC/SSO provider)
 - `app-radio` (DevRadio client app, `AUTH_MODE=sso`, routed under `/devradio`)
-- `app-artsy` (Curio client app, `AUTH_MODE=sso`, routed under `/curio`)
+- `app-artsy` (NEERA client app, `AUTH_MODE=sso`, routed under `/NEERA`)
 - `app-researchAgent/seeksage/backend` (SeekSage app API, `AUTH_MODE=sso`, routed under `/seeksage`)
 - `app-note` (NoteStack app, shared-session auth via `service-auth`, routed under `/notestack`)
 - `app-admin` (admin login handoff app)
@@ -17,7 +17,7 @@ Production routing on the server is path-based on the single host `31.70.85.89`:
 - `http://31.70.85.89/` -> app-landing
 - `http://31.70.85.89/auth` -> service-auth
 - `http://31.70.85.89/devradio` -> app-radio
-- `http://31.70.85.89/curio` -> app-artsy (Curio)
+- `http://31.70.85.89/NEERA` -> app-artsy (Neera)
 - `http://31.70.85.89/seeksage` -> app-researchAgent/seeksage/backend (SeekSage)
 - `http://31.70.85.89/notestack` -> app-note (NoteStack)
 - `http://31.70.85.89/admin` -> app-admin
@@ -59,7 +59,7 @@ Useful flags:
 - `--check-only` preflight only
 - `--force-sync` force checkout to `origin/<branch>`
 - `--overwrite-env` overwrite `/etc/nightcraft/*.env` from repo templates
-- `--reset-curio-password` rotate the Curio DB password and resync PostgreSQL before deploying
+- `--reset-neera-password` rotate the neera DB password and resync PostgreSQL before deploying
 - `--skip-postgres`, `--skip-nginx`, `--skip-systemd`, `--skip-deploy` for partial runs
 - `--run-host-setup` or `--skip-host-setup` for setup-host control
 
@@ -71,10 +71,10 @@ platform-infra/prod-debian/scripts/status-deploys.sh
 
 ## Folder Layout
 
-- `nginx/nightcraft.conf`: reverse proxy config for landing/auth/devradio/curio/seeksage/notestack/admin
+- `nginx/nightcraft.conf`: reverse proxy config for landing/auth/devradio/neera/seeksage/notestack/admin
 - `systemd/nightcraft-auth.service`: Gunicorn service for auth
 - `systemd/nightcraft-radio.service`: Gunicorn service for radio
-- `systemd/nightcraft-curio.service`: Gunicorn service for Curio
+- `systemd/nightcraft-neera.service`: Gunicorn service for NEERA
 - `systemd/nightcraft-seeksage.service`: Gunicorn service for SeekSage
 - `systemd/nightcraft-landing.service`: Gunicorn service for landing
 - `systemd/nightcraft-admin.service`: Gunicorn service for admin handoff
@@ -83,7 +83,7 @@ platform-infra/prod-debian/scripts/status-deploys.sh
 - `postgres/create-dbs.sql`: DB creation/grant SQL
 - `env-examples/service-auth.env`: exact file for `/etc/nightcraft/service-auth.env`
 - `env-examples/app-radio.env`: exact file for `/etc/nightcraft/app-radio.env`
-- `env-examples/app-curio.env`: exact file for `/etc/nightcraft/app-curio.env`
+- `env-examples/app-neera.env`: exact file for `/etc/nightcraft/app-neera.env`
 - `env-examples/app-seeksage.env`: exact file for `/etc/nightcraft/app-seeksage.env`
 - `env-examples/app-landing.env`: exact file for `/etc/nightcraft/app-landing.env`
 - `env-examples/app-admin.env`: exact file for `/etc/nightcraft/app-admin.env`
@@ -96,8 +96,8 @@ platform-infra/prod-debian/scripts/status-deploys.sh
 - `scripts/install-env.sh`: install env files from `env-examples/*.env` into `/etc/nightcraft`
 - `scripts/deploy-auth.sh`: release deploy for service-auth
 - `scripts/deploy-radio.sh`: release deploy for app-radio
-- `scripts/deploy-curio.sh`: release deploy for app-artsy
-- `scripts/reset-curio-password.sh`: rotate Curio PostgreSQL password and resync `/etc/nightcraft/app-curio.env`
+- `scripts/deploy-neera.sh`: release deploy for app-artsy
+- `scripts/reset-neera-password.sh`: rotate neera PostgreSQL password and resync `/etc/nightcraft/app-neera.env`
 - `scripts/deploy-seeksage.sh`: release deploy for seeksage backend
   - Flask UI is server-rendered; no Node/npm frontend build step is required.
 - `scripts/deploy-landing.sh`: release deploy for app-landing
@@ -105,12 +105,12 @@ platform-infra/prod-debian/scripts/status-deploys.sh
 - `scripts/deploy-note.sh`: release deploy for app-note
 - `scripts/seed-auth-users.sh`: seed one service-auth user and one admin user
 - `scripts/seed-auth-client.sh`: seed OAuth client/user for radio callback
-- `scripts/seed-curio-client.sh`: seed OAuth client/user for Curio callback
+- `scripts/seed-neera-client.sh`: seed OAuth client/user for neera callback
 - `scripts/seed-seeksage-client.sh`: seed OAuth client/user for SeekSage callback
-- `scripts/deploy-all.sh`: landing + auth + radio + curio + seeksage + admin + notestack deploy + seed + restart
-- `scripts/start-all.sh`: start landing + auth + radio + curio + seeksage + admin + notestack
-- `scripts/stop-all.sh`: stop landing + auth + radio + curio + seeksage + admin + notestack
-- `scripts/restart-all.sh`: restart landing + auth + radio + curio + seeksage + admin + notestack + reload nginx
+- `scripts/deploy-all.sh`: landing + auth + radio + NEERA + seeksage + admin + notestack deploy + seed + restart
+- `scripts/start-all.sh`: start landing + auth + radio + NEERA + seeksage + admin + notestack
+- `scripts/stop-all.sh`: stop landing + auth + radio + NEERA + seeksage + admin + notestack
+- `scripts/restart-all.sh`: restart landing + auth + radio + NEERA + seeksage + admin + notestack + reload nginx
 - `scripts/status-all.sh`: service status overview
 - `scripts/backup-postgres.sh`: logical postgres backups
 - `scripts/backup-all.sh`: backup postgres + `/etc/nightcraft` + `/platform-infra/runtime/shared/*`
@@ -187,7 +187,7 @@ The command above installs these exact filenames under `/etc/nightcraft`:
 
 - `/etc/nightcraft/service-auth.env`
 - `/etc/nightcraft/app-radio.env`
-- `/etc/nightcraft/app-curio.env`
+- `/etc/nightcraft/app-neera.env`
 - `/etc/nightcraft/app-seeksage.env`
 - `/etc/nightcraft/app-landing.env`
 - `/etc/nightcraft/app-admin.env`
@@ -199,7 +199,7 @@ Review and edit once if needed:
 sudo nano /etc/nightcraft/app-landing.env
 sudo nano /etc/nightcraft/service-auth.env
 sudo nano /etc/nightcraft/app-radio.env
-sudo nano /etc/nightcraft/app-curio.env
+sudo nano /etc/nightcraft/app-neera.env
 sudo nano /etc/nightcraft/app-seeksage.env
 sudo nano /etc/nightcraft/app-admin.env
 sudo nano /etc/nightcraft/app-note.env
@@ -207,10 +207,10 @@ sudo nano /etc/nightcraft/app-note.env
 
 1. Create DB users and databases.
 
-`setup-postgres.sh` now provisions and grants for auth, radio, curio, seeksage, and notestack.
-For curio/seeksage/notestack it reads `/etc/nightcraft/app-curio.env`,
+`setup-postgres.sh` now provisions and grants for auth, radio, NEERA, seeksage, and notestack.
+For NEERA/seeksage/notestack it reads `/etc/nightcraft/app-neera.env`,
 `/etc/nightcraft/app-seeksage.env`, and `/etc/nightcraft/app-note.env`
-`DATABASE_URL` values when explicit `CURIO_DB_*`/`SEEKSAGE_DB_*`/`NOTESTACK_DB_*` vars are not provided.
+`DATABASE_URL` values when explicit `NEERA_DB_*`/`SEEKSAGE_DB_*`/`NOTESTACK_DB_*` vars are not provided.
 Existing role passwords are also synchronized on each run.
 
 ```bash
@@ -281,19 +281,19 @@ In `/etc/nightcraft/app-landing.env`:
 - `LANDING_AUTH_URL=/auth/login`
 - `LANDING_ADMIN_URL=/platform-admin`
 - `LANDING_DEVRADIO_URL=/devradio`
-- `LANDING_CURIO_URL=/curio`
+- `LANDING_NEERA_URL=/neera`
 - `LANDING_SEEKSAGE_URL=/seeksage`
 - `LANDING_NOTESTACK_URL=/notestack`
 
-In `/etc/nightcraft/app-curio.env`:
+In `/etc/nightcraft/app-neera.env`:
 
 - `FLASK_ENV=production`
 - `FLASK_SECRET_KEY`
 - `FLASK_AUTH_MODE=sso`
 - `FLASK_AUTH_SERVICE_URL=http://31.70.85.89/auth`
-- `FLASK_AUTHLIB_CLIENT_ID=curio-app`
+- `FLASK_AUTHLIB_CLIENT_ID=neera-app`
 - `FLASK_AUTHLIB_CLIENT_SECRET`
-- `DATABASE_URL` (postgres URL for curio DB)
+- `DATABASE_URL` (postgres URL for NEERA DB)
 
 In `/etc/nightcraft/app-seeksage.env`:
 

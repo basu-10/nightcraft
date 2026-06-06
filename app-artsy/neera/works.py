@@ -8,20 +8,20 @@ from werkzeug.utils import secure_filename
 
 from .catalog_seed import CATALOG_SEED_DATA
 from .models import (
-    CurioArtMetadata,
-    CurioBookMetadata,
-    CurioFilmMetadata,
-    CurioItem,
-    CurioSongMetadata,
+    NeeraArtMetadata,
+    NeeraBookMetadata,
+    NeeraFilmMetadata,
+    NeeraItem,
+    NeeraSongMetadata,
 )
 
 ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 
 CATEGORY_METADATA_MODELS = {
-    "book": CurioBookMetadata,
-    "film": CurioFilmMetadata,
-    "song": CurioSongMetadata,
-    "art": CurioArtMetadata,
+    "book": NeeraBookMetadata,
+    "film": NeeraFilmMetadata,
+    "song": NeeraSongMetadata,
+    "art": NeeraArtMetadata,
 }
 
 CATEGORY_METADATA_FIELDS = {
@@ -62,7 +62,7 @@ def catalog_image_url(raw_value, fallback_label):
 def build_seed_payload(entry):
     common = dict(entry.get("common", {}))
     common["category"] = normalize_work_category(common.get("category"))
-    common["image_url"] = catalog_image_url(common.get("image_url"), common.get("title", "Curio"))
+    common["image_url"] = catalog_image_url(common.get("image_url"), common.get("title", "Neera"))
     return common, dict(entry.get("metadata", {}))
 
 
@@ -145,9 +145,9 @@ def find_existing_seed_work(common):
     source_type = (common.get("source_type") or "").strip()
     source_id = (common.get("source_id") or "").strip()
     if source_type and source_id:
-        return CurioItem.query.filter_by(source_type=source_type, source_id=source_id).first()
+        return NeeraItem.query.filter_by(source_type=source_type, source_id=source_id).first()
 
-    return CurioItem.query.filter_by(
+    return NeeraItem.query.filter_by(
         category=normalize_work_category(common.get("category")),
         title=common.get("title", ""),
         creator_display_name=common.get("creator_display_name", ""),
@@ -157,7 +157,7 @@ def find_existing_seed_work(common):
 def create_work(common, metadata):
     common_payload = dict(common)
     common_payload["category"] = normalize_work_category(common_payload.get("category"))
-    work = CurioItem(**common_payload)
+    work = NeeraItem(**common_payload)
     metadata_payload = prepare_metadata(
         common_payload["category"],
         metadata,
@@ -206,7 +206,7 @@ def search_existing_works(category, query, limit=5):
     if not search_text:
         return [], []
 
-    rows = CurioItem.query.filter_by(category=normalized_category).all()
+    rows = NeeraItem.query.filter_by(category=normalized_category).all()
     exact_matches = []
     scored_rows = []
     for row in rows:

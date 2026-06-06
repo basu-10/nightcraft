@@ -21,6 +21,6 @@ Write-Host '[migrate-all] Syncing app-radio schema/setup...'
 Invoke-Checked -Action 'app-radio setup' -Command { & $radioPython -m flask --app devradio setup }
 
 Write-Host '[migrate-all] Syncing app-artsy schema/setup...'
-Invoke-Checked -Action 'app-artsy setup' -Command { & $artsyPython -m flask --app curio setup }
+Invoke-Checked -Action 'app-artsy setup' -Command { & $artsyPython -m flask --app neera setup }
 
 Write-Host '[migrate-all] Migrations applied.'

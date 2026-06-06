@@ -62,14 +62,14 @@ class UserProfile(db.Model):
         default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC),
     )
-    lists = db.relationship("CurioList", back_populates="profile", cascade="all, delete-orphan")
+    lists = db.relationship("NeeraList", back_populates="profile", cascade="all, delete-orphan")
     reviews = db.relationship("Review", back_populates="profile", cascade="all, delete-orphan")
-    notes = db.relationship("CurioNote", back_populates="profile", cascade="all, delete-orphan")
+    notes = db.relationship("NeeraNote", back_populates="profile", cascade="all, delete-orphan")
     feed_events = db.relationship("FeedEvent", back_populates="profile", cascade="all, delete-orphan")
 
 
-class CurioList(db.Model):
-    __tablename__ = "curio_list"
+class NeeraList(db.Model):
+    __tablename__ = "neera_list"
 
     id = db.Column(db.Integer, primary_key=True)
     profile_id = db.Column(db.Integer, db.ForeignKey("user_profile.id"), nullable=False, index=True)
@@ -88,25 +88,25 @@ class CurioList(db.Model):
 
     profile = db.relationship("UserProfile", back_populates="lists")
     items = db.relationship(
-        "CurioListItem",
-        back_populates="curio_list",
+        "NeeraListItem",
+        back_populates="neera_list",
         cascade="all, delete-orphan",
-        order_by="CurioListItem.position.asc()",
+        order_by="NeeraListItem.position.asc()",
     )
 
 
-class CurioListItem(db.Model):
-    __tablename__ = "curio_list_item"
+class NeeraListItem(db.Model):
+    __tablename__ = "neera_list_item"
 
     id = db.Column(db.Integer, primary_key=True)
-    list_id = db.Column(db.Integer, db.ForeignKey("curio_list.id"), nullable=False, index=True)
+    list_id = db.Column(db.Integer, db.ForeignKey("neera_list.id"), nullable=False, index=True)
     position = db.Column(db.Integer, nullable=False, default=1)
     title = db.Column(db.String(220), nullable=False)
     creator_name = db.Column(db.String(180), nullable=False, default="")
     notes = db.Column(db.Text, nullable=False, default="")
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(UTC))
 
-    curio_list = db.relationship("CurioList", back_populates="items")
+    neera_list = db.relationship("NeeraList", back_populates="items")
 
 
 class Review(db.Model):
@@ -114,7 +114,7 @@ class Review(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     profile_id = db.Column(db.Integer, db.ForeignKey("user_profile.id"), nullable=False, index=True)
-    work_id = db.Column(db.Integer, db.ForeignKey("curio_item.id"), nullable=True, index=True)
+    work_id = db.Column(db.Integer, db.ForeignKey("neera_item.id"), nullable=True, index=True)
     category = db.Column(db.String(40), nullable=False)
     subject = db.Column(db.String(220), nullable=False)
     review_title = db.Column(db.String(220), nullable=False, default="")
@@ -127,11 +127,11 @@ class Review(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(UTC), index=True)
 
     profile = db.relationship("UserProfile", back_populates="reviews")
-    work = db.relationship("CurioItem", back_populates="reviews")
+    work = db.relationship("NeeraItem", back_populates="reviews")
 
 
-class CurioNote(db.Model):
-    __tablename__ = "curio_note"
+class NeeraNote(db.Model):
+    __tablename__ = "neera_note"
 
     id = db.Column(db.Integer, primary_key=True)
     profile_id = db.Column(db.Integer, db.ForeignKey("user_profile.id"), nullable=False, index=True)
@@ -150,8 +150,8 @@ class CurioNote(db.Model):
     profile = db.relationship("UserProfile", back_populates="notes")
 
 
-class CurioItem(db.Model):
-    __tablename__ = "curio_item"
+class NeeraItem(db.Model):
+    __tablename__ = "neera_item"
 
     id = db.Column(db.Integer, primary_key=True)
     category = db.Column(db.String(40), nullable=False, index=True)
@@ -166,25 +166,25 @@ class CurioItem(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(UTC), index=True)
     reviews = db.relationship("Review", back_populates="work")
     book_metadata = db.relationship(
-        "CurioBookMetadata",
+        "NeeraBookMetadata",
         back_populates="work",
         uselist=False,
         cascade="all, delete-orphan",
     )
     film_metadata = db.relationship(
-        "CurioFilmMetadata",
+        "NeeraFilmMetadata",
         back_populates="work",
         uselist=False,
         cascade="all, delete-orphan",
     )
     song_metadata = db.relationship(
-        "CurioSongMetadata",
+        "NeeraSongMetadata",
         back_populates="work",
         uselist=False,
         cascade="all, delete-orphan",
     )
     art_metadata = db.relationship(
-        "CurioArtMetadata",
+        "NeeraArtMetadata",
         back_populates="work",
         uselist=False,
         cascade="all, delete-orphan",
@@ -301,11 +301,11 @@ class FeedEvent(db.Model):
     profile = db.relationship("UserProfile", back_populates="feed_events")
 
 
-class CurioBookMetadata(db.Model):
-    __tablename__ = "curio_book_metadata"
+class NeeraBookMetadata(db.Model):
+    __tablename__ = "neera_book_metadata"
 
     id = db.Column(db.Integer, primary_key=True)
-    work_id = db.Column(db.Integer, db.ForeignKey("curio_item.id"), nullable=False, unique=True, index=True)
+    work_id = db.Column(db.Integer, db.ForeignKey("neera_item.id"), nullable=False, unique=True, index=True)
     author = db.Column(db.String(180), nullable=False, default="")
     year = db.Column(db.Integer, nullable=True)
     pages = db.Column(db.Integer, nullable=True)
@@ -313,45 +313,45 @@ class CurioBookMetadata(db.Model):
     isbn = db.Column(db.String(40), nullable=False, default="")
     language = db.Column(db.String(80), nullable=False, default="")
 
-    work = db.relationship("CurioItem", back_populates="book_metadata")
+    work = db.relationship("NeeraItem", back_populates="book_metadata")
 
 
-class CurioFilmMetadata(db.Model):
-    __tablename__ = "curio_film_metadata"
+class NeeraFilmMetadata(db.Model):
+    __tablename__ = "neera_film_metadata"
 
     id = db.Column(db.Integer, primary_key=True)
-    work_id = db.Column(db.Integer, db.ForeignKey("curio_item.id"), nullable=False, unique=True, index=True)
+    work_id = db.Column(db.Integer, db.ForeignKey("neera_item.id"), nullable=False, unique=True, index=True)
     director = db.Column(db.String(180), nullable=False, default="")
     year = db.Column(db.Integer, nullable=True)
     runtime_minutes = db.Column(db.Integer, nullable=True)
     country = db.Column(db.String(120), nullable=False, default="")
     language = db.Column(db.String(80), nullable=False, default="")
 
-    work = db.relationship("CurioItem", back_populates="film_metadata")
+    work = db.relationship("NeeraItem", back_populates="film_metadata")
 
 
-class CurioSongMetadata(db.Model):
-    __tablename__ = "curio_song_metadata"
+class NeeraSongMetadata(db.Model):
+    __tablename__ = "neera_song_metadata"
 
     id = db.Column(db.Integer, primary_key=True)
-    work_id = db.Column(db.Integer, db.ForeignKey("curio_item.id"), nullable=False, unique=True, index=True)
+    work_id = db.Column(db.Integer, db.ForeignKey("neera_item.id"), nullable=False, unique=True, index=True)
     artist = db.Column(db.String(180), nullable=False, default="")
     album = db.Column(db.String(220), nullable=False, default="")
     year = db.Column(db.Integer, nullable=True)
     duration_seconds = db.Column(db.Integer, nullable=True)
 
-    work = db.relationship("CurioItem", back_populates="song_metadata")
+    work = db.relationship("NeeraItem", back_populates="song_metadata")
 
 
-class CurioArtMetadata(db.Model):
-    __tablename__ = "curio_art_metadata"
+class NeeraArtMetadata(db.Model):
+    __tablename__ = "neera_art_metadata"
 
     id = db.Column(db.Integer, primary_key=True)
-    work_id = db.Column(db.Integer, db.ForeignKey("curio_item.id"), nullable=False, unique=True, index=True)
+    work_id = db.Column(db.Integer, db.ForeignKey("neera_item.id"), nullable=False, unique=True, index=True)
     artist = db.Column(db.String(180), nullable=False, default="")
     year = db.Column(db.Integer, nullable=True)
     medium = db.Column(db.String(180), nullable=False, default="")
     movement = db.Column(db.String(180), nullable=False, default="")
     museum = db.Column(db.String(220), nullable=False, default="")
 
-    work = db.relationship("CurioItem", back_populates="art_metadata")
+    work = db.relationship("NeeraItem", back_populates="art_metadata")

@@ -43,7 +43,7 @@ try {
 
     Write-Host '[setup-all] Running app-artsy setup command...'
     $artsyPython = Get-VenvPython -AppPath $appArtsyPath
-    & $artsyPython -m flask --app curio setup
+    & $artsyPython -m flask --app neera setup
 
     Write-Host '[setup-all] Setup complete.'
 }

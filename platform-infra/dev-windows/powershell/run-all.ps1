@@ -13,7 +13,7 @@ param(
     [string]$AuthServiceUrl = 'http://127.0.0.1:5100',
     [string]$RadioClientId = 'radio-app',
     [string]$RadioClientSecret = 'dev-secret',
-    [string]$ArtsyClientId = 'curio-app',
+    [string]$ArtsyClientId = 'neera-app',
     [string]$ArtsyClientSecret = 'dev-secret',
     [string]$LogRoot = '',
     [string]$LogSessionId = ''

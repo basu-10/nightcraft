@@ -7,7 +7,7 @@ from sqlalchemy import and_
 from .auth.current_user import get_current_user
 from .guards import auth_required
 from .extensions import db
-from .models import CurioItem, CurioList, CurioListItem, CurioNote, FeedEvent, Review, UserProfile
+from .models import NeeraItem, NeeraList, NeeraListItem, NeeraNote, FeedEvent, Review, UserProfile
 from .works import CATEGORY_METADATA_FIELDS, create_work, normalize_work_category, search_existing_works, uploaded_image_path
 
 bp = Blueprint("main", __name__)
@@ -183,7 +183,7 @@ def _work_submission_payload(form_data):
 
 
 def _find_duplicate_work(common):
-    return CurioItem.query.filter_by(
+    return NeeraItem.query.filter_by(
         category=normalize_work_category(common.get("category")),
         title=common.get("title", ""),
         creator_display_name=common.get("creator_display_name", ""),
@@ -290,23 +290,23 @@ def _review_rows_for_profile(profile_id, viewer_can_edit=False, include_drafts=F
 
 
 def _note_rows_for_profile(profile_id, viewer_can_edit=False, include_drafts=False):
-    query = CurioNote.query.filter_by(profile_id=profile_id)
+    query = NeeraNote.query.filter_by(profile_id=profile_id)
     if include_drafts:
-        query = query.filter((CurioNote.status == "draft") | (CurioNote.visibility == "private"))
+        query = query.filter((NeeraNote.status == "draft") | (NeeraNote.visibility == "private"))
     elif viewer_can_edit:
-        query = query.filter(CurioNote.status == "published", CurioNote.visibility != "private")
+        query = query.filter(NeeraNote.status == "published", NeeraNote.visibility != "private")
     else:
         query = query.filter_by(status="published", visibility="public")
-    return query.order_by(CurioNote.created_at.desc()).limit(12).all()
+    return query.order_by(NeeraNote.created_at.desc()).limit(12).all()
 
 
 def _list_rows_for_profile(profile_id, viewer_can_edit=False, include_drafts=False):
-    query = CurioList.query.filter_by(profile_id=profile_id)
+    query = NeeraList.query.filter_by(profile_id=profile_id)
     if include_drafts:
         query = query.filter_by(visibility="private")
     elif not viewer_can_edit:
         query = query.filter_by(visibility="public")
-    return query.order_by(CurioList.created_at.desc()).all()
+    return query.order_by(NeeraList.created_at.desc()).all()
 
 
 def _collect_item_review_rows(item, app_user, highlighted_review_id=None):
@@ -722,10 +722,10 @@ def _current_profile_or_404():
 
 
 def _owned_list_or_404(profile, list_id):
-    curio_list = CurioList.query.filter_by(id=list_id, profile_id=profile.id).first()
-    if curio_list is None:
+    neera_list = NeeraList.query.filter_by(id=list_id, profile_id=profile.id).first()
+    if neera_list is None:
         abort(404)
-    return curio_list
+    return neera_list
 
 
 def _owned_review_or_404(profile, review_id):
@@ -736,23 +736,23 @@ def _owned_review_or_404(profile, review_id):
 
 
 def _owned_note_or_404(profile, note_id):
-    note = CurioNote.query.filter_by(id=note_id, profile_id=profile.id).first()
+    note = NeeraNote.query.filter_by(id=note_id, profile_id=profile.id).first()
     if note is None:
         abort(404)
     return note
 
 
-def _owned_list_item_or_404(curio_list, item_id):
-    item = CurioListItem.query.filter_by(id=item_id, list_id=curio_list.id).first()
+def _owned_list_item_or_404(neera_list, item_id):
+    item = NeeraListItem.query.filter_by(id=item_id, list_id=neera_list.id).first()
     if item is None:
         abort(404)
     return item
 
 
-def _reindex_list_items(curio_list):
-    for index, item in enumerate(curio_list.items, start=1):
+def _reindex_list_items(neera_list):
+    for index, item in enumerate(neera_list.items, start=1):
         item.position = index
-    curio_list.item_count = len(curio_list.items)
+    neera_list.item_count = len(neera_list.items)
 
 
 @bp.route("/")
@@ -766,8 +766,8 @@ def home():
     if profile is None:
         profile = UserProfile(
             user_id="demo",
-            username="curio",
-            display_name="Curio",
+            username="neera",
+            display_name="Neera",
             bio="Curating pieces of art that feel like home.",
             is_public=True,
         )
@@ -798,10 +798,10 @@ def admin_home():
         app_user=app_user,
         stats={
             "profiles": UserProfile.query.count(),
-            "works": CurioItem.query.count(),
+            "works": NeeraItem.query.count(),
             "reviews": Review.query.count(),
-            "lists": CurioList.query.count(),
-            "notes": CurioNote.query.count(),
+            "lists": NeeraList.query.count(),
+            "notes": NeeraNote.query.count(),
         },
     )
 
@@ -937,7 +937,7 @@ def items_catalog():
     category_order = ["book", "song", "art", "film"]
     category_labels = {"book": "Books", "song": "Songs", "art": "Arts", "film": "Films"}
 
-    all_items = CurioItem.query.order_by(CurioItem.category.asc(), CurioItem.title.asc()).all()
+    all_items = NeeraItem.query.order_by(NeeraItem.category.asc(), NeeraItem.title.asc()).all()
     grouped = {key: [] for key in category_order}
     for row in all_items:
         category_key = normalize_work_category(row.category)
@@ -971,7 +971,7 @@ def uploaded_work_file(filename):
 @bp.get("/items/<int:item_id>")
 def item_detail(item_id):
     app_user = get_current_user()
-    item = CurioItem.query.filter_by(id=item_id).first_or_404()
+    item = NeeraItem.query.filter_by(id=item_id).first_or_404()
     highlighted_review_id = request.args.get("highlight_review", type=int)
     related_reviews = _collect_item_review_rows(item, app_user, highlighted_review_id=highlighted_review_id)[:10]
 
@@ -1103,7 +1103,7 @@ def create_book_for_review():
 @auth_required
 def compose_review():
     work_id = request.args.get("work_id", type=int)
-    work = CurioItem.query.filter_by(id=work_id).first_or_404() if work_id is not None else None
+    work = NeeraItem.query.filter_by(id=work_id).first_or_404() if work_id is not None else None
     return render_template(
         "review_compose.html",
         app_user=get_current_user(),
@@ -1117,7 +1117,7 @@ def compose_review():
 def submit_review():
     profile = _current_profile_or_404()
     work_id = request.form.get("work_id", type=int)
-    work = CurioItem.query.filter_by(id=work_id).first_or_404() if work_id is not None else None
+    work = NeeraItem.query.filter_by(id=work_id).first_or_404() if work_id is not None else None
     review_form = _review_form_from_request(default_work=work)
 
     try:
@@ -1207,7 +1207,7 @@ def create_list():
         flash("List title is required.", "error")
         return redirect(url_for("main.my_lists"))
 
-    curio_list = CurioList(
+    neera_list = NeeraList(
         profile_id=profile.id,
         title=title,
         category=category,
@@ -1215,7 +1215,7 @@ def create_list():
         visibility=visibility,
         item_count=0,
     )
-    db.session.add(curio_list)
+    db.session.add(neera_list)
     db.session.commit()
     flash("List created.", "success")
     return redirect(url_for("main.my_lists"))
@@ -1225,7 +1225,7 @@ def create_list():
 @auth_required
 def create_list_item(list_id):
     profile = _current_profile_or_404()
-    curio_list = _owned_list_or_404(profile, list_id)
+    neera_list = _owned_list_or_404(profile, list_id)
 
     title = request.form.get("title", "").strip()
     creator_name = request.form.get("creator_name", "").strip()
@@ -1234,17 +1234,17 @@ def create_list_item(list_id):
         flash("List item title is required.", "error")
         return redirect(url_for("main.my_lists"))
 
-    next_position = (curio_list.items[-1].position + 1) if curio_list.items else 1
+    next_position = (neera_list.items[-1].position + 1) if neera_list.items else 1
     db.session.add(
-        CurioListItem(
-            list_id=curio_list.id,
+        NeeraListItem(
+            list_id=neera_list.id,
             position=next_position,
             title=title,
             creator_name=creator_name,
             notes=notes,
         )
     )
-    curio_list.item_count = next_position
+    neera_list.item_count = next_position
     db.session.commit()
     flash("List item added.", "success")
     return redirect(url_for("main.my_lists"))
@@ -1254,21 +1254,21 @@ def create_list_item(list_id):
 @auth_required
 def edit_list(list_id):
     profile = _current_profile_or_404()
-    curio_list = _owned_list_or_404(profile, list_id)
+    neera_list = _owned_list_or_404(profile, list_id)
     title = request.form.get("title", "").strip()
-    category = request.form.get("category", curio_list.category).strip().lower() or curio_list.category
+    category = request.form.get("category", neera_list.category).strip().lower() or neera_list.category
     description = request.form.get("description", "").strip()
-    visibility = _normalize_list_visibility(request.form.get("visibility", curio_list.visibility))
+    visibility = _normalize_list_visibility(request.form.get("visibility", neera_list.visibility))
     return_tab = request.form.get("return_tab", "Lists").strip()
 
     if not title:
         flash("List title is required.", "error")
         return redirect(url_for("main.my_lists"))
 
-    curio_list.title = title
-    curio_list.category = category
-    curio_list.description = description
-    curio_list.visibility = visibility
+    neera_list.title = title
+    neera_list.category = category
+    neera_list.description = description
+    neera_list.visibility = visibility
     db.session.commit()
     flash("List updated.", "success")
     return _profile_tab_redirect(return_tab)
@@ -1278,9 +1278,9 @@ def edit_list(list_id):
 @auth_required
 def delete_list(list_id):
     profile = _current_profile_or_404()
-    curio_list = _owned_list_or_404(profile, list_id)
+    neera_list = _owned_list_or_404(profile, list_id)
     return_tab = request.form.get("return_tab", "Lists").strip()
-    db.session.delete(curio_list)
+    db.session.delete(neera_list)
     db.session.commit()
     flash("List deleted.", "success")
     return _profile_tab_redirect(return_tab)
@@ -1290,10 +1290,10 @@ def delete_list(list_id):
 @auth_required
 def move_list_item(list_id, item_id):
     profile = _current_profile_or_404()
-    curio_list = _owned_list_or_404(profile, list_id)
-    item = _owned_list_item_or_404(curio_list, item_id)
+    neera_list = _owned_list_or_404(profile, list_id)
+    item = _owned_list_item_or_404(neera_list, item_id)
     direction = request.form.get("direction", "").strip().lower()
-    items = list(curio_list.items)
+    items = list(neera_list.items)
     current_index = next((index for index, row in enumerate(items) if row.id == item.id), None)
     if current_index is None:
         abort(404)
@@ -1319,11 +1319,11 @@ def move_list_item(list_id, item_id):
 @auth_required
 def delete_list_item(list_id, item_id):
     profile = _current_profile_or_404()
-    curio_list = _owned_list_or_404(profile, list_id)
-    item = _owned_list_item_or_404(curio_list, item_id)
+    neera_list = _owned_list_or_404(profile, list_id)
+    item = _owned_list_item_or_404(neera_list, item_id)
     db.session.delete(item)
     db.session.flush()
-    _reindex_list_items(curio_list)
+    _reindex_list_items(neera_list)
     db.session.commit()
     flash("List item deleted.", "success")
     return redirect(url_for("main.my_lists"))
@@ -1343,7 +1343,7 @@ def create_review():
     visibility = _normalize_review_visibility(request.form.get("visibility", "public"))
     status = _normalize_review_status(request.form.get("status", "published"))
     work_id = request.form.get("work_id", type=int)
-    work = CurioItem.query.filter_by(id=work_id).first() if work_id is not None else None
+    work = NeeraItem.query.filter_by(id=work_id).first() if work_id is not None else None
 
     if work is not None:
         subject = work.title
@@ -1392,7 +1392,7 @@ def create_note():
         flash("Note title is required.", "error")
         return redirect(url_for("main.my_notes"))
 
-    note = CurioNote(
+    note = NeeraNote(
         profile_id=profile.id,
         title=title,
         body=body,

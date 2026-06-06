@@ -18,7 +18,7 @@ Run from repo root or from this folder.
 .\platform-infra\dev-windows\powershell\setup-all.ps1
 ```
 
-Curio only setup:
+neera only setup:
 
 ```powershell
 .\platform-infra\dev-windows\powershell\setup-artsy.ps1
@@ -30,13 +30,13 @@ Curio only setup:
 .\platform-infra\dev-windows\powershell\seed-all.ps1 -RadioPort 5000
 ```
 
-Include Curio OAuth client as well:
+Include neera OAuth client as well:
 
 ```powershell
 .\platform-infra\dev-windows\powershell\seed-all.ps1 -RadioPort 5000 -IncludeArtsy -ArtsyPort 5600
 ```
 
-When `-IncludeArtsy` is enabled, the same script also runs Curio's catalog seed so the artsy app starts with the shared test dataset.
+When `-IncludeArtsy` is enabled, the same script also runs neera's catalog seed so the artsy app starts with the shared test dataset.
 
 ### 3) Run auth server only (server mode)
 
@@ -53,13 +53,13 @@ or
 
 ```
 
-Run Curio only:
+Run neera only:
 
 ```powershell
 .\platform-infra\dev-windows\powershell\run-client.ps1 -App artsy -AuthMode sso -AuthServiceUrl http://127.0.0.1:5100
 ```
 
-Equivalent Curio-focused shortcut:
+Equivalent neera-focused shortcut:
 
 ```powershell
 .\platform-infra\dev-windows\powershell\run-artsy.ps1 -AuthMode sso -AuthServiceUrl http://127.0.0.1:5100
@@ -71,7 +71,7 @@ Equivalent Curio-focused shortcut:
 .\platform-infra\dev-windows\powershell\run-all.ps1
 ```
 
-Run auth + radio + Curio:
+Run auth + radio + neera:
 
 ```powershell
 .\platform-infra\dev-windows\powershell\run-all.ps1 -IncludeArtsy
@@ -90,5 +90,5 @@ This applies `service-auth` DB migrations and runs idempotent setup/schema sync 
 - `run-all.ps1` starts service-auth and app-radio in separate PowerShell windows.
 - Add `-IncludeArtsy` to also launch app-artsy.
 - `seed-all.ps1` writes the callback redirect URI based on `-RadioPort`.
-- Add `-IncludeArtsy` to also seed Curio's redirect URI based on `-ArtsyPort` and load Curio's seeded catalog.
+- Add `-IncludeArtsy` to also seed neera's redirect URI based on `-ArtsyPort` and load neera's seeded catalog.
 - Both app startup scripts handle FLASK-prefixed env vars for SSO mode.

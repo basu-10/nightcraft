@@ -18,7 +18,7 @@ def test_root_route_renders_product_cards_and_links():
     assert response.status_code == 200
     html = response.get_data(as_text=True)
     assert "DevRadio" in html
-    assert "Curio" in html
+    assert "NEERA" in html
     assert "SeekSage" in html
     assert "NoteStack" in html
     assert "Sign In" in html
@@ -77,7 +77,7 @@ def test_admin_route_prompts_login_when_not_authenticated():
     assert "Sign in to access admin controls" in html
     assert "Unified Login" in html
     assert "Admin Login" in html
-    assert "Open Curio Admin" not in html
+    assert "Open NEERA Admin" not in html
 
 
 def test_admin_route_renders_admin_cards_for_admin_user():
@@ -92,7 +92,7 @@ def test_admin_route_renders_admin_cards_for_admin_user():
     html = response.get_data(as_text=True)
     assert "Hi, seedadmin welcome" in html
     assert "Open DevRadio Admin" in html
-    assert "Open Curio Admin" in html
+    assert "Open NEERA Admin" in html
     assert "Open SeekSage Admin" in html
     assert "Open NoteStack Admin" in html
 

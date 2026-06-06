@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Curio | Home</title>
+  <title>Neera | Home</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
 <body>
   <div class="home-shell">
     <header class="home-topbar">
-      <a class="home-logo" href="{{ url_for('main.home') }}">Curio</a>
+      <a class="home-logo" href="{{ url_for('main.home') }}">Neera</a>
       <nav class="home-topnav">
         {% if app_user.is_authenticated %}
           <span>Hi, {{ app_user.display_name or app_user.username }} welcome</span>
@@ -37,7 +37,7 @@
         <p class="home-kicker">Curate books. songs. films. art.</p>
         <h1>Build a taste map that feels unmistakably yours.</h1>
         <p>
-          Curio is where reviews, lists, notes, and posts meet item pages designed for discovery.
+          Neera is where reviews, lists, notes, and posts meet item pages designed for discovery.
           Start with seeded catalog entries and publish your voice from day one.
         </p>
         <div class="home-hero-actions">

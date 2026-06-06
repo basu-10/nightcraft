@@ -1,4 +1,4 @@
-from curio import create_app
+from neera import create_app
 
 app = create_app()
 

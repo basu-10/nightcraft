@@ -4,10 +4,10 @@ import os
 
 import pytest
 
-from curio import create_app
-from curio.auth import sso_auth
-from curio.extensions import db
-from curio.models import CurioItem, CurioList, Review, UserProfile
+from neera import create_app
+from neera.auth import sso_auth
+from neera.extensions import db
+from neera.models import NeeraItem, NeeraList, Review, UserProfile
 
 
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "").strip()
@@ -54,7 +54,7 @@ class _FakeOAuth:
         )
 
 
-def _seed_sso_profile(user_id="sso-sub-1", username="curio-sso", is_admin=False):
+def _seed_sso_profile(user_id="sso-sub-1", username="Neera-sso", is_admin=False):
     profile = UserProfile(
         user_id=user_id,
         username=username,
@@ -82,7 +82,7 @@ def test_sso_auth_required_redirects_unauthenticated(tmp_path):
     assert response.status_code in (301, 302, 303, 307, 308)
     target = response.headers.get("Location", "")
     parsed = urlparse(target)
-    assert parsed.path in {"/auth/login", "/curio/auth/login"}
+    assert parsed.path in {"/auth/login", "/Neera/auth/login"}
     next_values = parse_qs(parsed.query).get("next", [])
     assert next_values and next_values[0].startswith("/me")
 
@@ -91,14 +91,14 @@ def test_sso_auth_required_preserves_forwarded_prefix_in_next(tmp_path):
     app = _build_sso_app(tmp_path)
     client = app.test_client()
 
-    response = client.get("/me", headers={"X-Forwarded-Prefix": "/curio"})
+    response = client.get("/me", headers={"X-Forwarded-Prefix": "/Neera"})
     assert response.status_code in (301, 302, 303, 307, 308)
 
     target = response.headers.get("Location", "")
     parsed = urlparse(target)
-    assert parsed.path in {"/auth/login", "/curio/auth/login"}
+    assert parsed.path in {"/auth/login", "/Neera/auth/login"}
     next_values = parse_qs(parsed.query).get("next", [])
-    assert next_values and next_values[0].startswith("/curio/me")
+    assert next_values and next_values[0].startswith("/Neera/me")
 
 
 def test_sso_callback_creates_profile_and_session(tmp_path):
@@ -108,7 +108,7 @@ def test_sso_callback_creates_profile_and_session(tmp_path):
         token_payload={"access_token": "abc", "token_type": "Bearer"},
         userinfo_payload={
             "sub": "sso-sub-100",
-            "preferred_username": "curio-user",
+            "preferred_username": "Neera-user",
             "roles": ["listener"],
         },
     )
@@ -121,12 +121,12 @@ def test_sso_callback_creates_profile_and_session(tmp_path):
         with app.app_context():
             profile = UserProfile.query.filter_by(user_id="sso-sub-100").first()
             assert profile is not None
-            assert profile.username == "curio-user"
+            assert profile.username == "Neera-user"
             assert profile.is_admin is False
 
         with client.session_transaction() as session_state:
             assert session_state["user_id"] == "sso-sub-100"
-            assert session_state["username"] == "curio-user"
+            assert session_state["username"] == "Neera-user"
             assert session_state["is_admin"] is False
     finally:
         sso_auth.oauth = original_oauth
@@ -135,7 +135,7 @@ def test_sso_callback_creates_profile_and_session(tmp_path):
 def test_sso_callback_rejects_invalid_state(tmp_path):
     app = _build_sso_app(tmp_path)
     if sso_auth.OAuthError is None:
-        raise AssertionError("Authlib OAuthError should be available for Curio SSO tests")
+        raise AssertionError("Authlib OAuthError should be available for Neera SSO tests")
 
     original_oauth = sso_auth.oauth
     sso_auth.oauth = _FakeOAuth(
@@ -158,7 +158,7 @@ def test_sso_callback_redirects_to_prefixed_next_target(tmp_path):
         token_payload={"access_token": "abc", "token_type": "Bearer"},
         userinfo_payload={
             "sub": "sso-sub-101",
-            "preferred_username": "curio-prefixed-user",
+            "preferred_username": "Neera-prefixed-user",
             "roles": ["listener"],
         },
     )
@@ -168,9 +168,9 @@ def test_sso_callback_redirects_to_prefixed_next_target(tmp_path):
         with client.session_transaction() as session_state:
             session_state["sso_next"] = "/me"
 
-        response = client.get("/auth/callback", headers={"X-Forwarded-Prefix": "/curio"}, follow_redirects=False)
+        response = client.get("/auth/callback", headers={"X-Forwarded-Prefix": "/Neera"}, follow_redirects=False)
         assert response.status_code in (301, 302, 303)
-        assert response.headers.get("Location", "").startswith("/curio/me")
+        assert response.headers.get("Location", "").startswith("/Neera/me")
     finally:
         sso_auth.oauth = original_oauth
 
@@ -178,11 +178,11 @@ def test_sso_callback_redirects_to_prefixed_next_target(tmp_path):
 def test_sso_session_user_can_create_list_review_and_item(tmp_path):
     app = _build_sso_app(tmp_path)
     with app.app_context():
-        profile = _seed_sso_profile(user_id="sso-sub-2", username="curio-sso")
+        profile = _seed_sso_profile(user_id="sso-sub-2", username="Neera-sso")
         profile_id = profile.id
 
     client = app.test_client()
-    _set_sso_session(client, user_id="sso-sub-2", username="curio-sso", is_admin=False)
+    _set_sso_session(client, user_id="sso-sub-2", username="Neera-sso", is_admin=False)
 
     list_response = client.post(
         "/me/lists",
@@ -201,7 +201,7 @@ def test_sso_session_user_can_create_list_review_and_item(tmp_path):
     assert "Review published." in review_response.get_data(as_text=True)
 
     with app.app_context():
-        created_list = CurioList.query.filter_by(profile_id=profile_id, title="SSO Shelf").first()
+        created_list = NeeraList.query.filter_by(profile_id=profile_id, title="SSO Shelf").first()
         assert created_list is not None
         assert Review.query.filter_by(profile_id=profile_id, subject="SSO Review").first() is not None
         list_id = created_list.id
@@ -234,12 +234,12 @@ def test_sso_session_user_can_create_list_review_and_item(tmp_path):
     assert "Work submitted." in work_response.get_data(as_text=True)
 
     with app.app_context():
-        created_work = CurioItem.query.filter_by(title="SSO Film").first()
+        created_work = NeeraItem.query.filter_by(title="SSO Film").first()
         assert created_work is not None
         assert created_work.is_user_submitted is True
 
 
-def test_sso_shared_auth_cookie_bootstraps_curio_session(tmp_path):
+def test_sso_shared_auth_cookie_bootstraps_Neera_session(tmp_path):
     app = _build_sso_app(tmp_path)
 
     class _FakeResponse:
@@ -283,7 +283,7 @@ def test_sso_shared_auth_cookie_bootstraps_curio_session(tmp_path):
         sso_auth.urllib_request.urlopen = original_urlopen
 
 
-def test_curio_admin_page_forbidden_for_non_admin_sso_user(tmp_path):
+def test_Neera_admin_page_forbidden_for_non_admin_sso_user(tmp_path):
     app = _build_sso_app(tmp_path)
     with app.app_context():
         _seed_sso_profile(user_id="sso-sub-non-admin", username="plain-user", is_admin=False)
@@ -295,7 +295,7 @@ def test_curio_admin_page_forbidden_for_non_admin_sso_user(tmp_path):
     assert response.status_code == 403
 
 
-def test_curio_admin_page_renders_for_admin_sso_user(tmp_path):
+def test_Neera_admin_page_renders_for_admin_sso_user(tmp_path):
     app = _build_sso_app(tmp_path)
     with app.app_context():
         _seed_sso_profile(user_id="sso-sub-admin", username="admin-user", is_admin=True)
@@ -306,5 +306,5 @@ def test_curio_admin_page_renders_for_admin_sso_user(tmp_path):
     response = client.get("/admin")
     assert response.status_code == 200
     page = response.get_data(as_text=True)
-    assert "Curio Admin" in page
+    assert "Neera Admin" in page
     assert "Platform Stats" in page

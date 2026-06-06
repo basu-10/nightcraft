@@ -2,7 +2,7 @@ param(
     [ValidateSet('local', 'sso')]
     [string]$AuthMode = 'sso',
     [string]$AuthServiceUrl = 'http://127.0.0.1:5100',
-    [string]$AuthClientId = 'curio-app',
+    [string]$AuthClientId = 'neera-app',
     [string]$AuthClientSecret = 'dev-secret',
     [int]$Port = 5600
 )

@@ -8,7 +8,7 @@ param(
     [string]$RadioClientSecret = 'dev-secret',
     [int]$RadioPort = 5000,
     [switch]$IncludeArtsy,
-    [string]$ArtsyClientId = 'curio-app',
+    [string]$ArtsyClientId = 'neera-app',
     [string]$ArtsyClientSecret = 'dev-secret',
     [int]$ArtsyPort = 5600,
     [string]$LogRoot = '',
@@ -49,7 +49,7 @@ try {
     if ($IncludeArtsy) {
         $artsyRedirectUri = "http://127.0.0.1:$ArtsyPort/auth/callback"
         Write-Host "[seed-all] Seeding service-auth for app-artsy redirect URI: $artsyRedirectUri"
-        Invoke-Checked -Action 'service-auth seed-dev (curio)' -Command {
+        Invoke-Checked -Action 'service-auth seed-dev (neera)' -Command {
             & $servicePython -m flask --app (Join-Path $serviceAuthPath 'run.py') seed-dev `
                 --username $Username `
                 --email $Email `
@@ -63,7 +63,7 @@ try {
         $null = Install-Requirements -AppPath $artsyPath
         $artsyPython = Get-VenvPython -AppPath $artsyPath
 
-        Write-Host '[seed-all] Seeding Curio catalog items for app-artsy'
+        Write-Host '[seed-all] Seeding neera catalog items for app-artsy'
         Invoke-Checked -Action 'app-artsy seed-catalog' -Command {
             & $artsyPython -m flask --app (Join-Path $artsyPath 'run.py') seed-catalog
         }

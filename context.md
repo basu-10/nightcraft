@@ -2,33 +2,52 @@
 
 - This folder in local develepment : D:\dev_work\web_dev\personal site\ionos-server
 - Each folder here represents a github repo.
-- Each folder has their own git repos that they point to. 
+- Each folder has their own git repos that they point to.
 
 - mirrors the structure of the Ionos server where this project will be uploaded.
-server ip:  31.70.85.89
+  server ip: 31.70.85.89
 
 ## ssh login
 
 ssh dev@31.70.85.89
 Project6969ThumsUpClassmateProject6969ThumsUpClassmate
 
+or, for passwordless login:
+ssh ionos-dev
+
+## Seeded data
+
+At server provisioning time, the default seeded auth users are:
+
+- seeduser (regular user role)
+  Source: seed-auth-users.sh:21
+
+- seedadmin (admin role)
+  Source: seed-auth-users.sh:25
+
+- devuser (non-admin OAuth seed user reused for app clients: radio, Neera, seeksage, game)
+  Sources: seed-auth-client.sh:23, seed-Neera-client.sh:22, seed-seeksage-client.sh:22, seed-game-client.sh:22
+
+Provisioning path that runs these seed scripts: deploy-all.sh:19
+
+These are upserted (created if missing, otherwise updated/already exists), not blindly duplicated: cli.py:7.
+
 ## Routing
 
 ### Use subpaths first, not subdomains as we dont yet have a domain purchased:
 
-http://SERVER_IP/auth   → central auth service
-http://SERVER_IP/notes  → notes app
-http://SERVER_IP/game   → game app
-http://SERVER_IP/admin  → admin app
+http://SERVER_IP/auth → central auth service
+http://SERVER_IP/notes → notes app
+http://SERVER_IP/game → game app
+http://SERVER_IP/admin → admin app
 
 ### Behind Nginx
 
 Nginx
-├── /auth  → auth service
+├── /auth → auth service
 ├── /notes → notes Flask app
-├── /game  → game Flask app
+├── /game → game Flask app
 └── /admin → admin Flask app
-
 
 ## repo design
 
@@ -36,10 +55,10 @@ Each folder here represents a github repo.
 
 Individual repos for each project:
 
-- notes-app       → standalone capable, SSO capable
-- game-app        → standalone capable, SSO capable
-- admin-app       → standalone capable, SSO capable
-- auth-service    → central login service
+- notes-app → standalone capable, SSO capable
+- game-app → standalone capable, SSO capable
+- admin-app → standalone capable, SSO capable
+- auth-service → central login service
 
 Then add a separate deployment repo:
 nightcraft-server-stack/
@@ -71,7 +90,7 @@ Run the full ecosystem
 All projects share the same auth backbone - they have a central authentication/identity service that handles all user management and authentication. This service is responsible for user registration, login, logout, password reset, email verification, session management, and OAuth/OIDC token issuing. Each app becomes an OAuth/OIDC client that relies on the auth service for user authentication and authorization.
 D:\dev_work\web_dev\personal site\ionos-server\service-auth
 
-Each product DB stores only product-specific data and user_id, not full user data.  The user_id comes from the auth service. Each app becomes an OAuth/OIDC  client
+Each product DB stores only product-specific data and user_id, not full user data. The user_id comes from the auth service. Each app becomes an OAuth/OIDC client
 
 #### Responsibilities
 
@@ -89,6 +108,7 @@ MFA later, maybe
 #### Database:
 
 auth_db
+
 - users
 - identities
 - sessions
@@ -98,7 +118,7 @@ auth_db
 - roles
 - permissions
 
-#### expected behaviour 
+#### expected behaviour
 
 When the user visits 31.70.85.89.com/notes:
 

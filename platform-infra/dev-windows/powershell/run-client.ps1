@@ -25,7 +25,7 @@ if ($App -eq 'artsy') {
     $appScript = Join-Path $appArtsyPath 'dev-start.ps1'
     $logCategoryPath = 'app-artsy'
     if (-not $AuthClientId) {
-        $AuthClientId = 'curio-app'
+        $AuthClientId = 'neera-app'
     }
     if ($Port -le 0) {
         $Port = 5600

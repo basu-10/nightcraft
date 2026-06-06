@@ -3,28 +3,28 @@ import click
 from .catalog_seed import CATALOG_SEED_DATA
 
 from .extensions import db
-from .models import CurioList, CurioListItem, LocalCredential, Review, UserProfile
+from .models import NeeraList, NeeraListItem, LocalCredential, Review, UserProfile
 from .works import seed_catalog_items
 
 
 def _seed_profile_content(profile):
-    if CurioList.query.filter_by(profile_id=profile.id).count() == 0:
+    if NeeraList.query.filter_by(profile_id=profile.id).count() == 0:
         starter_lists = [
-            CurioList(
+            NeeraList(
                 profile_id=profile.id,
                 category="books",
                 title="Summer Reads",
                 description="Beach days, slow nights, and unforgettable stories.",
                 item_count=3,
             ),
-            CurioList(
+            NeeraList(
                 profile_id=profile.id,
                 category="songs",
                 title="Songs that Heal",
                 description="For the days when you need a little extra softness.",
                 item_count=3,
             ),
-            CurioList(
+            NeeraList(
                 profile_id=profile.id,
                 category="films",
                 title="10 Films You Must Watch",
@@ -37,15 +37,15 @@ def _seed_profile_content(profile):
 
         db.session.add_all(
             [
-                CurioListItem(list_id=starter_lists[0].id, position=1, title="The Left Hand of Darkness", creator_name="Ursula K. Le Guin"),
-                CurioListItem(list_id=starter_lists[0].id, position=2, title="Never Let Me Go", creator_name="Kazuo Ishiguro"),
-                CurioListItem(list_id=starter_lists[0].id, position=3, title="A Visit from the Goon Squad", creator_name="Jennifer Egan"),
-                CurioListItem(list_id=starter_lists[1].id, position=1, title="Nights", creator_name="Frank Ocean"),
-                CurioListItem(list_id=starter_lists[1].id, position=2, title="Simulation Swarm", creator_name="Big Thief"),
-                CurioListItem(list_id=starter_lists[1].id, position=3, title="Kintsugi", creator_name="Lana Del Rey"),
-                CurioListItem(list_id=starter_lists[2].id, position=1, title="Past Lives", creator_name="Celine Song"),
-                CurioListItem(list_id=starter_lists[2].id, position=2, title="Portrait of a Lady on Fire", creator_name="Celine Sciamma"),
-                CurioListItem(list_id=starter_lists[2].id, position=3, title="In the Mood for Love", creator_name="Wong Kar-wai"),
+                NeeraListItem(list_id=starter_lists[0].id, position=1, title="The Left Hand of Darkness", creator_name="Ursula K. Le Guin"),
+                NeeraListItem(list_id=starter_lists[0].id, position=2, title="Never Let Me Go", creator_name="Kazuo Ishiguro"),
+                NeeraListItem(list_id=starter_lists[0].id, position=3, title="A Visit from the Goon Squad", creator_name="Jennifer Egan"),
+                NeeraListItem(list_id=starter_lists[1].id, position=1, title="Nights", creator_name="Frank Ocean"),
+                NeeraListItem(list_id=starter_lists[1].id, position=2, title="Simulation Swarm", creator_name="Big Thief"),
+                NeeraListItem(list_id=starter_lists[1].id, position=3, title="Kintsugi", creator_name="Lana Del Rey"),
+                NeeraListItem(list_id=starter_lists[2].id, position=1, title="Past Lives", creator_name="Celine Song"),
+                NeeraListItem(list_id=starter_lists[2].id, position=2, title="Portrait of a Lady on Fire", creator_name="Celine Sciamma"),
+                NeeraListItem(list_id=starter_lists[2].id, position=3, title="In the Mood for Love", creator_name="Wong Kar-wai"),
             ]
         )
 
@@ -114,8 +114,8 @@ def register_cli(app):
         if demo_profile is None:
             demo_profile = UserProfile(
                 user_id="demo",
-                username="curio",
-                display_name="Curio",
+                username="neera",
+                display_name="Neera",
                 bio="Curating pieces of art that feel like home.",
                 is_public=True,
             )

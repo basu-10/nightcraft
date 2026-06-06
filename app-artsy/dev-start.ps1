@@ -3,9 +3,9 @@ param(
     [switch]$ForceSetup,
     [ValidateSet('local', 'sso')]
     [string]$AuthMode = 'local',
-    [string]$DatabaseUrl = 'postgresql://postgres:postgres@localhost:5432/nightcraft_curio',
+    [string]$DatabaseUrl = 'postgresql://postgres:postgres@localhost:5432/nightcraft_neera',
     [string]$AuthServiceUrl = 'http://127.0.0.1:5100',
-    [string]$AuthClientId = 'curio-app',
+    [string]$AuthClientId = 'neera-app',
     [string]$AuthClientSecret = 'dev-secret',
     [int]$Port = 5600
 )
@@ -49,11 +49,11 @@ $env:DATABASE_URL = $DatabaseUrl
 
 if ($ForceSetup) {
     Write-Host '[dev-start] Running setup (forced)...'
-    & $venvPython -m flask --app curio setup
+    & $venvPython -m flask --app neera setup
 }
 else {
     Write-Host '[dev-start] Running setup (idempotent)...'
-    & $venvPython -m flask --app curio setup
+    & $venvPython -m flask --app neera setup
 }
 
 $env:FLASK_AUTH_MODE = $AuthMode
@@ -68,5 +68,5 @@ else {
     Write-Host '[dev-start] AUTH_MODE=local'
 }
 
-Write-Host "[dev-start] Starting Curio at http://127.0.0.1:$Port"
-& $venvPython -m flask --app curio run --port $Port
+Write-Host "[dev-start] Starting Neera at http://127.0.0.1:$Port"
+& $venvPython -m flask --app neera run --port $Port

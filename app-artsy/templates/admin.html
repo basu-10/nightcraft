@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Curio Admin</title>
+  <title>Neera Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
 <body>
   <div class="home-shell">
     <header class="home-topbar">
-      <a class="home-logo" href="{{ url_for('main.home') }}">Curio</a>
+      <a class="home-logo" href="{{ url_for('main.home') }}">Neera</a>
       <nav class="home-topnav">
         <span>Hi, {{ app_user.display_name or app_user.username }} welcome</span>
         <a href="{{ url_for('main.me') }}">My Profile</a>
@@ -24,10 +24,10 @@
 
     <main class="home-main">
       <section class="home-hero">
-        <p class="home-kicker">Curio Admin</p>
+        <p class="home-kicker">Neera Admin</p>
         <h1>Content and profile controls</h1>
         <p>
-          Basic admin summary for Curio. This page is visible only to accounts with the
+          Basic admin summary for Neera. This page is visible only to accounts with the
           <strong>admin</strong> role from shared auth.
         </p>
       </section>

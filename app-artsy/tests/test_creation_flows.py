@@ -3,17 +3,17 @@ import os
 
 import pytest
 
-from curio import create_app
-from curio.extensions import db
-from curio.models import (
-    CurioArtMetadata,
-    CurioBookMetadata,
-    CurioFilmMetadata,
-    CurioItem,
-    CurioList,
-    CurioListItem,
-    CurioNote,
-    CurioSongMetadata,
+from neera import create_app
+from neera.extensions import db
+from neera.models import (
+    NeeraArtMetadata,
+    NeeraBookMetadata,
+    NeeraFilmMetadata,
+    NeeraItem,
+    NeeraList,
+    NeeraListItem,
+    NeeraNote,
+    NeeraSongMetadata,
     FeedEvent,
     LocalCredential,
     Review,
@@ -113,7 +113,7 @@ def test_create_list_persists_and_renders_on_me(tmp_path):
     assert "List created." in page
 
     with app.app_context():
-        created = CurioList.query.filter_by(title="Rainy Day Films").first()
+        created = NeeraList.query.filter_by(title="Rainy Day Films").first()
         assert created is not None
         assert created.category == "films"
         assert created.visibility == "public"
@@ -156,7 +156,7 @@ def test_review_search_shows_exact_and_similar_states(tmp_path):
     app = _build_test_app(tmp_path)
     with app.app_context():
         _create_local_user()
-        exact = CurioItem(
+        exact = NeeraItem(
             category="book",
             title="The Hobbit",
             creator_display_name="J.R.R. Tolkien",
@@ -167,7 +167,7 @@ def test_review_search_shows_exact_and_similar_states(tmp_path):
             is_user_submitted=False,
             metadata_confidence=1.0,
         )
-        similar = CurioItem(
+        similar = NeeraItem(
             category="book",
             title="The Book That Didn't Exist",
             creator_display_name="Author B",
@@ -182,8 +182,8 @@ def test_review_search_shows_exact_and_similar_states(tmp_path):
         db.session.flush()
         db.session.add_all(
             [
-                CurioBookMetadata(work_id=exact.id, author="J.R.R. Tolkien", year=1937),
-                CurioBookMetadata(work_id=similar.id, author="Author B", year=2020),
+                NeeraBookMetadata(work_id=exact.id, author="J.R.R. Tolkien", year=1937),
+                NeeraBookMetadata(work_id=similar.id, author="Author B", year=2020),
             ]
         )
         db.session.commit()
@@ -226,7 +226,7 @@ def test_create_new_book_then_publish_review_creates_feed_event(tmp_path):
     assert "Step 2: Write your review" in create_page
 
     with app.app_context():
-        book = CurioItem.query.filter_by(title="The Book That Does Not Exist").first()
+        book = NeeraItem.query.filter_by(title="The Book That Does Not Exist").first()
         assert book is not None
         assert book.is_user_submitted is True
         assert book.metadata_confidence == 0.35
@@ -266,7 +266,7 @@ def test_create_new_book_duplicate_warning_and_draft_no_feed_event(tmp_path):
     app = _build_test_app(tmp_path)
     with app.app_context():
         _create_local_user()
-        existing = CurioItem(
+        existing = NeeraItem(
             category="book",
             title="The Book That Does Not Exist",
             creator_display_name="S. Author",
@@ -279,7 +279,7 @@ def test_create_new_book_duplicate_warning_and_draft_no_feed_event(tmp_path):
         )
         db.session.add(existing)
         db.session.flush()
-        db.session.add(CurioBookMetadata(work_id=existing.id, author="S. Author", year=2020))
+        db.session.add(NeeraBookMetadata(work_id=existing.id, author="S. Author", year=2020))
         db.session.commit()
 
     client = app.test_client()
@@ -308,7 +308,7 @@ def test_create_new_book_duplicate_warning_and_draft_no_feed_event(tmp_path):
     assert "Step 2: Write your review" in create_response.get_data(as_text=True)
 
     with app.app_context():
-        created_book = CurioItem.query.filter_by(title="The Book That Does Not Exist Again").first()
+        created_book = NeeraItem.query.filter_by(title="The Book That Does Not Exist Again").first()
         assert created_book is not None
         assert created_book.metadata_confidence == 0.2
 
@@ -342,25 +342,25 @@ def test_create_list_item_orders_entries_and_updates_count(tmp_path):
     app = _build_test_app(tmp_path)
     with app.app_context():
         _user, profile = _create_local_user()
-        curio_list = CurioList(
+        Neera_list = NeeraList(
             profile_id=profile.id,
             category="books",
             title="Shelf",
             description="Favorites",
             item_count=1,
         )
-        db.session.add(curio_list)
+        db.session.add(Neera_list)
         db.session.flush()
         db.session.add(
-            CurioListItem(
-                list_id=curio_list.id,
+            NeeraListItem(
+                list_id=Neera_list.id,
                 position=1,
                 title="Existing Book",
                 creator_name="Author A",
             )
         )
         db.session.commit()
-        list_id = curio_list.id
+        list_id = Neera_list.id
 
     client = app.test_client()
     _login(client)
@@ -380,8 +380,8 @@ def test_create_list_item_orders_entries_and_updates_count(tmp_path):
     assert "List item added." in page
 
     with app.app_context():
-        stored_list = CurioList.query.get(list_id)
-        items = CurioListItem.query.filter_by(list_id=list_id).order_by(CurioListItem.position.asc()).all()
+        stored_list = NeeraList.query.get(list_id)
+        items = NeeraListItem.query.filter_by(list_id=list_id).order_by(NeeraListItem.position.asc()).all()
         assert stored_list.item_count == 2
         assert [item.title for item in items] == ["Existing Book", "New Book"]
         assert [item.position for item in items] == [1, 2]
@@ -391,10 +391,10 @@ def test_edit_and_delete_list(tmp_path):
     app = _build_test_app(tmp_path)
     with app.app_context():
         _user, profile = _create_local_user()
-        curio_list = CurioList(profile_id=profile.id, category="books", title="Shelf", description="Old")
-        db.session.add(curio_list)
+        Neera_list = NeeraList(profile_id=profile.id, category="books", title="Shelf", description="Old")
+        db.session.add(Neera_list)
         db.session.commit()
-        list_id = curio_list.id
+        list_id = Neera_list.id
 
     client = app.test_client()
     _login(client)
@@ -408,7 +408,7 @@ def test_edit_and_delete_list(tmp_path):
     assert "List updated." in edit_response.get_data(as_text=True)
 
     with app.app_context():
-        updated = db.session.get(CurioList, list_id)
+        updated = db.session.get(NeeraList, list_id)
         assert updated.title == "Updated Shelf"
         assert updated.category == "films"
         assert updated.description == "New mood"
@@ -418,7 +418,7 @@ def test_edit_and_delete_list(tmp_path):
     assert "List deleted." in delete_response.get_data(as_text=True)
 
     with app.app_context():
-        assert db.session.get(CurioList, list_id) is None
+        assert db.session.get(NeeraList, list_id) is None
 
 
 def test_edit_and_delete_review(tmp_path):
@@ -460,20 +460,20 @@ def test_reorder_and_delete_list_items(tmp_path):
     app = _build_test_app(tmp_path)
     with app.app_context():
         _user, profile = _create_local_user()
-        curio_list = CurioList(profile_id=profile.id, category="books", title="Shelf", description="Favorites", item_count=3)
-        db.session.add(curio_list)
+        Neera_list = NeeraList(profile_id=profile.id, category="books", title="Shelf", description="Favorites", item_count=3)
+        db.session.add(Neera_list)
         db.session.flush()
         db.session.add_all(
             [
-                CurioListItem(list_id=curio_list.id, position=1, title="First"),
-                CurioListItem(list_id=curio_list.id, position=2, title="Second"),
-                CurioListItem(list_id=curio_list.id, position=3, title="Third"),
+                NeeraListItem(list_id=Neera_list.id, position=1, title="First"),
+                NeeraListItem(list_id=Neera_list.id, position=2, title="Second"),
+                NeeraListItem(list_id=Neera_list.id, position=3, title="Third"),
             ]
         )
         db.session.commit()
-        list_id = curio_list.id
-        second_item_id = CurioListItem.query.filter_by(list_id=list_id, title="Second").first().id
-        first_item_id = CurioListItem.query.filter_by(list_id=list_id, title="First").first().id
+        list_id = Neera_list.id
+        second_item_id = NeeraListItem.query.filter_by(list_id=list_id, title="Second").first().id
+        first_item_id = NeeraListItem.query.filter_by(list_id=list_id, title="First").first().id
 
     client = app.test_client()
     _login(client)
@@ -487,7 +487,7 @@ def test_reorder_and_delete_list_items(tmp_path):
     assert "List item reordered." in move_response.get_data(as_text=True)
 
     with app.app_context():
-        items = CurioListItem.query.filter_by(list_id=list_id).order_by(CurioListItem.position.asc()).all()
+        items = NeeraListItem.query.filter_by(list_id=list_id).order_by(NeeraListItem.position.asc()).all()
         assert [item.title for item in items] == ["Second", "First", "Third"]
 
     delete_response = client.post(
@@ -498,8 +498,8 @@ def test_reorder_and_delete_list_items(tmp_path):
     assert "List item deleted." in delete_response.get_data(as_text=True)
 
     with app.app_context():
-        items = CurioListItem.query.filter_by(list_id=list_id).order_by(CurioListItem.position.asc()).all()
-        stored_list = db.session.get(CurioList, list_id)
+        items = NeeraListItem.query.filter_by(list_id=list_id).order_by(NeeraListItem.position.asc()).all()
+        stored_list = db.session.get(NeeraList, list_id)
         assert [item.title for item in items] == ["Second", "Third"]
         assert [item.position for item in items] == [1, 2]
         assert stored_list.item_count == 2
@@ -510,7 +510,7 @@ def test_public_lists_page_renders_profile_lists(tmp_path):
     with app.app_context():
         _user, profile = _create_local_user(username="listowner")
         db.session.add(
-            CurioList(
+            NeeraList(
                 profile_id=profile.id,
                 category="books",
                 title="Public Shelf",
@@ -575,14 +575,14 @@ def test_public_profile_hides_private_lists_and_reviews_from_main_tabs(tmp_path)
         _user, profile = _create_local_user(username="owner")
         db.session.add_all(
             [
-                CurioList(
+                NeeraList(
                     profile_id=profile.id,
                     category="books",
                     title="Public Shelf",
                     description="Shown publicly",
                     visibility="public",
                 ),
-                CurioList(
+                NeeraList(
                     profile_id=profile.id,
                     category="books",
                     title="Secret Shelf",
@@ -642,7 +642,7 @@ def test_drafts_route_requires_owner_and_shows_private_content(tmp_path):
     with app.app_context():
         _user, owner_profile = _create_local_user(username="owner")
         _create_local_user(username="outsider")
-        private_list = CurioList(
+        private_list = NeeraList(
             profile_id=owner_profile.id,
             category="books",
             title="Secret Shelf",
@@ -692,7 +692,7 @@ def test_editing_private_content_from_drafts_redirects_back_to_drafts(tmp_path):
     app = _build_test_app(tmp_path)
     with app.app_context():
         _user, profile = _create_local_user(username="owner")
-        curio_list = CurioList(
+        Neera_list = NeeraList(
             profile_id=profile.id,
             category="books",
             title="Secret Shelf",
@@ -708,9 +708,9 @@ def test_editing_private_content_from_drafts_redirects_back_to_drafts(tmp_path):
             visibility="private",
             status="published",
         )
-        db.session.add_all([curio_list, review])
+        db.session.add_all([Neera_list, review])
         db.session.commit()
-        list_id = curio_list.id
+        list_id = Neera_list.id
         review_id = review.id
 
     client = app.test_client()
@@ -748,7 +748,7 @@ def test_editing_private_content_from_drafts_redirects_back_to_drafts(tmp_path):
     assert "Drafts &amp; Private" in review_page or "Drafts & Private" in review_page
 
     with app.app_context():
-        updated_list = db.session.get(CurioList, list_id)
+        updated_list = db.session.get(NeeraList, list_id)
         updated_review = db.session.get(Review, review_id)
         assert updated_list.visibility == "public"
         assert updated_review.visibility == "public"
@@ -839,21 +839,21 @@ def test_notes_and_feed_tab_routes_render_real_content(tmp_path):
         )
         db.session.add_all(
             [
-                CurioNote(
+                NeeraNote(
                     profile_id=profile.id,
                     title="Public Note",
                     body="Visible note.",
                     visibility="public",
                     status="published",
                 ),
-                CurioNote(
+                NeeraNote(
                     profile_id=profile.id,
                     title="Private Note",
                     body="Hidden note.",
                     visibility="private",
                     status="published",
                 ),
-                CurioNote(
+                NeeraNote(
                     profile_id=profile.id,
                     title="Draft Note",
                     body="Draft note.",
@@ -904,21 +904,21 @@ def test_drafts_route_shows_note_drafts_and_private_notes(tmp_path):
         _user, owner = _create_local_user(username="owner")
         db.session.add_all(
             [
-                CurioNote(
+                NeeraNote(
                     profile_id=owner.id,
                     title="Public Published Note",
                     body="Should stay out of drafts.",
                     visibility="public",
                     status="published",
                 ),
-                CurioNote(
+                NeeraNote(
                     profile_id=owner.id,
                     title="Private Published Note",
                     body="Drafts should include this.",
                     visibility="private",
                     status="published",
                 ),
-                CurioNote(
+                NeeraNote(
                     profile_id=owner.id,
                     title="Draft Note",
                     body="Drafts should include this too.",
@@ -967,7 +967,7 @@ def test_create_edit_delete_note_and_redirect_from_drafts(tmp_path):
     assert "Note draft saved." in create_response.get_data(as_text=True)
 
     with app.app_context():
-        note = CurioNote.query.filter_by(title="Fresh Note").first()
+        note = NeeraNote.query.filter_by(title="Fresh Note").first()
         assert note is not None
         note_id = note.id
 
@@ -996,7 +996,7 @@ def test_create_edit_delete_note_and_redirect_from_drafts(tmp_path):
     assert "Note deleted." in delete_response.get_data(as_text=True)
 
     with app.app_context():
-        assert CurioNote.query.get(note_id) is None
+        assert NeeraNote.query.get(note_id) is None
 
 
 def test_bookmarks_route_requires_owner(tmp_path):
@@ -1032,12 +1032,12 @@ def test_seed_catalog_cli_is_idempotent_and_item_pages_render(tmp_path):
     assert "Seeded 0 new catalog items" in second_seed.output
 
     with app.app_context():
-        assert CurioItem.query.count() == 20
-        assert CurioItem.query.filter_by(category="book").count() == 5
-        assert CurioItem.query.filter_by(category="film").count() == 5
-        assert CurioItem.query.filter_by(category="song").count() == 5
-        assert CurioItem.query.filter_by(category="art").count() == 5
-        first_item = CurioItem.query.order_by(CurioItem.id.asc()).first()
+        assert NeeraItem.query.count() == 20
+        assert NeeraItem.query.filter_by(category="book").count() == 5
+        assert NeeraItem.query.filter_by(category="film").count() == 5
+        assert NeeraItem.query.filter_by(category="song").count() == 5
+        assert NeeraItem.query.filter_by(category="art").count() == 5
+        first_item = NeeraItem.query.order_by(NeeraItem.id.asc()).first()
         item_id = first_item.id
 
     client = app.test_client()
@@ -1054,7 +1054,7 @@ def test_work_schema_supports_category_specific_metadata(tmp_path):
     app = _build_test_app(tmp_path)
 
     with app.app_context():
-        book = CurioItem(
+        book = NeeraItem(
             category="book",
             title="The Hobbit",
             creator_display_name="J.R.R. Tolkien",
@@ -1065,7 +1065,7 @@ def test_work_schema_supports_category_specific_metadata(tmp_path):
             is_user_submitted=False,
             metadata_confidence=1.0,
         )
-        film = CurioItem(
+        film = NeeraItem(
             category="film",
             title="Spirited Away",
             creator_display_name="Hayao Miyazaki",
@@ -1076,7 +1076,7 @@ def test_work_schema_supports_category_specific_metadata(tmp_path):
             is_user_submitted=False,
             metadata_confidence=1.0,
         )
-        song = CurioItem(
+        song = NeeraItem(
             category="song",
             title="Imagine",
             creator_display_name="John Lennon",
@@ -1087,7 +1087,7 @@ def test_work_schema_supports_category_specific_metadata(tmp_path):
             is_user_submitted=False,
             metadata_confidence=1.0,
         )
-        art = CurioItem(
+        art = NeeraItem(
             category="art",
             title="The Starry Night",
             creator_display_name="Vincent van Gogh",
@@ -1102,7 +1102,7 @@ def test_work_schema_supports_category_specific_metadata(tmp_path):
         db.session.flush()
         db.session.add_all(
             [
-                CurioBookMetadata(
+                NeeraBookMetadata(
                     work_id=book.id,
                     author="J.R.R. Tolkien",
                     year=1937,
@@ -1111,7 +1111,7 @@ def test_work_schema_supports_category_specific_metadata(tmp_path):
                     isbn="9780547928227",
                     language="English",
                 ),
-                CurioFilmMetadata(
+                NeeraFilmMetadata(
                     work_id=film.id,
                     director="Hayao Miyazaki",
                     year=2001,
@@ -1119,14 +1119,14 @@ def test_work_schema_supports_category_specific_metadata(tmp_path):
                     country="Japan",
                     language="Japanese",
                 ),
-                CurioSongMetadata(
+                NeeraSongMetadata(
                     work_id=song.id,
                     artist="John Lennon",
                     album="Imagine",
                     year=1971,
                     duration_seconds=183,
                 ),
-                CurioArtMetadata(
+                NeeraArtMetadata(
                     work_id=art.id,
                     artist="Vincent van Gogh",
                     year=1889,
@@ -1138,10 +1138,10 @@ def test_work_schema_supports_category_specific_metadata(tmp_path):
         )
         db.session.commit()
 
-        stored_book = CurioItem.query.filter_by(title="The Hobbit").first()
-        stored_film = CurioItem.query.filter_by(title="Spirited Away").first()
-        stored_song = CurioItem.query.filter_by(title="Imagine").first()
-        stored_art = CurioItem.query.filter_by(title="The Starry Night").first()
+        stored_book = NeeraItem.query.filter_by(title="The Hobbit").first()
+        stored_film = NeeraItem.query.filter_by(title="Spirited Away").first()
+        stored_song = NeeraItem.query.filter_by(title="Imagine").first()
+        stored_art = NeeraItem.query.filter_by(title="The Starry Night").first()
 
         assert stored_book.book_metadata.author == "J.R.R. Tolkien"
         assert stored_book.year_value == 1937
@@ -1158,7 +1158,7 @@ def test_item_pages_render_with_new_work_schema(tmp_path):
     app = _build_test_app(tmp_path)
 
     with app.app_context():
-        item = CurioItem(
+        item = NeeraItem(
             category="book",
             title="The Hobbit",
             creator_display_name="J.R.R. Tolkien",
@@ -1172,7 +1172,7 @@ def test_item_pages_render_with_new_work_schema(tmp_path):
         db.session.add(item)
         db.session.flush()
         db.session.add(
-            CurioBookMetadata(
+            NeeraBookMetadata(
                 work_id=item.id,
                 author="J.R.R. Tolkien",
                 year=1937,
@@ -1247,7 +1247,7 @@ def test_create_work_submission_persists_new_entry(tmp_path):
     assert "9780547773742" in page
 
     with app.app_context():
-        created = CurioItem.query.filter_by(title="A Wizard of Earthsea").first()
+        created = NeeraItem.query.filter_by(title="A Wizard of Earthsea").first()
         assert created is not None
         assert created.is_user_submitted is True
         assert created.source_type == "user"
@@ -1306,7 +1306,7 @@ def test_create_work_submission_accepts_uploaded_image(tmp_path):
     assert "Work submitted." in response.get_data(as_text=True)
 
     with app.app_context():
-        created = CurioItem.query.filter_by(title="New Song").first()
+        created = NeeraItem.query.filter_by(title="New Song").first()
         assert created is not None
         assert created.image_url.startswith("/uploads/works/")
 

@@ -116,10 +116,10 @@ def home():
             "stack": "Python, FastAPI, React",
         },
         {
-            "name": "Curio",
+            "name": "Neera",
             "tagline": "Cultural discovery for books, songs, art, people, and ideas.",
             "description": "Lists, notes, posts, item pages, and discussions that connect culture across formats.",
-            "url": current_app.config["CURIO_URL"],
+            "url": current_app.config["NEERA_URL"],
             "status": "In Development",
             "stack": "Next.js, Prisma, PostgreSQL",
         },
@@ -178,9 +178,9 @@ def admin_dashboard():
             "status": "Live",
         },
         {
-            "name": "Curio Admin",
+            "name": "Neera Admin",
             "description": "Review catalog data and product-level administration.",
-            "url": _admin_target(current_app.config["CURIO_URL"]),
+            "url": _admin_target(current_app.config["NEERA_URL"]),
             "status": "Live",
         },
         {
