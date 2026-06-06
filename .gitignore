@@ -92,3 +92,7 @@ resources/icons/*.png
 
 # server orchestration
 server-scripts/
+
+# ai generated shittery
+.playwright-mcp/
+main-page-snapshot.yml
