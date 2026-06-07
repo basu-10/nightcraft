@@ -4,7 +4,16 @@ Companion web app for NoteStack desktop. Edit notes in the browser with the Lexi
 
 In the Nightcraft stack, this app is mounted under `/notestack` and uses shared session login from `service-auth` when `AUTH_MODE=sso`.
 
+Guest mode is enabled by default on `/app`: when no authenticated session exists, the app runs fully in browser-only mode and stores notes/folders/tags in IndexedDB on the client device.
+
+Guest mode data tools:
+
+- Export guest data to a JSON backup from the sidebar.
+- Import a JSON backup back into guest mode on the same or another browser.
+- After sign-in, if guest data exists in that browser, NoteStack prompts to import it into the authenticated account and then clears local guest data.
+
 Database backend note:
+
 - Current default is `sqlite` for backward compatibility.
 - PostgreSQL migration is in progress. See `POSTGRES_MIGRATION_PLAN.md`.
 
@@ -25,6 +34,7 @@ app-note/
   static/
     css/style.css      # Dark theme matching desktop palette
     js/app.js          # Main SPA logic
+    js/guest_store.js  # IndexedDB local API adapter for guest mode
     js/lexical_editor.js  # Lexical editor integration
     js/conflicts.js    # Conflict resolution UI
     js/lexical_editor/ # Lexical helper modules (toolbar, nodes, insertions)
@@ -68,7 +78,8 @@ cd app-note
 python run.py
 ```
 
-Open `http://127.0.0.1:5335` in a browser, register an account, and start editing.
+Open `http://127.0.0.1:5335` in a browser and go to `/app` to start in guest mode.
+Sign in/register when you want account-backed sync and token settings.
 
 For shared-auth development against `service-auth`:
 
@@ -149,9 +160,9 @@ application = create_app()
 
 In the PythonAnywhere **Web** tab under **Static files**, add:
 
-| URL         | Directory                                       |
-| ----------- | ----------------------------------------------- |
-| `/static/`  | `/home/YOUR_USERNAME/notestack/app-note/static` |
+| URL        | Directory                                       |
+| ---------- | ----------------------------------------------- |
+| `/static/` | `/home/YOUR_USERNAME/notestack/app-note/static` |
 
 ### 6. Reload the web app
 
@@ -180,12 +191,12 @@ If a note is edited on both the web and the desktop between syncs, a conflict is
 
 ## Sync protocol summary
 
-| Operation | Trigger | Endpoint |
-| --------- | ------- | -------- |
-| Push | 3s after any note save on desktop | `POST /api/sync/push` |
-| Pull | App startup | `GET /api/sync/pull?since=<ISO>` |
-| Conflict list | Web banner / desktop tray | `GET /api/sync/conflicts` |
-| Resolve | Web UI | `POST /api/sync/conflicts/<id>/resolve` |
+| Operation     | Trigger                           | Endpoint                                |
+| ------------- | --------------------------------- | --------------------------------------- |
+| Push          | 3s after any note save on desktop | `POST /api/sync/push`                   |
+| Pull          | App startup                       | `GET /api/sync/pull?since=<ISO>`        |
+| Conflict list | Web banner / desktop tray         | `GET /api/sync/conflicts`               |
+| Resolve       | Web UI                            | `POST /api/sync/conflicts/<id>/resolve` |
 
 Conflict detection: a conflict is raised when the server's `updated_at > client_updated_at` (the web app edited the note after the desktop's last successful push).
 

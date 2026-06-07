@@ -238,6 +238,13 @@ def login_redirect():
     )
 
 
+@main_bp.get("/curio")
+@main_bp.get("/curio/")
+def legacy_curio_redirect():
+    """Keep legacy Curio links working after the rename to Neera."""
+    return redirect(current_app.config["NEERA_URL"])
+
+
 @main_bp.get("/dev-profile")
 def dev_profile():
     shared_user = _fetch_shared_auth_user()

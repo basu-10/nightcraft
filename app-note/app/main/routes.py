@@ -21,6 +21,14 @@ def _require_login():
     return None
 
 
+def _guest_user_view():
+    return {
+        "id": None,
+        "username": "Guest",
+        "email": "",
+    }
+
+
 @main_bp.route("/")
 def index():
     user = get_user_by_id(g.user_id) if g.user_id else None
@@ -29,11 +37,8 @@ def index():
 
 @main_bp.route("/app")
 def app_view():
-    redirect_or_none = _require_login()
-    if redirect_or_none:
-        return redirect_or_none
-    user = get_user_by_id(g.user_id)
-    return render_template("app.html", user=user)
+    user = get_user_by_id(g.user_id) if g.user_id else _guest_user_view()
+    return render_template("app.html", user=user, is_guest=not bool(g.user_id))
 
 
 @main_bp.route("/settings")

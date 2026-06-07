@@ -77,7 +77,7 @@ def test_admin_route_prompts_login_when_not_authenticated():
     assert "Sign in to access admin controls" in html
     assert "Unified Login" in html
     assert "Admin Login" in html
-    assert "Open NEERA Admin" not in html
+    assert "Open Neera Admin" not in html
 
 
 def test_admin_route_renders_admin_cards_for_admin_user():
@@ -92,7 +92,7 @@ def test_admin_route_renders_admin_cards_for_admin_user():
     html = response.get_data(as_text=True)
     assert "Hi, seedadmin welcome" in html
     assert "Open DevRadio Admin" in html
-    assert "Open NEERA Admin" in html
+    assert "Open Neera Admin" in html
     assert "Open SeekSage Admin" in html
     assert "Open NoteStack Admin" in html
 
@@ -105,3 +105,12 @@ def test_platform_admin_alias_route_still_works_for_local_usage():
     assert response.status_code == 200
     html = response.get_data(as_text=True)
     assert "Platform Admin Dashboard" in html
+
+
+def test_legacy_curio_route_redirects_to_neera():
+    client = _client()
+
+    response = client.get("/curio", follow_redirects=False)
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/neera"

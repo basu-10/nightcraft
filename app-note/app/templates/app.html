@@ -58,13 +58,28 @@
 
     <!-- Sync status -->
     <div class="sidebar__footer">
+      {% if is_guest %}
+      <span id="sync-status" class="sync-badge sync-badge--idle" title="Guest mode stores data in this browser via IndexedDB">
+      {% else %}
       <a id="sync-status" class="sync-badge sync-badge--idle" href="{{ url_for('main.sync_log_view') }}" target="_blank" rel="noopener" title="Open sync log">
+      {% endif %}
         <span class="sync-badge__dot"></span>
         <span class="sync-badge__label">Synced</span>
+      {% if is_guest %}
+      </span>
+      {% else %}
       </a>
+      {% endif %}
       <div class="sidebar__user">
         <span id="username-label">{{ user.username }}</span>
+        {% if is_guest %}
+        <button id="btn-guest-export" class="sidebar__settings-btn" title="Export guest data" aria-label="Export guest data">⤓</button>
+        <button id="btn-guest-import" class="sidebar__settings-btn" title="Import guest data" aria-label="Import guest data">⤒</button>
+        <a href="{{ url_for('auth.login', next=request.path) }}" class="sidebar__settings-btn" title="Sign in" aria-label="Sign in">↪</a>
+        <input id="guest-import-file" type="file" accept="application/json,.json" hidden />
+        {% else %}
         <a href="{{ url_for('main.settings_view') }}" class="sidebar__settings-btn" title="Settings" aria-label="Settings">⚙</a>
+        {% endif %}
       </div>
     </div>
   </aside>
@@ -111,6 +126,14 @@
     <div id="conflict-banner" class="conflict-banner" hidden>
       <span>⚠ You have <strong id="conflict-count">0</strong> unresolved sync conflict(s).</span>
       <button id="btn-show-conflicts" class="btn btn--sm btn--warning">Resolve</button>
+    </div>
+
+    <div id="guest-import-banner" class="guest-import-banner" hidden>
+      <span id="guest-import-banner-text">Guest notes were found on this browser.</span>
+      <div class="guest-import-banner__actions">
+        <button id="btn-guest-import-accept" class="btn btn--sm btn--primary" type="button">Import to account</button>
+        <button id="btn-guest-import-dismiss" class="btn btn--sm btn--ghost" type="button">Dismiss</button>
+      </div>
     </div>
 
     <div class="view-header">
@@ -301,6 +324,11 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+  window.NOTESTACK_IS_GUEST = {{ (is_guest or false)|tojson }};
+  window.NOTESTACK_LOGIN_URL = {{ url_for('auth.login', next=request.path)|tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/guest_store.js') }}"></script>
 <script type="module" src="{{ url_for('static', filename='js/lexical_editor.js') }}"></script>
 <script src="{{ url_for('static', filename='js/conflicts.js') }}"></script>
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>

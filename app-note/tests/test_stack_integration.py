@@ -71,6 +71,34 @@ def test_shared_session_claims_provision_local_user(monkeypatch, tmp_path):
     assert int(row["is_admin"]) == 1
 
 
+def test_guest_mode_app_access_without_session(monkeypatch, tmp_path):
+    app = _create_app(monkeypatch, tmp_path, auth_mode="sso")
+
+    import app.auth.sso_auth as sso_auth
+
+    monkeypatch.setattr(sso_auth, "_claims_from_shared_session", lambda: None)
+
+    client = app.test_client()
+    response = client.get("/app")
+
+    assert response.status_code == 200
+    assert b"window.NOTESTACK_IS_GUEST = true" in response.data
+
+
+def test_guest_mode_settings_still_requires_login(monkeypatch, tmp_path):
+    app = _create_app(monkeypatch, tmp_path, auth_mode="sso")
+
+    import app.auth.sso_auth as sso_auth
+
+    monkeypatch.setattr(sso_auth, "_claims_from_shared_session", lambda: None)
+
+    client = app.test_client()
+    response = client.get("/settings")
+
+    assert response.status_code == 302
+    assert "/auth/login" in response.headers["Location"]
+
+
 def test_api_accepts_bearer_token(monkeypatch, tmp_path):
     app = _create_app(monkeypatch, tmp_path, auth_mode="local")
 
