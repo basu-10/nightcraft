@@ -176,7 +176,7 @@ _set_db_values_from_url() {
 
 if [[ -z "${NEERA_DB_USER}" || -z "${NEERA_DB_NAME}" || -z "${NEERA_DB_PASSWORD}" ]]; then
   if neera_url="$(_extract_database_url_from_env_file "${NEERA_ENV_FILE}")"; then
-    _set_db_values_from_url "${neera_url}" "Neera" || true
+    _set_db_values_from_url "${neera_url}" "NEERA" || true
   fi
 fi
 
