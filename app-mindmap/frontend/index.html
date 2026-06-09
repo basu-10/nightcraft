@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Research Workspace</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tui-color-picker@2.2.6/dist/tui-color-picker.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tui-image-editor@3.15.3/dist/tui-image-editor.min.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "lexical": "https://esm.sh/lexical@0.20.0",
+          "@lexical/rich-text": "https://esm.sh/@lexical/rich-text@0.20.0",
+          "@lexical/link": "https://esm.sh/@lexical/link@0.20.0",
+          "@lexical/list": "https://esm.sh/@lexical/list@0.20.0",
+          "@lexical/html": "https://esm.sh/@lexical/html@0.20.0",
+          "@lexical/selection": "https://esm.sh/@lexical/selection@0.20.0",
+          "@lexical/table": "https://esm.sh/@lexical/table@0.20.0",
+          "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="toolbar">
+      <div class="toolbar-left">
+        <button class="tb-btn tb-back-btn" data-action="back-to-books" title="Back to books">&larr; Books</button>
+        <div class="tb-menu-root" data-menu-root>
+          <button class="tb-btn tb-menu-toggle" data-menu-toggle="file">
+            File ▾
+          </button>
+          <div class="tb-menu" id="menu-file" data-menu="file">
+            <div class="tb-menu-section-title">New Card</div>
+            <button
+              class="tb-menu-item"
+              data-action="new-card"
+              data-card-type="text"
+            >
+              Text Card
+            </button>
+            <button
+              class="tb-menu-item"
+              data-action="new-card"
+              data-card-type="image"
+            >
+              Image Card
+            </button>
+            <button
+              class="tb-menu-item"
+              data-action="new-card"
+              data-card-type="table"
+            >
+              Table Card
+            </button>
+            <div class="tb-menu-sep"></div>
+            <button class="tb-menu-item" data-action="export-board">
+              Export Book
+            </button>
+          </div>
+        </div>
+        <div class="tb-menu-root" data-menu-root>
+          <button class="tb-btn tb-menu-toggle" data-menu-toggle="edit">
+            Edit ▾
+          </button>
+          <div class="tb-menu" id="menu-edit" data-menu="edit">
+            <button class="tb-menu-item" data-action="undo">
+              Undo
+            </button>
+            <button class="tb-menu-item" data-action="redo">
+              Redo
+            </button>
+            <div class="tb-menu-sep"></div>
+            <button
+              class="tb-menu-item"
+              data-action="zoom-preset"
+              data-zoom="0.75"
+            >
+              Zoom 75%
+            </button>
+            <button
+              class="tb-menu-item"
+              data-action="zoom-preset"
+              data-zoom="1"
+            >
+              Actual Size (100%)
+            </button>
+            <button
+              class="tb-menu-item"
+              data-action="zoom-preset"
+              data-zoom="1.25"
+            >
+              Zoom 125%
+            </button>
+            <button class="tb-menu-item" data-action="zoom-fit">
+              Fit to Screen
+            </button>
+            <div class="tb-menu-sep"></div>
+            <button class="tb-menu-item" data-action="toggle-multi-select">
+              Toggle Multi-Select Mode
+            </button>
+            <button class="tb-menu-item" data-action="select-all-cards">
+              Select All Cards
+            </button>
+          </div>
+        </div>
+        <span class="toolbar-sep clipboard-sep"></span>
+        <span class="tb-clipboard-group">
+          <button class="tb-btn-clipboard" data-action="cut-cards" disabled title="Cut selected cards">✂ Cut</button>
+          <button class="tb-btn-clipboard" data-action="copy-cards" disabled title="Copy selected cards">📋 Copy</button>
+          <button class="tb-btn-clipboard" data-action="paste-cards" title="Paste cards from clipboard">📌 Paste</button>
+        </span>
+        <span class="toolbar-sep clipboard-sep"></span>
+        <div class="tb-menu-root" data-menu-root>
+          <button class="tb-btn tb-menu-toggle" data-menu-toggle="about">
+            About ▾
+          </button>
+          <div class="tb-menu" id="menu-about" data-menu="about">
+            <a
+              class="tb-menu-item tb-menu-link"
+              href="/documentation.html"
+              >Documentation</a
+            >
+            <a
+              class="tb-menu-item tb-menu-link"
+              href="https://github.com/contact"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Contact</a
+            >
+          </div>
+        </div>
+        <input
+          type="file"
+          id="import-excel-input"
+          accept=".xlsx,.xls,.ods,.csv"
+          style="display: none"
+        />
+      </div>
+      <div class="toolbar-center">
+        <input
+          id="board-title-input"
+          type="text"
+          value="Research Workspace"
+          aria-label="Canvas name"
+        />
+      </div>
+      <div class="toolbar-right">
+        <input
+          id="search-input"
+          class="tb-search"
+          type="text"
+          placeholder="Search cards by title, content, tags..."
+        />
+        <span id="zoom-level">100%</span>
+      </div>
+    </div>
+
+    <div id="canvas-tab-bar"></div>
+
+    <div id="left-sidebar">
+      <div id="sidebar-header">
+        <span id="sidebar-title">Cards</span>
+      </div>
+      <div id="filter-bar">
+        <select id="quick-view-toggle" class="filter-select">
+          <option value="all">All</option>
+          <option value="high-confidence">High Confidence</option>
+        </select>
+        <select id="filter-type" class="filter-select">
+          <option value="all">All Types</option>
+          <option value="text">Text</option>
+          <option value="image">Image</option>
+          <option value="table">Table</option>
+        </select>
+        <div class="filter-row">
+          <select id="filter-tag-id" class="filter-select">
+            <option value="all">All Tags</option>
+          </select>
+          <button
+            id="btn-open-tag-hierarchy"
+            class="tb-btn"
+            title="Set tag parent-child hierarchy"
+          >
+            ⋮
+          </button>
+        </div>
+        <input
+          id="filter-tag"
+          class="filter-input"
+          type="text"
+          placeholder="Filter by tag..."
+        />
+      </div>
+      <div id="card-list"></div>
+      <div id="sidebar-stats">
+        <div class="stats-title">Canvas Info</div>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-value" id="stat-cards">0</span>
+            <span class="stat-label">Cards</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value" id="stat-connections">0</span>
+            <span class="stat-label">Connections</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value" id="stat-tags">0</span>
+            <span class="stat-label">Tags</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button id="btn-collapse-sidebar" class="tb-btn">
+      ◀
+    </button>
+
+    <div id="canvas-container">
+      <div id="canvas-bg"></div>
+      <div id="canvas-content"></div>
+    </div>
+
+    <div id="right-inspector">
+      <div id="inspector-empty">Select a card to inspect</div>
+      <div id="inspector-content" style="display: none">
+        <div class="inspector-section">
+          <div class="inspector-field">
+            <label>ID</label>
+            <span id="insp-id"></span>
+          </div>
+          <div class="inspector-field">
+            <label>Type</label>
+            <span id="insp-type"></span>
+          </div>
+          <div class="inspector-field">
+            <label>Title</label>
+            <input id="insp-title" type="text" />
+          </div>
+          <div class="inspector-field">
+            <label>Created</label>
+            <span id="insp-created"></span>
+          </div>
+          <div class="inspector-field">
+            <label>Updated</label>
+            <span id="insp-updated"></span>
+          </div>
+          <div class="inspector-field">
+            <label>Position</label>
+            <span id="insp-position"></span>
+          </div>
+          <div class="inspector-field">
+            <label>Size</label>
+            <span id="insp-size"></span>
+          </div>
+        </div>
+        <div class="inspector-section">
+          <div class="inspector-field">
+            <label>Tags</label>
+            <input
+              id="insp-tags"
+              type="text"
+              placeholder="comma-separated tags"
+            />
+          </div>
+          <div class="inspector-field">
+            <label>Source URL</label>
+            <input id="insp-source" type="text" placeholder="https://..." />
+          </div>
+          <div class="inspector-field insp-field-image">
+            <label>Image URL</label>
+            <input id="insp-image" type="text" placeholder="https://..." />
+          </div>
+        </div>
+      </div>
+      <div id="inspector-edge-content" style="display: none">
+        <div class="inspector-section">
+          <div class="inspector-field">
+            <label>Edge ID</label>
+            <span id="insp-edge-id"></span>
+          </div>
+          <div class="inspector-field">
+            <label>Connection</label>
+            <span id="insp-edge-connection"></span>
+          </div>
+          <div class="inspector-field">
+            <label>Label</label>
+            <input id="insp-edge-label" type="text" placeholder="Edge label" />
+          </div>
+          <div class="inspector-field">
+            <label>Type</label>
+            <input
+              id="insp-edge-type"
+              type="text"
+              placeholder="e.g. relates-to, depends-on"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="card-context-menu"
+      class="context-menu"
+      style="display: none"
+    ></div>
+
+    <!-- Tag Hierarchy Modal -->
+    <div id="tag-hierarchy-modal" style="display: none">
+      <div id="thm-backdrop"></div>
+      <div id="thm-panel">
+        <div class="thm-header">
+          <span>Tag Hierarchy</span>
+          <button id="btn-close-thm">✕</button>
+        </div>
+        <p class="thm-hint">
+          Drop a tag <strong>onto</strong> another to nest it as a child. Use
+          <em>↑ root</em> to remove a parent.
+        </p>
+        <div id="thm-root-zone" class="thm-root-zone">
+          Drop here to make a root tag ↓
+        </div>
+        <div id="thm-list"></div>
+        <div class="thm-footer">
+          <button id="btn-done-thm" class="tb-btn">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="drop-overlay">
+      <div id="drop-overlay-content">
+        <span id="drop-overlay-icon">📄</span>
+        <span id="drop-overlay-text">Drop files here</span>
+        <span id="drop-overlay-hint">Text, images, spreadsheets, and more</span>
+      </div>
+    </div>
+
+    <!-- Import Type Dialog -->
+    <div id="import-type-modal" style="display: none">
+      <div id="itm-backdrop"></div>
+      <div id="itm-panel">
+        <div class="itm-header">
+          <span>Import File</span>
+          <button id="btn-close-itm">✕</button>
+        </div>
+        <div class="itm-body">
+          <p id="itm-file-name" class="itm-file-name"></p>
+          <p class="itm-prompt">How would you like to import this file?</p>
+          <div class="itm-options">
+            <label class="itm-option">
+              <input type="radio" name="import-type" value="text" checked />
+              <span class="itm-option-label">📝 Text</span>
+              <span class="itm-option-desc">Import as a rich text card</span>
+            </label>
+            <label class="itm-option">
+              <input type="radio" name="import-type" value="table" />
+              <span class="itm-option-label">📊 Table</span>
+              <span class="itm-option-desc">Import as a spreadsheet table</span>
+            </label>
+            <label class="itm-option">
+              <input type="radio" name="import-type" value="image" />
+              <span class="itm-option-label">🖼️ Image</span>
+              <span class="itm-option-desc">Import as an image card</span>
+            </label>
+          </div>
+        </div>
+        <div class="itm-footer">
+          <button id="btn-cancel-itm" class="tb-btn">Cancel</button>
+          <button id="btn-confirm-itm" class="tb-btn itm-btn-primary">Import</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image Editor Modal -->
+    <div id="image-editor-modal">
+      <div id="iem-backdrop"></div>
+      <div id="iem-panel">
+        <div class="iem-header">
+          <span>Edit Image</span>
+          <div class="iem-header-actions">
+            <button id="btn-save-iem" class="tb-btn iem-btn-primary">Apply</button>
+            <button id="btn-close-iem" class="tb-btn" title="Cancel">Cancel</button>
+          </div>
+        </div>
+        <div id="iem-editor-container"></div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/tui-color-picker@2.2.6/dist/tui-color-picker.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tui-image-editor@3.15.3/dist/tui-image-editor.min.js"></script>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

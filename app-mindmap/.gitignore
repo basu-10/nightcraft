@@ -1,0 +1,4 @@
+.git
+.playwright-mcp
+__pycache__
+venv

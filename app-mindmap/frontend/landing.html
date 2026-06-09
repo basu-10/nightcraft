@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Research Workspace</title>
+    <link rel="stylesheet" href="landing.css" />
+  </head>
+  <body>
+    <div id="guest-banner">
+      Logged in as Guest — data saved in browser. Server login coming soon.
+    </div>
+
+    <div id="landing-container">
+      <div id="landing-header">
+        <h1>Research Workspace</h1>
+        <p class="landing-subtitle">Knowledge graph canvas for evidence mapping</p>
+        <div id="landing-actions">
+          <button id="btn-create-book" class="landing-btn landing-btn-primary">+ Create New Book</button>
+          <button id="btn-import-book" class="landing-btn landing-btn-secondary">Import Book</button>
+        </div>
+      </div>
+
+      <div id="book-list">
+        <div id="book-list-empty" class="book-list-empty">
+          <p>No books yet. Create a new one or import an existing book to get started.</p>
+        </div>
+      </div>
+    </div>
+
+    <input type="file" id="import-input" accept=".json" style="display: none" />
+
+    <script type="module" src="landing.js"></script>
+  </body>
+</html>

@@ -108,6 +108,7 @@ The script performs baseline checks, clones/pulls git repo into `/nightcraft-sou
 - `.github/workflows/deploy.yml`:
 
 > **Note:** The bootstrap script at `/usr/local/sbin/server-scripts/nightcraft-server-bootstrap.sh` is **not** in the GitHub repo — it's kept separately on the server.
+> Copy it with a dedicated SCP command per file (one SCP per file), not a multi-file glob. SCP flattens multiple source paths to the destination directory, so `scp file1 file2 dir/` works but `scp ../file1 sub/file2 dir/` loses relative paths.
 > Deploy happens by simply pushing to `main`. GitHub Actions picks it up via `deploy.yml` and runs the SSH command on the server.
 >
 > Deploy logs are in `/var/log/nightcraft-deploy/`. A summary (success/failure) is written to `/platform-infra/deploy-history.csv`.
