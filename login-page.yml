@@ -1,0 +1,21 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - paragraph [ref=e4]: Shared Login
+    - heading "Login" [level=1] [ref=e6]
+    - paragraph [ref=e7]: Use your shared DevRadio account, or continue with Google.
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - text: Username or email
+        - textbox "Username or email" [ref=e10]:
+          - /placeholder: username or email
+      - generic [ref=e11]:
+        - text: Password
+        - textbox "Password" [ref=e12]:
+          - /placeholder: password
+      - button "Sign In" [ref=e13] [cursor=pointer]
+    - generic [ref=e15]: or
+    - generic [ref=e16]:
+      - link "Continue with Google" [ref=e17] [cursor=pointer]:
+        - /url: /auth/login/google?next=/oauth/authorize?response_type%3Dcode%26client_id%3Dseeksage-app%26redirect_uri%3Dhttp%253A%252F%252F31.70.85.89%252Fseeksage%252Fauth%252Fsso%252Fcallback%26scope%3Dopenid%2Bprofile%2Bemail%26state%3D9EwuGPvlxyfYZ3ZQCOH58ZZxruO3y7%26nonce%3DxvCOIYblrb3dykVH2Tly
+      - link "Create account" [ref=e18] [cursor=pointer]:
+        - /url: /auth/register?next=/oauth/authorize?response_type%3Dcode%26client_id%3Dseeksage-app%26redirect_uri%3Dhttp%253A%252F%252F31.70.85.89%252Fseeksage%252Fauth%252Fsso%252Fcallback%26scope%3Dopenid%2Bprofile%2Bemail%26state%3D9EwuGPvlxyfYZ3ZQCOH58ZZxruO3y7%26nonce%3DxvCOIYblrb3dykVH2Tly
