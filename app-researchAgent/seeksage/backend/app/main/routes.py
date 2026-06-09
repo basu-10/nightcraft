@@ -1,6 +1,7 @@
+from pathlib import Path
 from urllib.parse import urlsplit
 
-from flask import Blueprint, current_app, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, logout_user
 
 
@@ -8,6 +9,7 @@ main_bp = Blueprint("main", __name__, url_prefix="/ui")
 
 
 NAV_ITEMS = [
+    {"endpoint": "main.ui_root", "label": "Workspace"},
     {"endpoint": "main.dashboard", "label": "Dashboard"},
     {"endpoint": "main.notes", "label": "Notes"},
     {"endpoint": "main.notifications", "label": "Notifications"},
@@ -40,6 +42,10 @@ def _inject_ui_context():
 
 @main_bp.get("/")
 def ui_root():
+    frontend_dist = current_app.config.get("FRONTEND_DIST_DIR", "")
+    frontend_dist_dir = Path(frontend_dist) if frontend_dist else None
+    if frontend_dist_dir and frontend_dist_dir.is_dir() and (frontend_dist_dir / "index.html").is_file():
+        return send_from_directory(frontend_dist_dir, "index.html")
     return redirect(url_for("main.dashboard"))
 
 
