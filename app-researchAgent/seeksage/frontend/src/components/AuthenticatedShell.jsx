@@ -15,8 +15,12 @@ export default function AuthenticatedShell({ user, onLogout, children }) {
       setActiveWorkspaceId(workspaces[0].id);
       return;
     }
-    if (activeWorkspaceId && !workspaces.find((w) => w.id === activeWorkspaceId) && workspaces.length > 0) {
-      setActiveWorkspaceId(workspaces[0].id);
+    if (activeWorkspaceId && !workspaces.find((w) => w.id === activeWorkspaceId)) {
+      if (workspaces.length > 0) {
+        setActiveWorkspaceId(workspaces[0].id);
+      } else {
+        setActiveWorkspaceId("");
+      }
     }
   }, [activeWorkspaceId, workspaces]);
 
