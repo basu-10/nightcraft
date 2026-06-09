@@ -173,7 +173,11 @@ export default function MainPage({ user, onLogout, workspaces = [], activeWorksp
         next.tool_caps = policy.hard_caps;
       }
     }
-    await updateSettings(next);
+    try {
+      await updateSettings(next);
+    } catch {
+      // Settings update failed silently — state remains unchanged
+    }
   }, [policies, updateSettings]);
 
   const toolUsage = useMemo(() => {
