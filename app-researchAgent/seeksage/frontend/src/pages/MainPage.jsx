@@ -307,6 +307,7 @@ export default function MainPage({ user, onLogout, workspaces = [], activeWorksp
             profiles={profiles}
             policies={policies}
             usage={toolUsage}
+            workspaceId={activeWorkspaceId}
           />
         </div>
 

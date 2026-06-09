@@ -7,6 +7,7 @@ export default function LeftSidebarTabs({
   profiles,
   policies,
   usage = {},
+  workspaceId,
 }) {
   const [tab, setTab] = useState("history");
 
@@ -30,6 +31,9 @@ export default function LeftSidebarTabs({
         {tab === "history" && chatHistory}
         {tab === "settings" && (
           <div className="workspace-settings-panel">
+            {!workspaceId ? (
+              <p className="muted">Create a workspace first to configure settings.</p>
+            ) : (<>
             <label className="form-label">Provider preset</label>
             <select
               className="form-input"
@@ -72,6 +76,7 @@ export default function LeftSidebarTabs({
                 </div>
               ))}
             </div>
+            </>)}
           </div>
         )}
       </div>

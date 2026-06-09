@@ -46,12 +46,13 @@ export function useWorkspaceSettings(workspaceId) {
       return data;
     } catch {
       const data = await api.updateWorkspace(workspaceId, patch);
-      setSettings((prev) => ({
-        ...prev,
-        profile_id: data?.profile_id || prev.profile_id,
-        tool_policy_id: data?.tool_policy_id || prev.tool_policy_id,
-        tool_caps: data?.tool_caps || prev.tool_caps,
-      }));
+      setSettings((prev) => {
+        const next = { ...prev };
+        if ("profile_id" in (data || {})) next.profile_id = data.profile_id;
+        if ("tool_policy_id" in (data || {})) next.tool_policy_id = data.tool_policy_id;
+        if ("tool_caps" in (data || {})) next.tool_caps = data.tool_caps;
+        return next;
+      });
       return data;
     }
   }, [workspaceId]);
