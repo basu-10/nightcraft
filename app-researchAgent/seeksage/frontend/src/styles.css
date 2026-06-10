@@ -317,6 +317,7 @@ body {
   gap: 6px;
   overflow-x: auto;
   flex: 1;
+  min-width: 0;
 }
 
 .workspace-tab {
@@ -1048,10 +1049,12 @@ hr {
 .chat-messages {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 20px 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0;
 }
 
 /* Message Bubbles */
@@ -1061,6 +1064,8 @@ hr {
   border-radius: 12px;
   font-size: 0.9rem;
   line-height: 1.55;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .msg-bubble.msg-user {
@@ -1111,7 +1116,7 @@ hr {
 
 /* ── Markdown content inside assistant bubbles ─────────────────────────── */
 .msg-assistant .msg-content {
-  overflow-x: visible;
+  overflow-x: hidden;
 }
 
 .msg-assistant .msg-content > *:first-child { margin-top: 0; }
