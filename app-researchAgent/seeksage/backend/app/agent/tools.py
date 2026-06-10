@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import markdown as _md_lib
 import re
 import threading
 import time
@@ -22,7 +23,7 @@ from youtube_transcript_api import NoTranscriptFound, TranscriptsDisabled, YouTu
 from ..settings import get_user_tool_settings
 from ..core import activity_log as actlog
 from ..core.activity_log import EVT_TOOL_RETRY, EVT_TOOL_TIMEOUT
-from .llm_factory import build_summary_llms
+from .llm_factory import build_summary_llms, invoke_with_fallbacks
 
 
 _tls = threading.local()
@@ -256,6 +257,243 @@ def _reformat_for_slides(raw_text: str) -> str:
 
     actlog.log("slide_structuring_fallback_raw", {"reason": "all_models_failed"})
     return raw_text
+
+
+_TEMPLATE_SECTIONS: dict[str, str] = {
+    "research_report": (
+        "1. Title (use the provided title or derive one)\n"
+        "2. Executive Summary\n"
+        "3. Key Findings\n"
+        "4. Detailed Analysis\n"
+        "5. Sources / References (if any citations/links are present)\n"
+        "6. Missing / Not specified (if information is lacking)"
+    ),
+    "procurement_report": (
+        "1. Title\n"
+        "2. Objective\n"
+        "3. Recommended Approach\n"
+        "4. Bill of Materials (use a Markdown table)\n"
+        "5. Vendor / Seller Options (use a Markdown table if available)\n"
+        "6. Cost Notes\n"
+        "7. Safety / Compatibility Notes\n"
+        "8. Sources / References (if present)\n"
+        "9. Missing / Not specified (if needed)"
+    ),
+    "comparison_report": (
+        "1. Title\n"
+        "2. Decision Summary\n"
+        "3. Comparison Table (use a Markdown table)\n"
+        "4. Option-by-option Analysis\n"
+        "5. Tradeoffs\n"
+        "6. Recommendation\n"
+        "7. Sources / References (if present)\n"
+        "8. Missing / Not specified (if needed)"
+    ),
+    "financial_report": (
+        "1. Title\n"
+        "2. Executive Summary\n"
+        "3. Key Metrics\n"
+        "4. Analysis\n"
+        "5. Risks / Assumptions\n"
+        "6. Sources / References (if present)\n"
+        "7. Missing / Not specified (if needed)"
+    ),
+}
+
+_VALID_TEMPLATES = set(_TEMPLATE_SECTIONS.keys())
+_VALID_STYLES = {"clean", "dense", "executive"}
+
+
+def _pdf_structuring_prompt(template: str, title: str = "") -> str:
+    sections = _TEMPLATE_SECTIONS.get(template, _TEMPLATE_SECTIONS["research_report"])
+    prompt = (
+        "You are a professional report writer. Transform the input below into a polished "
+        "Markdown report.\n\n"
+        "Requirements:\n"
+        "- Use clear headings (## or ###).\n"
+        "- Use Markdown tables where useful for structured data.\n"
+        "- Preserve any links and citations already present in the input.\n"
+        "- Do NOT invent sources or citations.\n"
+        "- If key information is missing, include a section called 'Missing / Not specified'\n"
+        "  indicating what is absent rather than fabricating content.\n"
+        "- Avoid code fences unless the source data specifically requires code.\n"
+        "- Output Markdown only. Do not include surrounding explanation.\n\n"
+    )
+    if title:
+        prompt += f"Report title: {title}\n\n"
+    prompt += "Required report structure:\n"
+    prompt += sections
+    return prompt
+
+
+def _format_for_pdf(data: str, template: str, title: str) -> str:
+    user_id = getattr(_tls, "user_id", "")
+    workspace_id = getattr(_tls, "workspace_id", "")
+    if not user_id or not workspace_id:
+        return data
+
+    llm_chain = build_summary_llms(user_id, workspace_id)
+    if not llm_chain:
+        return data
+
+    messages = [
+        SystemMessage(content=_pdf_structuring_prompt(template, title)),
+        HumanMessage(content=data),
+    ]
+
+    try:
+        response, model_name = invoke_with_fallbacks(llm_chain, messages)
+        structured = _normalize_llm_content(getattr(response, "content", ""))
+        if structured:
+            actlog.log("pdf_structured", {
+                "model": model_name, "chars": len(structured), "template": template
+            })
+            return structured
+    except Exception as exc:
+        actlog.log("pdf_structuring_fallback_raw", {"error": str(exc)[:300]})
+
+    return data
+
+
+def _safe_artifact_filename(filename: str, extension: str) -> str:
+    name = re.sub(r'[^\w\-_\. ]', '', str(filename or "report"))
+    name = name.strip()
+    if not name:
+        name = "report"
+    if not name.endswith(extension):
+        name = f"{name}{extension}"
+    return name
+
+
+def _markdown_to_html(markdown_text: str) -> str:
+    return _md_lib.markdown(
+        markdown_text,
+        extensions=["extra", "tables", "fenced_code", "sane_lists"],
+    )
+
+
+def _build_report_html(body_html: str, title: str, template: str, style: str) -> str:
+    ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    style_class = style if style in _VALID_STYLES else "clean"
+    disclaimer = ""
+    if template == "financial_report":
+        disclaimer = (
+            '<div class="disclaimer">'
+            "This report is generated for informational purposes only "
+            "and is not financial advice."
+            "</div>"
+        )
+
+    escaped_title = title.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    css = """
+@page {
+  size: A4;
+  margin: 2cm 2.5cm;
+}
+
+body {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 11pt;
+  line-height: 1.5;
+  color: #1a1a1a;
+}
+
+h1 { font-size: 20pt; margin-top: 0; margin-bottom: 0.3cm; color: #111; }
+h2 { font-size: 14pt; margin-top: 0.6cm; margin-bottom: 0.3cm;
+      color: #222; border-bottom: 1px solid #ccc; padding-bottom: 0.1cm; }
+h3 { font-size: 12pt; margin-top: 0.4cm; margin-bottom: 0.2cm; color: #333; }
+h4 { font-size: 11pt; margin-top: 0.3cm; margin-bottom: 0.2cm; color: #444; }
+
+p { margin: 0.2cm 0; }
+ul, ol { margin: 0.2cm 0; padding-left: 1.2cm; }
+li { margin: 0.1cm 0; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.4cm 0;
+  font-size: 10pt;
+  page-break-inside: auto;
+}
+
+th, td {
+  border: 1px solid #999;
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background-color: #eef;
+  font-weight: bold;
+}
+
+tr:nth-child(even) td {
+  background-color: #f8f8f8;
+}
+
+thead { display: table-header-group; }
+
+.metadata {
+  font-size: 9pt;
+  color: #666;
+  margin-bottom: 0.5cm;
+  padding-bottom: 0.3cm;
+  border-bottom: 1px solid #ddd;
+}
+
+.disclaimer {
+  margin-top: 1cm;
+  padding: 0.3cm 0.5cm;
+  border: 1px solid #cc0000;
+  background-color: #fff5f5;
+  font-size: 9pt;
+  color: #800;
+  text-align: center;
+}
+
+a { color: #2563eb; text-decoration: underline; }
+code { font-family: 'Courier New', monospace; font-size: 10pt;
+       background-color: #f4f4f4; padding: 1px 4px; border-radius: 2px; }
+pre { background-color: #f4f4f4; padding: 0.3cm; border: 1px solid #ddd;
+      border-radius: 3px; overflow-x: auto; font-size: 9pt; }
+blockquote { border-left: 3px solid #ccc; margin: 0.3cm 0; padding: 0.1cm 0.5cm;
+             color: #555; }
+
+/* dense */
+.dense body { font-size: 9.5pt; line-height: 1.3; }
+.dense h1 { font-size: 16pt; }
+.dense h2 { font-size: 12pt; margin-top: 0.4cm; }
+.dense h3 { font-size: 10.5pt; margin-top: 0.3cm; }
+.dense p { margin: 0.1cm 0; }
+.dense table { font-size: 8.5pt; }
+.dense th, .dense td { padding: 4px 6px; }
+.dense ul, .dense ol { margin: 0.1cm 0; }
+
+/* executive */
+.executive body { font-size: 12pt; line-height: 1.6; }
+.executive h1 { font-size: 24pt; margin-bottom: 0.5cm; }
+.executive h2 { font-size: 16pt; border-bottom-width: 2px; }
+.executive h3 { font-size: 13pt; }
+.executive p { margin: 0.3cm 0; }
+.executive .metadata { margin-bottom: 0.8cm; }
+"""
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{escaped_title}</title>
+<style>{css}</style>
+</head>
+<body class="{style_class}">
+<h1>{escaped_title or "Report"}</h1>
+<div class="metadata">Template: {template} &nbsp;|&nbsp; Style: {style} &nbsp;|&nbsp; Generated: {ts}</div>
+{body_html}
+{disclaimer}
+</body>
+</html>"""
 
 
 @tool("web_search")
@@ -505,6 +743,79 @@ def create_slides(data: str, format: str = "ppt", filename: str = "slides") -> s
         return f"PPT generation unavailable; slide text saved to {fallback}"
 
 
+@tool("create_pdf")
+def create_pdf(
+    data: str,
+    template: str = "research_report",
+    filename: str = "report",
+    title: str = "",
+    style: str = "clean",
+) -> str:
+    """Generate a polished PDF report from research findings.
+
+    Use this tool when the user specifically requests a PDF document, a formal
+    written report, or a downloadable summary of the research session.
+
+    Args:
+        data: Research findings / conversation summary to convert into the PDF.
+        template: Report layout. One of: research_report, procurement_report,
+                  comparison_report, financial_report. Default: research_report.
+        filename: Base name for the output file (without extension).
+                  Default: "report".
+        title: Optional report title shown in the PDF heading.
+        style: Visual appearance. One of: clean, dense, executive.
+               Default: clean.
+
+    Notes:
+        - This tool does NOT perform web searches. Research first, then call
+          this tool with the gathered data.
+        - Allowed templates: research_report, procurement_report,
+          comparison_report, financial_report.
+    """
+    valid_templates = {"research_report", "procurement_report", "comparison_report", "financial_report"}
+    valid_styles = {"clean", "dense", "executive"}
+
+    effective_template = template if template in valid_templates else "research_report"
+    effective_style = style if style in valid_styles else "clean"
+
+    sanitized = _safe_artifact_filename(filename, ".pdf")
+
+    folder = _session_output_dir()
+    pdf_path = folder / sanitized
+    html_path = folder / _safe_artifact_filename(filename, ".html")
+
+    try:
+        report_md = _format_for_pdf(data, effective_template, title)
+    except Exception as exc:
+        report_md = data
+
+    try:
+        body_html = _markdown_to_html(report_md)
+    except Exception as exc:
+        return f"PDF generation failed: error rendering Markdown: {exc}"
+
+    full_html = _build_report_html(body_html, title, effective_template, effective_style)
+
+    try:
+        from weasyprint import HTML as _WeasyHTML
+
+        _WeasyHTML(string=full_html).write_pdf(str(pdf_path))
+        return f"PDF report saved to {pdf_path}"
+    except Exception as exc:
+        try:
+            with open(html_path, "w", encoding="utf-8") as f:
+                f.write(full_html)
+            return (
+                f"PDF generation failed; HTML fallback saved to {html_path}. "
+                f"Error: {exc}"
+            )
+        except Exception as inner:
+            return (
+                f"PDF generation failed and HTML fallback also failed. "
+                f"Error: {exc}; Fallback error: {inner}"
+            )
+
+
 ALL_TOOLS = [
     web_search,
     wiki_search,
@@ -514,6 +825,7 @@ ALL_TOOLS = [
     arxiv_search,
     save_text,
     create_slides,
+    create_pdf,
 ]
 
 TOOL_MAP = {tool_item.name: tool_item for tool_item in ALL_TOOLS}

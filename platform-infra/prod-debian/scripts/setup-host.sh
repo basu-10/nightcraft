@@ -27,7 +27,12 @@ apt-get install -y \
   libpq-dev \
   rsync \
   curl \
-  jq
+  jq \
+  libpango-1.0-0 \
+  libpangocairo-1.0-0 \
+  libgdk-pixbuf-2.0-0 \
+  libffi-dev \
+  shared-mime-info
 
 install -d -m 0755 /etc/nightcraft
 install -d -m 0755 "${SOURCE_ROOT}"

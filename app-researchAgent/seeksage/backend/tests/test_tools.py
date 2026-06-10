@@ -294,3 +294,183 @@ class TestToolsLive:
             written = tmp_path / case["filename"]
             assert written.exists(), f"File {written} not created"
             assert case["data"] in written.read_text()
+
+
+# ── create_pdf tests ────────────────────────────────────────────────────────────
+
+try:
+    import weasyprint  # noqa: F401
+    _HAS_WEASYPRINT = True
+except ImportError:
+    _HAS_WEASYPRINT = False
+
+
+class TestCreatePdf:
+    """Unit tests for create_pdf tool and its helper functions."""
+
+    # ── Helper function tests (no weasyprint needed) ─────────────────────────
+
+    @pytest.mark.unit
+    def test_safe_artifact_filename(self):
+        from app.agent.tools import _safe_artifact_filename
+        assert _safe_artifact_filename("my report", ".pdf") == "my report.pdf"
+        assert _safe_artifact_filename("my report.pdf", ".pdf") == "my report.pdf"
+        assert _safe_artifact_filename("", ".pdf") == "report.pdf"
+        assert _safe_artifact_filename(None, ".pdf") == "report.pdf"
+        safe = _safe_artifact_filename("../bad/path", ".pdf")
+        assert "../" not in safe
+        assert safe.endswith(".pdf")
+
+    @pytest.mark.unit
+    def test_pdf_structuring_prompt_research(self):
+        from app.agent.tools import _pdf_structuring_prompt
+        prompt = _pdf_structuring_prompt("research_report", "Test Title")
+        assert "Executive Summary" in prompt
+        assert "Key Findings" in prompt
+        assert "Detailed Analysis" in prompt
+        assert "Test Title" in prompt
+
+    @pytest.mark.unit
+    def test_pdf_structuring_prompt_financial(self):
+        from app.agent.tools import _pdf_structuring_prompt
+        prompt = _pdf_structuring_prompt("financial_report")
+        assert "Key Metrics" in prompt
+        assert "Risks / Assumptions" in prompt
+
+    @pytest.mark.unit
+    def test_pdf_structuring_prompt_procurement(self):
+        from app.agent.tools import _pdf_structuring_prompt
+        prompt = _pdf_structuring_prompt("procurement_report")
+        assert "Bill of Materials" in prompt
+        assert "Vendor / Seller Options" in prompt
+        assert "Cost Notes" in prompt
+
+    @pytest.mark.unit
+    def test_pdf_structuring_prompt_comparison(self):
+        from app.agent.tools import _pdf_structuring_prompt
+        prompt = _pdf_structuring_prompt("comparison_report")
+        assert "Comparison Table" in prompt
+        assert "Option-by-option Analysis" in prompt
+        assert "Tradeoffs" in prompt
+
+    @pytest.mark.unit
+    def test_pdf_structuring_prompt_invalid_fallback(self):
+        from app.agent.tools import _pdf_structuring_prompt
+        prompt = _pdf_structuring_prompt("nonexistent")
+        # Should fall back to research_report behaviour
+        assert "Executive Summary" in prompt
+        assert "Key Findings" in prompt
+
+    @pytest.mark.unit
+    def test_markdown_to_html_renders_tables(self):
+        from app.agent.tools import _markdown_to_html
+        md = "| A | B |\n|---|---|\n| 1 | 2 |"
+        html = _markdown_to_html(md)
+        assert "<table>" in html
+        assert "<th>A</th>" in html
+        assert "<td>1</td>" in html
+
+    @pytest.mark.unit
+    def test_build_report_html_metadata(self):
+        from app.agent.tools import _build_report_html
+        html = _build_report_html("<p>body</p>", "Test Title", "research_report", "clean")
+        assert "Test Title" in html
+        assert "Template: research_report" in html
+        assert "Style: clean" in html
+        assert "Generated:" in html
+        assert "financial advice" not in html
+
+    @pytest.mark.unit
+    def test_build_report_html_financial_disclaimer(self):
+        from app.agent.tools import _build_report_html
+        html = _build_report_html("<p>body</p>", "Financials", "financial_report", "clean")
+        assert "This report is generated for informational purposes only" in html
+        assert "not financial advice" in html
+
+    @pytest.mark.unit
+    def test_build_report_html_style_classes(self):
+        from app.agent.tools import _build_report_html
+        for style in ("clean", "dense", "executive"):
+            html = _build_report_html("<p>x</p>", "", "research_report", style)
+            assert f'class="{style}"' in html
+
+    @pytest.mark.unit
+    def test_build_report_html_invalid_style_fallback(self):
+        from app.agent.tools import _build_report_html
+        html = _build_report_html("<p>x</p>", "", "research_report", "bogus")
+        assert 'class="clean"' in html
+
+    @pytest.mark.unit
+    def test_format_for_pdf_returns_raw_when_no_context(self):
+        from app.agent.tools import _format_for_pdf
+        result = _format_for_pdf("hello", "research_report", "")
+        assert result == "hello"
+
+    # ── Integration tests (require weasyprint) ───────────────────────────────
+
+    @pytest.mark.unit
+    @pytest.mark.skipif(not _HAS_WEASYPRINT, reason="weasyprint not installed")
+    def test_create_pdf_creates_file(self, app, tmp_path):
+        import unittest.mock as mock
+        with app.app_context():
+            from app.agent.tools import set_runtime_context, create_pdf
+            set_runtime_context("test", "test-ws", "test-session")
+            with mock.patch("app.agent.tools._session_output_dir", return_value=tmp_path):
+                with mock.patch("app.agent.tools._format_for_pdf", return_value="# Test\nContent"):
+                    with mock.patch("weasyprint.HTML") as MockHTML:
+                        MockHTML.return_value.write_pdf.return_value = None
+                        result = create_pdf("data", filename="testreport")
+                        assert "PDF report saved to" in result
+                        MockHTML.return_value.write_pdf.assert_called_once()
+
+    @pytest.mark.unit
+    @pytest.mark.skipif(not _HAS_WEASYPRINT, reason="weasyprint not installed")
+    def test_create_pdf_invalid_template_fallback(self, app, tmp_path):
+        import unittest.mock as mock
+        with app.app_context():
+            from app.agent.tools import set_runtime_context, create_pdf
+            set_runtime_context("test", "test-ws", "test-session")
+            with mock.patch("app.agent.tools._session_output_dir", return_value=tmp_path):
+                with mock.patch("app.agent.tools._format_for_pdf", return_value="# Test"):
+                    with mock.patch("weasyprint.HTML") as MockHTML:
+                        MockHTML.return_value.write_pdf.return_value = None
+                        result = create_pdf("data", template="invalid")
+                        assert "PDF report saved to" in result
+                        call_args, _ = MockHTML.call_args
+                        html_str = call_args[0] if call_args else ""
+                        assert not call_args or "Template: research_report" in html_str
+
+    @pytest.mark.unit
+    @pytest.mark.skipif(not _HAS_WEASYPRINT, reason="weasyprint not installed")
+    def test_create_pdf_invalid_style_fallback(self, app, tmp_path):
+        import unittest.mock as mock
+        with app.app_context():
+            from app.agent.tools import set_runtime_context, create_pdf
+            set_runtime_context("test", "test-ws", "test-session")
+            with mock.patch("app.agent.tools._session_output_dir", return_value=tmp_path):
+                with mock.patch("app.agent.tools._format_for_pdf", return_value="# Test"):
+                    with mock.patch("weasyprint.HTML") as MockHTML:
+                        MockHTML.return_value.write_pdf.return_value = None
+                        result = create_pdf("data", style="bogus")
+                        assert "PDF report saved to" in result
+                        call_args, _ = MockHTML.call_args
+                        html_str = call_args[0] if call_args else ""
+                        assert not call_args or 'class="clean"' in html_str
+
+    @pytest.mark.unit
+    @pytest.mark.skipif(not _HAS_WEASYPRINT, reason="weasyprint not installed")
+    def test_create_pdf_html_fallback_on_failure(self, app, tmp_path):
+        import unittest.mock as mock
+        from weasyprint import HTML as _RealHTML
+
+        with app.app_context():
+            from app.agent.tools import set_runtime_context, create_pdf
+            set_runtime_context("test", "test-ws", "test-session")
+            with mock.patch("app.agent.tools._session_output_dir", return_value=tmp_path):
+                with mock.patch("app.agent.tools._format_for_pdf", return_value="# Hello"):
+                    with mock.patch.object(_RealHTML, "write_pdf", side_effect=RuntimeError("crash")):
+                        result = create_pdf("data", filename="fallback_test")
+                        assert "HTML fallback saved to" in result
+                        html_files = list(tmp_path.glob("*.html"))
+                        assert len(html_files) > 0
+                        assert (tmp_path / "fallback_test.html").exists()
