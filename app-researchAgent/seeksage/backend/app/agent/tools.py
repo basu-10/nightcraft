@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import json
 import markdown as _md_lib
+import os
 import re
 import threading
 import time
@@ -185,11 +186,18 @@ def _tool_settings() -> dict:
     return get_user_tool_settings(user_id)
 
 
+def _runtime_instance_root() -> Path:
+    configured = os.getenv("SEEKSAGE_INSTANCE_PATH", "").strip()
+    if configured:
+        return Path(configured).resolve()
+    return Path(__file__).resolve().parents[2] / "instance"
+
+
 def _session_output_dir() -> Path:
     user_id = getattr(_tls, "user_id", "user")
     workspace_id = getattr(_tls, "workspace_id", "workspace")
     session_id = getattr(_tls, "session_id", "session")
-    root = Path(__file__).resolve().parents[2] / "instance" / "files"
+    root = _runtime_instance_root() / "files"
     folder = root / user_id[:8] / workspace_id[:8] / session_id[:8]
     folder.mkdir(parents=True, exist_ok=True)
     return folder
