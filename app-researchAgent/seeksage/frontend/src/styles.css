@@ -1073,7 +1073,6 @@ hr {
   border-radius: 12px;
   font-size: 0.9rem;
   line-height: 1.55;
-  overflow: hidden;
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -1090,7 +1089,8 @@ hr {
   background: var(--chat-assistant-bg);
   color: var(--ink);
   border-bottom-left-radius: 4px;
-  max-width: min(80%, 920px);
+  width: min(80%, 920px);
+  max-width: 920px;
 }
 
 .msg-thinking {
@@ -1106,9 +1106,23 @@ hr {
   overflow-wrap: anywhere;
 }
 
+.msg-content {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.msg-content > *:first-child {
+  margin-top: 0;
+}
+
+.msg-content > *:last-child {
+  margin-bottom: 0;
+}
+
 .msg-actions {
   margin-top: 8px;
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -1255,8 +1269,8 @@ hr {
 .msg-assistant .msg-content table {
   border-collapse: collapse;
   width: 100%;
+  min-width: 720px;
   max-width: 100%;
-  min-width: 0;
   font-size: 0.85em;
   background: var(--card);
   border-radius: var(--radius-sm);
