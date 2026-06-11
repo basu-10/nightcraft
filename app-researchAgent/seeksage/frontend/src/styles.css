@@ -1315,6 +1315,157 @@ hr {
   background: var(--sidebar-hover);
 }
 
+.usage-stats-card {
+  margin: 0.8em 0;
+  padding: 12px;
+  border: 1px solid rgba(31, 110, 212, 0.2);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 245, 245, 0.96));
+  box-shadow: var(--shadow-in);
+}
+
+.usage-stats-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.usage-stats-kicker {
+  margin: 0 0 2px;
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.usage-stats-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.usage-stats-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.usage-stats-pill {
+  max-width: 190px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.usage-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.usage-stats-group {
+  min-width: 0;
+}
+
+.usage-stats-group-title {
+  margin-bottom: 6px;
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.usage-stats-group-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.usage-stat-tile {
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--card);
+}
+
+.usage-stat-label {
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.usage-stat-value {
+  margin-top: 4px;
+  color: var(--ink);
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.usage-stats-detail-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.usage-stats-breakdown {
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface);
+}
+
+.usage-stats-breakdown-title {
+  color: var(--ink);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.usage-stats-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.usage-stats-chip {
+  max-width: 100%;
+  padding: 4px 8px;
+  border: 1px solid rgba(31, 110, 212, 0.18);
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.usage-stats-empty {
+  margin-top: 7px;
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+}
+
 /* Steps inside bubble */
 .msg-steps { margin-top: 8px; border-top: 1px solid var(--border); padding-top: 6px; }
 
@@ -1742,6 +1893,23 @@ hr {
   .sidebar-close-btn {
     display: block;
   }
+
+  .usage-stats-header {
+    flex-direction: column;
+  }
+
+  .usage-stats-pills {
+    justify-content: flex-start;
+  }
+
+  .usage-stats-grid,
+  .usage-stats-detail-row {
+    grid-template-columns: 1fr;
+  }
+
+  .usage-stats-group-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* -- Data Table -- */
@@ -1910,17 +2078,6 @@ hr {
     grid-template-columns: 1fr;
   }
 
-  .provider-roles-grid__header {
-    display: none;
-  }
-
-  .provider-roles-grid__row {
-    grid-template-columns: 1fr;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 10px;
-  }
-
   .left-column {
     width: 240px;
     min-width: 200px;
@@ -1935,6 +2092,21 @@ hr {
     width: 52px;
     min-width: 52px;
     overflow: hidden;
+  }
+
+  .usage-stat-tile {
+    padding: 8px;
+  }
+
+  .provider-roles-grid__header {
+    display: none;
+  }
+
+  .provider-roles-grid__row {
+    grid-template-columns: 1fr;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px;
   }
 
   /* Hide text labels in the collapsed strip */
@@ -2008,7 +2180,7 @@ hr {
     padding: 14px 12px 8px;
   }
 
-  /* Hide steps panel on tablet � show as toggle only */
+  /* Hide steps panel on tablet — show as toggle only */
   .steps-panel {
     display: none;
   }

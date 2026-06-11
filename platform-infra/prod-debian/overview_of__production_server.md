@@ -2,7 +2,7 @@
 
 ---
 
-login with:
+login to production server with(most permissionsenabled):
 ssh ionos-dev
 
 ## Server Architecture — Nightcraft Stack

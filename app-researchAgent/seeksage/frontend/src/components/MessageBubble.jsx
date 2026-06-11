@@ -2,6 +2,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import { useState } from "react";
+import UsageStats, { splitUsageStatsMarkdown } from "./UsageStats";
 
 async function copyText(value) {
   const text = `${value || ""}`;
@@ -24,6 +25,8 @@ async function copyText(value) {
 export default function MessageBubble({ message, onRetry }) {
   const isUser = message.role === "user";
   const [copyStatus, setCopyStatus] = useState("idle");
+  const usageStats = message.metadata_json?.usage_stats;
+  const { hasUsageStats, markdown } = splitUsageStatsMarkdown(message.content, usageStats);
 
   const handleCopy = async () => {
     try {
@@ -42,19 +45,22 @@ export default function MessageBubble({ message, onRetry }) {
         {isUser ? (
           <span className="msg-text">{message.content}</span>
         ) : (
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeHighlight]}
-            components={{
-              table: ({ children, ...props }) => (
-                <div className="md-table-wrapper">
-                  <table {...props}>{children}</table>
-                </div>
-              ),
-            }}
-          >
-            {message.content}
-          </ReactMarkdown>
+          <>
+            {hasUsageStats && <UsageStats stats={usageStats} />}
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeHighlight]}
+              components={{
+                table: ({ children, ...props }) => (
+                  <div className="md-table-wrapper">
+                    <table {...props}>{children}</table>
+                  </div>
+                ),
+              }}
+            >
+              {markdown}
+            </ReactMarkdown>
+          </>
         )}
       </div>
       <div className="msg-actions" role="group" aria-label="Message actions">
