@@ -23,6 +23,7 @@ from ..core.activity_log import (
     EVT_TOOL_RETRY,
     EVT_TOOL_RESULT,
     EVT_TOOL_TIMEOUT,
+    EVT_USER_MSG,
 )
 from .citations import append_deterministic_sources
 from .graph_react import get_react_graph, resolve_final_answer, to_langchain_messages

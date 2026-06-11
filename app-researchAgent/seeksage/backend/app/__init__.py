@@ -45,7 +45,8 @@ def _enforce_postgres_database_uri(app: Flask) -> None:
 
 
 def create_app() -> Flask:
-    app = Flask(__name__)
+    instance_path = os.getenv("SEEKSAGE_INSTANCE_PATH", "").strip()
+    app = Flask(__name__, instance_path=str(Path(instance_path).resolve()) if instance_path else None)
     app.config.from_object(Config)
     _enforce_postgres_database_uri(app)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
