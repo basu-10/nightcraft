@@ -23,6 +23,7 @@ from __future__ import annotations
 import os
 import time
 import uuid
+from datetime import datetime
 
 import pytest
 import yaml
@@ -92,6 +93,57 @@ def _create_run(app, db, test_user, test_ws, case: dict) -> tuple[str, str]:
     db.session.add(run)
     db.session.commit()
     return sess.id, run.id
+
+
+@pytest.mark.unit
+def test_usage_stats_helpers_count_llm_and_tool_events(app, db_session, test_user, test_ws):
+    from app.agent.runner import _build_usage_stats, _format_usage_stats
+    from app.core.activity_log import EVT_LLM_CALL, EVT_LLM_REPLY, EVT_TOOL_CACHE_HIT, EVT_TOOL_CALL, EVT_TOOL_RESULT
+    from app.models import AgentRun, ChatSession, RunEvent
+
+    with app.app_context():
+        sess = ChatSession(user_id=test_user, workspace_id=test_ws, title="stats", thread_id=str(uuid.uuid4()))
+        db_session.add(sess)
+        db_session.flush()
+
+        started_at = datetime.utcnow()
+        finished_at = datetime.utcnow()
+        run = AgentRun(
+            user_id=test_user,
+            workspace_id=test_ws,
+            chat_session_id=sess.id,
+            query_text="stats",
+            status="done",
+            started_at=started_at,
+            finished_at=finished_at,
+        )
+        db_session.add(run)
+        db_session.flush()
+
+        db_session.add_all([
+            RunEvent(run_id=run.id, user_id=test_user, seq=1, event_type=EVT_LLM_CALL, payload_json={"model": "model-a"}),
+            RunEvent(run_id=run.id, user_id=test_user, seq=2, event_type=EVT_LLM_CALL, payload_json={"model": "model-b"}),
+            RunEvent(run_id=run.id, user_id=test_user, seq=3, event_type=EVT_LLM_REPLY, payload_json={}),
+            RunEvent(run_id=run.id, user_id=test_user, seq=4, event_type=EVT_TOOL_CALL, payload_json={"tool": "web_search"}),
+            RunEvent(run_id=run.id, user_id=test_user, seq=5, event_type=EVT_TOOL_RESULT, payload_json={}),
+            RunEvent(run_id=run.id, user_id=test_user, seq=6, event_type=EVT_TOOL_CACHE_HIT, payload_json={"tool": "wiki_search"}),
+        ])
+        db_session.commit()
+
+        final_state = type("FinalState", (), {"values": {"used_model": "model-a"}})()
+        stats = _build_usage_stats(run, final_state)
+        rendered = _format_usage_stats(stats)
+
+        assert stats["llm_calls"] == 2
+        assert stats["llm_replies"] == 1
+        assert stats["tool_calls"] == 1
+        assert stats["tool_results"] == 2
+        assert stats["tool_cache_hits"] == 1
+        assert stats["searches"] == 2
+        assert stats["used_model"] == "model-a"
+        assert rendered.startswith("### Usage Stats")
+        assert "**LLM calls:** 2" in rendered
+        assert "**Tools:** wiki_search (1), web_search (1)" in rendered
 
 
 # ── Tests ──────────────────────────────────────────────────────────────────────

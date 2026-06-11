@@ -9,7 +9,21 @@ from ..extensions import db
 from ..models import AgentRun, ChatSession, Message, Project, RunEvent, Workspace
 from ..settings import get_user_react_max_steps
 from ..core import activity_log as actlog
-from ..core.activity_log import EVT_USER_MSG, EVT_RUN_START, EVT_RUN_DONE, EVT_RUN_ERROR
+from ..core.activity_log import (
+    EVT_LLM_CALL,
+    EVT_LLM_ERROR,
+    EVT_LLM_REPLY,
+    EVT_LLM_RETRY,
+    EVT_RUN_DONE,
+    EVT_RUN_ERROR,
+    EVT_RUN_START,
+    EVT_TOOL_CACHE_HIT,
+    EVT_TOOL_CALL,
+    EVT_TOOL_ERROR,
+    EVT_TOOL_RETRY,
+    EVT_TOOL_RESULT,
+    EVT_TOOL_TIMEOUT,
+)
 from .citations import append_deterministic_sources
 from .graph_react import get_react_graph, resolve_final_answer, to_langchain_messages
 from .tools import set_runtime_context
@@ -30,6 +44,120 @@ def _append_event(run: AgentRun, event_type: str, payload: dict | None = None) -
             payload_json=payload or {},
         )
     )
+
+
+_SEARCH_TOOL_NAMES = {"web_search", "wiki_search", "news_search", "arxiv_search"}
+
+
+def _format_duration_ms(duration_ms: int | None) -> str:
+    if duration_ms is None:
+        return "n/a"
+    if duration_ms < 1000:
+        return "<1s"
+    return f"{duration_ms / 1000:.1f}s"
+
+
+def _format_counts(counts: dict[str, int]) -> str:
+    if not counts:
+        return "none"
+    return ", ".join(f"{name} ({count})" for name, count in sorted(counts.items()))
+
+
+def _build_usage_stats(run: AgentRun, final_state) -> dict:
+    stats = {
+        "run_id": run.id,
+        "llm_calls": 0,
+        "llm_replies": 0,
+        "llm_retries": 0,
+        "llm_errors": 0,
+        "tool_calls": 0,
+        "tool_results": 0,
+        "tool_cache_hits": 0,
+        "tool_retries": 0,
+        "tool_timeouts": 0,
+        "tool_errors": 0,
+        "searches": 0,
+        "tool_counts": {},
+        "llm_model_counts": {},
+        "used_model": "",
+        "duration_ms": None,
+    }
+
+    events = (
+        RunEvent.query
+        .filter_by(run_id=run.id)
+        .order_by(RunEvent.seq.asc())
+        .all()
+    )
+
+    for event in events:
+        payload = event.payload_json or {}
+        event_type = event.event_type
+
+        if event_type == EVT_LLM_CALL:
+            stats["llm_calls"] += 1
+            model = payload.get("model") or ""
+            if model:
+                stats["llm_model_counts"][model] = stats["llm_model_counts"].get(model, 0) + 1
+        elif event_type == EVT_LLM_REPLY:
+            stats["llm_replies"] += 1
+        elif event_type == EVT_LLM_RETRY:
+            stats["llm_retries"] += 1
+        elif event_type == EVT_LLM_ERROR:
+            stats["llm_errors"] += 1
+        elif event_type == EVT_TOOL_CALL:
+            tool = payload.get("tool") or payload.get("tool_name") or ""
+            stats["tool_calls"] += 1
+            if tool:
+                stats["tool_counts"][tool] = stats["tool_counts"].get(tool, 0) + 1
+                if tool in _SEARCH_TOOL_NAMES:
+                    stats["searches"] += 1
+        elif event_type == EVT_TOOL_RESULT:
+            stats["tool_results"] += 1
+        elif event_type == EVT_TOOL_CACHE_HIT:
+            tool = payload.get("tool") or payload.get("tool_name") or ""
+            stats["tool_cache_hits"] += 1
+            stats["tool_results"] += 1
+            if tool:
+                stats["tool_counts"][tool] = stats["tool_counts"].get(tool, 0) + 1
+                if tool in _SEARCH_TOOL_NAMES:
+                    stats["searches"] += 1
+        elif event_type == EVT_TOOL_RETRY:
+            stats["tool_retries"] += 1
+        elif event_type == EVT_TOOL_TIMEOUT:
+            stats["tool_timeouts"] += 1
+        elif event_type == EVT_TOOL_ERROR:
+            stats["tool_errors"] += 1
+
+    if run.started_at and run.finished_at:
+        stats["duration_ms"] = int((run.finished_at - run.started_at).total_seconds() * 1000)
+
+    values = (final_state.values or {}) if final_state is not None else {}
+    stats["used_model"] = values.get("used_model", "") or ""
+    return stats
+
+
+def _format_usage_stats(stats: dict) -> str:
+    lines = [
+        "### Usage Stats",
+        "",
+        f"- **Searches:** {stats.get('searches', 0)}",
+        f"- **Tool calls:** {stats.get('tool_calls', 0)}",
+        f"- **Tool results:** {stats.get('tool_results', 0)}",
+        f"- **Tool cache hits:** {stats.get('tool_cache_hits', 0)}",
+        f"- **LLM calls:** {stats.get('llm_calls', 0)}",
+        f"- **LLM replies:** {stats.get('llm_replies', 0)}",
+        f"- **LLM retries:** {stats.get('llm_retries', 0)}",
+        f"- **LLM errors:** {stats.get('llm_errors', 0)}",
+        f"- **Tool errors:** {stats.get('tool_errors', 0)}",
+        f"- **Tool timeouts:** {stats.get('tool_timeouts', 0)}",
+        f"- **Run time:** {_format_duration_ms(stats.get('duration_ms'))}",
+        f"- **Model:** `{stats.get('used_model') or 'n/a'}`",
+        f"- **LLM models:** {_format_counts(stats.get('llm_model_counts') or {})}",
+        f"- **Tools:** {_format_counts(stats.get('tool_counts') or {})}",
+        "",
+    ]
+    return "\n".join(lines)
 
 
 def _run_once(app: Flask, run_id: str) -> None:
@@ -138,13 +266,13 @@ def _run_once(app: Flask, run_id: str) -> None:
             final_state = graph.get_state(config)
             raw_answer = resolve_final_answer(final_state.values or {}) or "(no answer)"
 
-            # Inject deterministic source citations.
+            run.finished_at = datetime.utcnow()
+            usage_stats = _build_usage_stats(run, final_state)
             graph_messages = (final_state.values or {}).get("messages") or []
-            final_answer = append_deterministic_sources(raw_answer, graph_messages)
+            final_answer = _format_usage_stats(usage_stats) + append_deterministic_sources(raw_answer, graph_messages)
 
             run.status = "done"
             run.final_answer = final_answer
-            run.finished_at = datetime.utcnow()
             _append_event(run, "done", {"finished_at": run.finished_at.isoformat()})
 
             duration_ms = int((run.finished_at - run.started_at).total_seconds() * 1000) if run.started_at else None
@@ -152,6 +280,7 @@ def _run_once(app: Flask, run_id: str) -> None:
                 "run_id": run.id,
                 "answer_len": len(final_answer),
                 "used_model": (final_state.values or {}).get("used_model", ""),
+                "usage_stats": usage_stats,
             }, duration_ms=duration_ms)
 
             assistant_message = Message(
@@ -159,7 +288,7 @@ def _run_once(app: Flask, run_id: str) -> None:
                 chat_session_id=run.chat_session_id,
                 role="assistant",
                 content=final_answer,
-                metadata_json={"run_id": run.id, "mode": "react"},
+                metadata_json={"run_id": run.id, "mode": "react", "usage_stats": usage_stats},
             )
             db.session.add(assistant_message)
 
