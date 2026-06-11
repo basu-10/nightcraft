@@ -128,6 +128,14 @@ flask --app devradio run
 
 Open <http://127.0.0.1:5000/>.
 
+## Production Instance Layout
+
+In the Debian stack, DevRadio runtime state stays outside the source checkout under `/runtime/shared/dev-podcast-app/instance`:
+- `instance/uploads/works` stores uploaded work/media files.
+- `instance/automation_logs` stores structured automation run artifacts.
+
+Production status scripts intentionally use non-fatal `systemctl status` calls so a stopped service does not hide the rest of the stack status.
+
 ## CLI Commands
 
 - `flask --app devradio setup`

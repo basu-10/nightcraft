@@ -41,7 +41,7 @@ Default local URL: `http://127.0.0.1:5400`
 - `LANDING_AUTH_RETURN_PARAM` (default `next`)
 - `LANDING_ADMIN_URL` (default `/platform-admin`)
 - `LANDING_DEVRADIO_URL` (default `/devradio`)
-- `LANDING_NEERA_URL` (default `/NEERA`)
+- `LANDING_NEERA_URL` (default `/neera`)
 - `LANDING_SEEKSAGE_URL` (default `/seeksage`)
 - `LANDING_NOTESTACK_URL` (default `/notestack`)
 

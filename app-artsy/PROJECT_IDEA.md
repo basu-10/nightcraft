@@ -1,8 +1,8 @@
-# Curio (app-artsy) Project Idea and Product Blueprint
+# NEERA (app-artsy) Project Idea and Product Blueprint
 
 ## 1. Product Summary
 
-Curio is a social review and curation platform for creative media. Users can review items, build lists, write notes, and post updates.
+NEERA is a social review and curation platform for creative media. Users can review items, build lists, write notes, and post updates.
 
 Primary review categories:
 

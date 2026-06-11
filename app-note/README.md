@@ -103,13 +103,17 @@ FLASK_SESSION_SECURE=1
 AUTH_MODE=sso
 AUTH_SERVICE_URL=http://31.70.85.89/auth
 SESSION_COOKIE_PATH=/notestack
-NOTESTACK_DB_BACKEND=sqlite
-NOTESTACK_DB=/platform-infra/runtime/shared/app-note/notestack.db
-# When switching to postgres:
-# NOTESTACK_DB_BACKEND=postgres
-# DATABASE_URL=postgresql://notestack_app:change_me@127.0.0.1:5432/notestack_db
-LOCALAPPDATA=/platform-infra/runtime/shared/app-note/localappdata
+NOTESTACK_DB_BACKEND=postgres
+DATABASE_URL=postgresql://notestack_app:change_me@127.0.0.1:5432/notestack_db
+LOCALAPPDATA=/runtime/shared/app-note/localappdata
 ```
+
+Production deploy notes:
+
+- `deploy-note.sh` requires `NOTESTACK_DB_BACKEND=postgres`.
+- If `DATABASE_URL` is absent, the deploy script derives it from the default NoteStack role/database/password and writes it back to `/etc/nightcraft/app-note.env`.
+- Runtime app data and sync logs are kept under `/runtime/shared/app-note/`, outside the source checkout.
+- Sync logging writes to `LOCALAPPDATA/ABasu_apps/NoteStack/sync.log` and ignores directory/file creation failures; the `/sync-log` page returns an empty response instead of 502 when the log cannot be read.
 
 Desktop clients should use the value shown in `/settings`:
 
@@ -199,6 +203,12 @@ If a note is edited on both the web and the desktop between syncs, a conflict is
 | Resolve       | Web UI                            | `POST /api/sync/conflicts/<id>/resolve` |
 
 Conflict detection: a conflict is raised when the server's `updated_at > client_updated_at` (the web app edited the note after the desktop's last successful push).
+
+## Sync Logging Hardening
+
+Sync logging uses `LOCALAPPDATA/ABasu_apps/NoteStack/sync.log` on the server.
+Directory creation and log-file creation failures are ignored so sync requests do not fail because the runtime log path is temporarily unavailable.
+The `/sync-log` route returns an empty response if the file cannot be read, avoiding 502 responses during transient filesystem/OSError conditions.
 
 ---
 

@@ -1,10 +1,10 @@
-# Curio Implementation Checklist
+# NEERA Implementation Checklist
 
-Curio is a Goodreads-like arts platform with customizable user profiles, item-centric review pages, list pages, notes/posts, and a social feed. This checklist turns the product plan into buildable issues with explicit progress tracking.
+NEERA is a Goodreads-like arts platform with customizable user profiles, item-centric review pages, list pages, notes/posts, and a social feed. This checklist turns the product plan into buildable issues with explicit progress tracking.
 
 ## Execution Order
 
-1. Scaffold the Curio app and align it with the existing radio-app structure.
+1. Scaffold the NEERA app and align it with the existing radio-app structure.
 2. Implement auth, profile storage, and user profile layout foundations.
 3. Add category taxonomy and seeded item catalog for day-1 reviews.
 4. Build item pages, review flows, and user-submitted item contribution flows.
@@ -22,22 +22,22 @@ Legend:
 
 | Issue | Progress | Completed | In Progress | Notes |
 | --- | --- | --- | --- | --- |
-| 1 - Scaffold Curio app structure | IN PROGRESS | App package, app factory, config, CLI setup command, startup scripts, templates/static scaffold | Production-facing routes and deployment wiring | Aligned with radio-style layout and platform-infra startup integration |
+| 1 - Scaffold NEERA app structure | IN PROGRESS | App package, app factory, config, CLI setup command, startup scripts, templates/static scaffold | Production-facing routes and deployment wiring | Aligned with radio-style layout and platform-infra startup integration |
 | 2 - Add auth adapter layer | COMPLETE | Local auth blueprint, SSO auth blueprint, current-user helper abstraction, mode-based auth blueprint selection, focused SSO tests | Broader integration coverage against expanded app routes | Product routes are mode-agnostic via shared auth helper interfaces |
 | 3 - Add core profile models | COMPLETE | Profile table and persistence fields for display name, bio, avatar/background URLs, link/location, accent settings, visibility, and timestamps | Richer profile management UX | Profile persistence is now DB-backed for both local and SSO-linked users |
 | 4 - Build public account page | IN PROGRESS | Public profile route now renders persisted profile data plus DB-backed reviews/lists | Category filtering/grouping and richer timeline behavior | Profile page now reads from product DB records instead of static sample payload |
 | 5 - Build lists page | IN PROGRESS | Dedicated lists routes/pages (`/u/<username>/lists`, `/me/lists`) now render persisted lists with owner management controls | Category-specific presentation refinements and list discovery UX | Lists are no longer only embedded in the profile page |
 | 6 - Add review model and posting flow | IN PROGRESS | Added `review` model, profile-page rendering, create/edit/delete flows, search-first review composition, and focused tests | Richer review metadata and expanded non-book composition UX | Reviews can now be created from profile and item-linked composition flows |
-| 7 - Add list and list-item models | IN PROGRESS | Added `curio_list` and `curio_list_item` models with ordered items, add/delete flows, reorder controls, and focused tests | Fuller item metadata and dedicated list management screens | Lists now persist ordered entries and support mutation from the profile page |
+| 7 - Add list and list-item models | IN PROGRESS | Added `neera_list` and `neera_list_item` models with ordered items, add/delete flows, reorder controls, and focused tests | Fuller item metadata and dedicated list management screens | Lists now persist ordered entries and support mutation from the profile page |
 | 8 - Add category styling system | NOT STARTED | None yet | Assign colored containers and reusable style rules per list type | Different list types should feel visually distinct |
 | 9 - Add profile customization uploads | IN PROGRESS | URL-based profile header edit flow for background image, avatar image, location, and profile link | File upload pipeline, storage policy, and media validation hardening | Header presentation is now owner-driven even before upload storage is introduced |
 | 10 - Add follow relationships | NOT STARTED | None yet | Create follow/unfollow storage and social graph queries | Feed content depends on who a user follows |
 | 11 - Build social feed timeline | IN PROGRESS | Added feed tab routes/pages, review `feed_event` pointer emission on publish, and read-time event resolution on profile feed views | Follow graph, global-vs-following modes, and note/post/list event fan-out | Feed is now populated for published non-private reviews but social graph behavior is still pending |
 | 12 - Add search and discovery | NOT STARTED | None yet | Search users, lists, reviews, and categories | Useful once core content and feed are stable |
 | 13 - Add privacy and moderation controls | NOT STARTED | None yet | Define public/private profile options and content visibility rules | Needed before wider sharing and growth features |
-| 14 - Add tests for core flows | IN PROGRESS | Added focused Curio tests for owner-only composer visibility, list/review create-edit-delete flows, ordered list-item insertion/reordering, and SSO callback/session mutation paths | Broader auth/profile/feed coverage and end-to-end shared-mode integration tests | The current profile and auth mutation slice is covered by targeted pytest checks |
-| 15 - Prepare deployment and docs | IN PROGRESS | Curio README, env example, dev-start script, dev-windows run/seed/setup wiring, Curio-focused setup/run scripts, and deprecated windows-dev forwarding wrappers | Linux/system-service deployment notes and final validation checklist | Shared-mode startup and seeding include Curio alongside radio/service-auth |
-| 16 - Add category taxonomy and seeded catalog | IN PROGRESS | Added `curio_item` model, taxonomy-backed seeded catalog data, idempotent `seed-catalog` command, setup-time catalog seeding, and `/items` browse route | Expand metadata contracts and deeper category-specific validation | Fresh setups now load seeded entries across book/song/arts/films |
+| 14 - Add tests for core flows | IN PROGRESS | Added focused NEERA tests for owner-only composer visibility, list/review create-edit-delete flows, ordered list-item insertion/reordering, and SSO callback/session mutation paths | Broader auth/profile/feed coverage and end-to-end shared-mode integration tests | The current profile and auth mutation slice is covered by targeted pytest checks |
+| 15 - Prepare deployment and docs | IN PROGRESS | NEERA README, env example, dev-start script, dev-windows run/seed/setup wiring, NEERA-focused setup/run scripts, and deprecated windows-dev forwarding wrappers | Linux/system-service deployment notes and final validation checklist | Shared-mode startup and seeding include NEERA alongside radio/service-auth |
+| 16 - Add category taxonomy and seeded catalog | IN PROGRESS | Added `neera_item` model, taxonomy-backed seeded catalog data, idempotent `seed-catalog` command, setup-time catalog seeding, and `/items` browse route | Expand metadata contracts and deeper category-specific validation | Fresh setups now load seeded entries across book/song/arts/films |
 | 17 - Build item details page (2-column) | IN PROGRESS | Added `/items/<item_id>` two-column template with item header/actions, ratings block, metadata panel, and review stream placeholder | Related lists previews, discussions, and richer rating breakdown UX | Item pages now exist as navigable foundations for the full Issue 17 contract |
 | 18 - Add user-submitted item contribution flow | IN PROGRESS | Added create-missing-book path in review flow, persisted user-submitted items, and item-level confidence defaults | Extend contribution flow to non-book categories and per-field confidence badges | Users can create a missing book and publish a linked first review in one journey |
 | 19 - Add notes and posts content types | NOT STARTED | None yet | Persist markdown notes and posts; add mention graph integration and profile tab rendering | Needed for post-centric interaction and discussion depth |
@@ -61,7 +61,7 @@ Focus for product work (excluding server setup/deployment for now):
 
 ### Milestone 1 - App Foundation
 
-- [x] Create Curio application folder and package layout.
+- [x] Create NEERA application folder and package layout.
 - [x] Add Flask app factory, config classes, and extension bootstrap.
 - [x] Add basic templates, static assets, and layout shell.
 - [x] Add setup command and local dev startup path.
@@ -308,7 +308,7 @@ Depends on:
 ## Issue 15 - Prepare deployment and docs
 
 Objective:
-Document how Curio runs standalone and inside the shared ecosystem.
+Document how NEERA runs standalone and inside the shared ecosystem.
 
 Status tracker:
 - [ ] Complete
@@ -323,7 +323,7 @@ Checklist:
 - Add deployment notes for the shared stack.
 
 Acceptance criteria:
-- Another developer can run Curio from the docs.
+- Another developer can run NEERA from the docs.
 - Deployment instructions are clear for both local and shared-auth setups.
 
 Depends on:

@@ -10,6 +10,7 @@
 - JWKS endpoint: `/oauth/jwks`
 - Session-backed auth UI endpoints: `/register`, `/login`, `/logout`
 - Shared auth UI now mirrors the radio app's login card styling and includes Google sign-in support
+- Post-login `next` URLs are preserved for cross-app destinations; `X-Forwarded-Prefix` is applied only to auth-internal paths such as `/oauth/`, `/login`, `/register`, `/logout`, `/session/`, and `/healthz`
 - OAuth authorization endpoint: `/oauth/authorize`
 - OAuth token endpoint: `/oauth/token`
 - User claims endpoint: `/userinfo`
@@ -68,6 +69,13 @@ Default URL: `http://localhost:5100`
 - `GET /userinfo`
 - `GET /session/me`
 
+## Post-Login Redirect Normalization
+
+`service-auth` accepts a `next` query/form value from app login handoffs and preserves it after successful registration, login, or Google callback.
+The redirect target must be path-relative; absolute URLs and open redirects are rejected and replaced with the safe default target.
+When nginx sets `X-Forwarded-Prefix: /auth`, the prefix is applied only to auth-internal paths such as `/oauth/`, `/login`, `/register`, `/logout`, `/session/`, and `/healthz`.
+Cross-app destinations such as `/neera/me`, `/notestack/app`, or `/seeksage/ui` are left intact so the OIDC callback can return users to the original product route.
+
 ## Migration Workflow (Flask-Migrate)
 
 Initialize migrations once:
@@ -88,9 +96,9 @@ Apply migration:
 flask --app run.py db upgrade
 ```
 
-## app-radio Integration (Current Step)
+## App Integrations
 
-In `app-radio`, use:
+Example SSO client configuration:
 
 ```env
 FLASK_AUTH_MODE=sso
@@ -126,7 +134,7 @@ GOOGLE_DISCOVERY_URL=https://accounts.google.com/.well-known/openid-configuratio
 
 ## Local Dev Seeding
 
-Create a default user and OAuth client for radio integration:
+Create a default user and OAuth client for a client app integration:
 
 ```powershell
 flask --app run.py seed-dev

@@ -28,6 +28,8 @@ Migrate NoteStack (`app-note`) from SQLite-first storage to PostgreSQL while pre
 ## Phase 3: Production cutover preparation
 - Add PostgreSQL role/db provisioning for NoteStack in infra scripts.
 - Add `DATABASE_URL` to `/etc/nightcraft/app-note.env` templates.
+- Harden production deploy: `deploy-note.sh` requires `NOTESTACK_DB_BACKEND=postgres`, derives the default PostgreSQL URL when `DATABASE_URL` is absent, and writes the resolved URL back to `/etc/nightcraft/app-note.env`.
+- Harden sync logging: write sync logs under `LOCALAPPDATA/ABasu_apps/NoteStack/sync.log`, ignore directory/file creation failures, and return an empty `/sync-log` response on read failures instead of 502.
 - Provide one-time data migration script from SQLite file to PostgreSQL.
 - Validate read/write parity against snapshot fixtures.
 

@@ -7,7 +7,7 @@ Current target in this phase:
 - `app-landing` (root product hub)
 - `service-auth` (OIDC/SSO provider)
 - `app-radio` (DevRadio client app, `AUTH_MODE=sso`, routed under `/devradio`)
-- `app-artsy` (NEERA client app, `AUTH_MODE=sso`, routed under `/NEERA`)
+- `app-artsy` (NEERA client app, `AUTH_MODE=sso`, routed under `/neera`)
 - `app-researchAgent/seeksage/backend` (SeekSage app API, `AUTH_MODE=sso`, routed under `/seeksage`)
 - `app-note` (NoteStack app, shared-session auth via `service-auth`, routed under `/notestack`)
 - `app-admin` (admin login handoff app)
@@ -17,7 +17,7 @@ Production routing on the server is path-based on the single host `31.70.85.89`:
 - `http://31.70.85.89/` -> app-landing
 - `http://31.70.85.89/auth` -> service-auth
 - `http://31.70.85.89/devradio` -> app-radio
-- `http://31.70.85.89/NEERA` -> app-artsy (Neera)
+- `http://31.70.85.89/neera` -> app-artsy (Neera)
 - `http://31.70.85.89/seeksage` -> app-researchAgent/seeksage/backend (SeekSage)
 - `http://31.70.85.89/notestack` -> app-note (NoteStack)
 - `http://31.70.85.89/admin` -> app-admin
@@ -27,7 +27,7 @@ All setup, deploy, seed, start, stop, and backup operations are script-driven fr
 
 Primary operations can be run through the single dispatcher command `serverctl` in that folder.
 
-Deployment runs are logged on the VPS under `/var/log/nightcraft-deploy/`, and each bootstrap run appends a CSV summary to `/platform-infra/deploy-history.csv`.
+Deployment runs are logged on the VPS under `/var/log/nightcraft-deploy/`, and each bootstrap run appends a CSV summary to `/runtime/deploy-history.csv`.
 
 ## Single-Command Server Bootstrap
 
@@ -38,9 +38,9 @@ Use `server-scripts/nightcraft-server-bootstrap.sh` to run the whole flow from o
 - runs env/postgres/systemd/nginx install scripts
 - runs app deploy and service restart via `deploy-all.sh`
 
-Each run creates a timestamped log in `/var/log/nightcraft-deploy/` and appends a deployment record to `/platform-infra/deploy-history.csv` with start time, commit, duration, and success/failure.
+Each run creates a timestamped log in `/var/log/nightcraft-deploy/` and appends a deployment record to `/runtime/deploy-history.csv` with start time, commit, duration, and success/failure.
 
-Recommended on the VPS: keep this script outside the checkout (for example under `/usr/local/sbin/server-scripts`) and point it at `/platform-infra`.
+Recommended on the VPS: keep this script outside the checkout (for example under `/usr/local/sbin/server-scripts`) and point it at `/nightcraft-source-code`.
 
 Example install and run:
 
@@ -50,7 +50,7 @@ sudo install -m 0755 /tmp/nightcraft-server-bootstrap.sh /usr/local/sbin/server-
 sudo /usr/local/sbin/server-scripts/nightcraft-server-bootstrap.sh \
   --repo-url https://github.com/basu-10/nightcraft.git \
   --branch main \
-  --target-dir /platform-infra \
+  --target-dir /nightcraft-source-code \
   --adopt-existing
 ```
 
@@ -96,13 +96,18 @@ platform-infra/prod-debian/scripts/status-deploys.sh
 - `scripts/install-env.sh`: install env files from `env-examples/*.env` into `/etc/nightcraft`
 - `scripts/deploy-auth.sh`: release deploy for service-auth
 - `scripts/deploy-radio.sh`: release deploy for app-radio
+  - Keeps runtime instance data under `/runtime/shared/dev-podcast-app/instance`, including uploads and automation logs.
 - `scripts/deploy-neera.sh`: release deploy for app-artsy; syncs PostgreSQL provisioning from `/etc/nightcraft/app-neera.env` before Flask setup
 - `scripts/reset-neera-password.sh`: rotate neera PostgreSQL password and resync `/etc/nightcraft/app-neera.env`
 - `scripts/deploy-seeksage.sh`: release deploy for seeksage backend
-  - Flask UI is server-rendered; no Node/npm frontend build step is required.
+  - Builds the React Workspace frontend when `npm` is available by running `npm ci` with fallback to `npm install`, then `VITE_BASE_PATH=/seeksage/ npm run build`; if the build is skipped, Flask UI falls back to the dashboard.
+  - The built SPA is served from `app-researchAgent/seeksage/frontend/dist` through Flask; nginx exposes it at `/seeksage/ui` while Flask API routes stay under `/seeksage/api`.
 - `scripts/deploy-landing.sh`: release deploy for app-landing
 - `scripts/deploy-admin.sh`: release deploy for app-admin
 - `scripts/deploy-note.sh`: release deploy for app-note
+  - Requires `NOTESTACK_DB_BACKEND=postgres` in `/etc/nightcraft/app-note.env`.
+  - If `DATABASE_URL` is absent, derives it from the default NoteStack PostgreSQL role/database/password and writes it back to `/etc/nightcraft/app-note.env`.
+  - Sync logs live under `/runtime/shared/app-note/localappdata/ABasu_apps/NoteStack/sync.log`; sync-log page creation/read failures are handled without returning 502.
 - `scripts/seed-auth-users.sh`: seed one service-auth user and one admin user
 - `scripts/seed-auth-client.sh`: seed OAuth client/user for radio callback
 - `scripts/seed-neera-client.sh`: seed OAuth client/user for neera callback
@@ -111,52 +116,52 @@ platform-infra/prod-debian/scripts/status-deploys.sh
 - `scripts/start-all.sh`: start landing + auth + radio + NEERA + seeksage + admin + notestack
 - `scripts/stop-all.sh`: stop landing + auth + radio + NEERA + seeksage + admin + notestack
 - `scripts/restart-all.sh`: restart landing + auth + radio + NEERA + seeksage + admin + notestack + reload nginx
-- `scripts/status-all.sh`: service status overview
+- `scripts/status-all.sh`: service status overview; `systemctl status` is non-fatal so one stopped service does not hide the rest of the stack
 - `scripts/backup-postgres.sh`: logical postgres backups
-- `scripts/backup-all.sh`: backup postgres + `/etc/nightcraft` + `/platform-infra/runtime/shared/*`
+- `scripts/backup-all.sh`: backup postgres + `/etc/nightcraft` + `/runtime/shared/*`
 - `scripts/cleanup-releases.sh`: obsolete helper kept only to report that release pruning is no longer needed
 - `scripts/reset-stack.sh`: reset app deploy state with keep-data default and explicit remove-data mode
 - `scripts/serverctl`: single command dispatcher for deploy/backup/status/restart/start/stop/reset
-- `scripts/status-deploys.sh`: summarize `/platform-infra/deploy-history.csv` into a readable deployment report
+- `scripts/status-deploys.sh`: summarize `/runtime/deploy-history.csv` into a readable deployment report
 
 ## Runtime Layout Used On Server
 
-Apps run directly from the source checkout under `/platform-infra`:
+Apps run directly from the source checkout under `/nightcraft-source-code`:
 
-- `/platform-infra/app-landing`
-- `/platform-infra/service-auth`
-- `/platform-infra/app-radio`
-- `/platform-infra/app-artsy`
-- `/platform-infra/app-researchAgent/seeksage`
-- `/platform-infra/app-admin`
-- `/platform-infra/app-game`
-- `/platform-infra/app-note`
+- `/nightcraft-source-code/app-landing`
+- `/nightcraft-source-code/service-auth`
+- `/nightcraft-source-code/app-radio`
+- `/nightcraft-source-code/app-artsy`
+- `/nightcraft-source-code/app-researchAgent/seeksage`
+- `/nightcraft-source-code/app-admin`
+- `/nightcraft-source-code/app-game`
+- `/nightcraft-source-code/app-note`
 
 Each app uses:
 
-- Dedicated virtualenv under `/platform-infra/runtime/venvs/`
-  - `/platform-infra/runtime/venvs/app-landing`
-  - `/platform-infra/runtime/venvs/service-auth`
-  - `/platform-infra/runtime/venvs/dev-podcast-app`
-  - `/platform-infra/runtime/venvs/app-artsy`
-  - `/platform-infra/runtime/venvs/seeksage-backend`
-  - `/platform-infra/runtime/venvs/app-admin`
-  - `/platform-infra/runtime/venvs/app-note`
-- Runtime state under `/platform-infra/runtime/shared/`
-  - `/platform-infra/runtime/shared/service-auth`
-  - `/platform-infra/runtime/shared/dev-podcast-app`
-  - `/platform-infra/runtime/shared/app-artsy`
-  - `/platform-infra/runtime/shared/seeksage-backend`
-  - `/platform-infra/runtime/shared/app-note`
+- Dedicated virtualenv under `/runtime/venvs/`
+  - `/runtime/venvs/app-landing`
+  - `/runtime/venvs/service-auth`
+  - `/runtime/venvs/dev-podcast-app`
+  - `/runtime/venvs/app-artsy`
+  - `/runtime/venvs/seeksage-backend`
+  - `/runtime/venvs/app-admin`
+  - `/runtime/venvs/app-note`
+- Runtime state under `/runtime/shared/`
+  - `/runtime/shared/service-auth`
+  - `/runtime/shared/dev-podcast-app`, including `instance/uploads/works` and `instance/automation_logs`
+  - `/runtime/shared/app-artsy`, including `instance/uploads/works`
+  - `/runtime/shared/seeksage-backend`, including `instance`
+  - `/runtime/shared/app-note`
 
 ## Expected Server Baseline
 
 Validated against the provided host:
 
-- Debian 13
+- Debian 12
 - PostgreSQL active
 - nginx active with default site
-- existing runtime roots under `/platform-infra/runtime`
+- existing runtime roots under `/runtime`
 
 No server-side code edits are needed. Upload repo folders and run scripts.
 
@@ -193,6 +198,8 @@ The command above installs these exact filenames under `/etc/nightcraft`:
 - `/etc/nightcraft/app-admin.env`
 - `/etc/nightcraft/app-note.env`
 
+`install-env.sh` accepts required and optional env targets. Required services fail if no template exists; optional services keep an existing env file or skip creation when no template is present. Each target accepts a primary `*.env` template plus optional `*.env.example` fallback candidates, keeps existing files by default, normalizes CRLF line endings, and only overwrites when `OVERWRITE=1` or `--overwrite` is supplied.
+
 Review and edit once if needed:
 
 ```bash
@@ -211,7 +218,9 @@ sudo nano /etc/nightcraft/app-note.env
 For NEERA/seeksage/notestack it reads `/etc/nightcraft/app-neera.env`,
 `/etc/nightcraft/app-seeksage.env`, and `/etc/nightcraft/app-note.env`
 `DATABASE_URL` values when explicit `NEERA_DB_*`/`SEEKSAGE_DB_*`/`NOTESTACK_DB_*` vars are not provided.
-Existing role passwords are also synchronized on each run.
+Existing role passwords are synchronized on each run.
+The script preflights SQL templates for required `\set ON_ERROR_STOP on`, orphan backslash lines, malformed `\ gexec` spacing, and missing files before invoking psql.
+It also accepts `postgresql+psycopg://`, `postgresql://`, and `postgres://` URLs and normalizes the first two forms to `postgresql+psycopg://` for SQLAlchemy/psycopg v3.
 
 ```bash
 sudo AUTH_DB_PASSWORD='auth_app_db_2026_prod_secret' RADIO_DB_PASSWORD='radio_app_db_2026_prod_secret' \
@@ -263,7 +272,7 @@ In `/etc/nightcraft/service-auth.env`:
 - `DATABASE_URL` (postgres URL for auth DB)
 - `OIDC_ISSUER=http://31.70.85.89/auth`
 - `PUBLIC_BASE_URL=http://31.70.85.89/auth`
-- `OIDC_KEYS_DIR=/platform-infra/runtime/shared/service-auth/keys`
+- `OIDC_KEYS_DIR=/runtime/shared/service-auth/keys`
 
 In `/etc/nightcraft/app-radio.env`:
 
@@ -321,7 +330,13 @@ In `/etc/nightcraft/app-note.env`:
 - `SESSION_COOKIE_PATH=/notestack`
 - `NOTESTACK_DB_BACKEND=postgres`
 - `DATABASE_URL` (postgres URL for notestack DB)
-- `LOCALAPPDATA=/platform-infra/runtime/shared/app-note/localappdata`
+- `LOCALAPPDATA=/runtime/shared/app-note/localappdata`
+
+## Cross-App Auth Redirect Behavior
+
+`service-auth` preserves post-login `next` URLs for cross-app destinations such as `/neera/me` or `/notestack/app`.
+It rejects absolute URLs and open redirects, then applies `X-Forwarded-Prefix` only to auth-internal paths such as `/oauth/`, `/login`, `/register`, `/logout`, `/session/`, and `/healthz`.
+This keeps app destinations intact while still allowing auth UI links to work when `/auth` is mounted behind the Nightcraft nginx prefix.
 
 ## Runtime Operations
 
@@ -361,7 +376,7 @@ The script now just reports that there are no release folders to prune.
 
 This mode removes venvs, but keeps:
 
-- `/platform-infra/runtime/shared/*` app runtime data
+- `/runtime/shared/*` app runtime data
 - `/etc/nightcraft/*.env`
 - postgres data
 
@@ -371,7 +386,7 @@ sudo platform-infra/prod-debian/scripts/serverctl reset
 
 ### Reset mode: remove app shared data
 
-This mode also deletes `/platform-infra/runtime/shared/*` runtime data:
+This mode also deletes `/runtime/shared/*` runtime data:
 
 ```bash
 sudo platform-infra/prod-debian/scripts/serverctl reset --remove-shared-data
@@ -397,7 +412,7 @@ This includes:
 
 - postgres logical dumps
 - `/etc/nightcraft` env files
-- `/platform-infra/runtime/shared/*` app runtime data
+- `/runtime/shared/*` app runtime data
 
 ### Fresh install scenario
 
@@ -446,7 +461,7 @@ Weekly backups:
 Deployment history:
 
 - `platform-infra/prod-debian/scripts/status-deploys.sh`
-- `/platform-infra/deploy-history.csv`
+- `/runtime/deploy-history.csv`
 
 Before risky change windows:
 

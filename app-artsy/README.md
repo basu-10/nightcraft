@@ -1,16 +1,16 @@
-# Curio
+# NEERA
 
-Curio is the arts-focused app in this federated portable apps workspace.
+NEERA is the arts-focused app in this federated portable apps workspace.
 
 ## Runtime Modes
 
 - Standalone mode
-  - Local auth lives inside Curio
+  - Local auth lives inside NEERA
   - App data is stored in PostgreSQL via DATABASE_URL
   - Started from app-local scripts
 - Shared SSO mode
   - service-auth owns login and OIDC flows
-  - Curio is an OIDC client and stores product data in PostgreSQL
+  - NEERA is an OIDC client and stores product data in PostgreSQL
 
 ## Quick Start
 
@@ -23,7 +23,7 @@ Standalone local mode:
 Shared SSO mode:
 
 ```powershell
-.\dev-start.ps1 -AuthMode sso -AuthServiceUrl http://127.0.0.1:5100 -AuthClientId curio-app -AuthClientSecret dev-secret
+.\dev-start.ps1 -AuthMode sso -AuthServiceUrl http://127.0.0.1:5100 -AuthClientId neera-app -AuthClientSecret dev-secret
 ```
 
 ## Setup And Run Manually
@@ -31,16 +31,16 @@ Shared SSO mode:
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-$env:DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/nightcraft_curio"
-.\.venv\Scripts\python.exe -m flask --app curio setup
-.\.venv\Scripts\python.exe -m flask --app curio run --port 5600
+$env:DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/nightcraft_neera"
+.\.venv\Scripts\python.exe -m flask --app neera setup
+.\.venv\Scripts\python.exe -m flask --app neera run --port 5600
 ```
 
 ## OIDC Notes
 
-In shared mode, the login UI is served by service-auth and Curio redirects to /auth/login.
+In shared mode, the login UI is served by service-auth and NEERA redirects to /auth/login.
 
-Curio expects these claims from service-auth:
+NEERA expects these claims from service-auth:
 
 - sub
 - preferred_username
@@ -48,14 +48,14 @@ Curio expects these claims from service-auth:
 - roles
 - optional derived is_admin
 
-Curio persists app-specific profile data in PostgreSQL.
+NEERA persists app-specific profile data in PostgreSQL.
 
-When `AUTH_MODE=sso`, Curio now also attempts shared-session bootstrap via
+When `AUTH_MODE=sso`, NEERA now also attempts shared-session bootstrap via
 `/session/me` before each request. If the user already logged in on the landing
-page, Curio hydrates local profile/session state automatically and opens with the
+page, NEERA hydrates local profile/session state automatically and opens with the
 user already signed in.
 
-Curio also exposes a basic admin page at `GET /admin` (admin role only) with
+NEERA also exposes a basic admin page at `GET /admin` (admin role only) with
 summary counts for profiles, works, reviews, lists, and notes.
 
 ## Profile Header Editing
@@ -71,11 +71,11 @@ Authenticated users can now edit their profile header directly from their profil
 - URL validation: link and image fields must start with http:// or https://
 - Tabs contract: Bookmarks tab is visible only to the profile owner
 
-Because Curio is still in active development, schema changes may require recreating the local development PostgreSQL database.
+Because NEERA is still in active development, schema changes may require recreating the local development PostgreSQL database.
 
 ## Profile Tab Routes
 
-Curio now has real routes for the tabbed profile interface.
+NEERA now has real routes for the tabbed profile interface.
 
 - Public profile tabs:
   - GET /u/{username}
@@ -95,10 +95,10 @@ Issue 16/17 foundation now includes the normalized work schema, active catalog s
 - Seed command:
 
 ```powershell
-.\.venv\Scripts\python.exe -m flask --app curio seed-catalog
+.\.venv\Scripts\python.exe -m flask --app neera seed-catalog
 ```
 
-- The seed command now inserts the prepared catalog dataset from `curio/catalog_seed.py` into the normalized work tables.
+- The seed command now inserts the prepared catalog dataset from `neera/catalog_seed.py` into the normalized work tables.
 - Setup prepares the schema and seeds the catalog idempotently.
 - Browse works at GET /items.
 - Authenticated users can submit a new work at GET /items with either an external image URL or an uploaded image file.
@@ -111,7 +111,7 @@ Issue 16/17 foundation now includes the normalized work schema, active catalog s
 - On profile pages, owner-only tabs now include:
   - `Drafts`: draft/private reviews, draft/private notes, and private lists for status management and editing
   - `Bookmarks`: private saved-content placeholder, visible only to the profile owner
-- Notes are now persisted in `curio_note` with `status` (`draft`, `published`) and `visibility` (`private`, `public`).
+- Notes are now persisted in `neera_note` with `status` (`draft`, `published`) and `visibility` (`private`, `public`).
 - Feed tab now renders from `feed_event` review pointers and links back to the highlighted review on the related item page.
 - Public profile tabs only show public content. Private/draft reviews and notes, plus private lists, are excluded from public tabs.
 - Item details are available at GET /items/<item_id> with a two-column layout:
