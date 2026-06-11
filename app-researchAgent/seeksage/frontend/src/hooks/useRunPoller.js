@@ -6,11 +6,13 @@ const TERMINAL_STATUSES = new Set(["done", "error"]);
 
 /**
  * Poll a run until it reaches a terminal status (done / error).
- * Returns { run, events, polling }.
+ * Returns { run, events, activityLogs, activityLogError, polling }.
  */
 export function useRunPoller(runId) {
   const [run, setRun] = useState(null);
   const [events, setEvents] = useState([]);
+  const [activityLogs, setActivityLogs] = useState([]);
+  const [activityLogError, setActivityLogError] = useState(null);
   const [polling, setPolling] = useState(false);
   const timerRef = useRef(null);
   const runIdRef = useRef(runId);
@@ -33,6 +35,13 @@ export function useRunPoller(runId) {
       ]);
       setRun(runData);
       setEvents(eventsData);
+      try {
+        const activityLogData = await api.listRunActivityLogs(id);
+        setActivityLogs(activityLogData || []);
+        setActivityLogError(null);
+      } catch (err) {
+        setActivityLogError(err?.message || "Unable to load activity logs.");
+      }
       if (TERMINAL_STATUSES.has(runData.status)) {
         stop();
         return;
@@ -49,6 +58,8 @@ export function useRunPoller(runId) {
       stop();
       setRun(null);
       setEvents([]);
+      setActivityLogs([]);
+      setActivityLogError(null);
       return;
     }
     setPolling(true);
@@ -56,5 +67,5 @@ export function useRunPoller(runId) {
     return stop;
   }, [runId, poll, stop]);
 
-  return { run, events, polling };
+  return { run, events, activityLogs, activityLogError, polling };
 }

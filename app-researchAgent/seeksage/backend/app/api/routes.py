@@ -1,11 +1,14 @@
+import json
 from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
 from flask import Blueprint, current_app, jsonify, request, send_file
 from flask_login import current_user, login_required
+from sqlalchemy import text
 from werkzeug.utils import secure_filename
 
+from ..core.activity_log import get_logger
 from ..extensions import db
 from ..models import AgentRun, ChatSession, ConnectionProfile, Message, Note, Notification, Project, RunEvent, SessionFile, Workspace
 from ..settings import (
@@ -1435,6 +1438,62 @@ def list_run_events(run_id: str):
         .all()
     )
     return jsonify([_to_run_event_dict(row) for row in rows]), 200
+
+
+@api_bp.get("/runs/<run_id>/activity-logs")
+@login_required
+def list_run_activity_logs(run_id: str):
+    run = _get_run_owned(run_id)
+    if not run:
+        return jsonify({"error": "Run not found."}), 404
+
+    logger = get_logger()
+    if logger is None:
+        return jsonify({"error": "activity logger not initialised"}), 503
+
+    try:
+        limit = min(max(int(request.args.get("limit", "500")), 0), 2000)
+    except ValueError:
+        return jsonify({"error": "limit must be an integer"}), 400
+
+    def parse_data(value):
+        if not value:
+            return {}
+        if isinstance(value, dict):
+            return value
+        try:
+            return json.loads(value)
+        except (TypeError, ValueError):
+            return {"raw": value}
+
+    try:
+        rows_sql = text(
+            """
+            SELECT id, ts, event_type, user_id, session_id, run_id, data_json, duration_ms
+            FROM activity_log
+            WHERE run_id = :run_id
+            ORDER BY ts ASC, id ASC
+            LIMIT :limit
+            """
+        )
+        with logger.engine.connect() as con:
+            rows = con.execute(rows_sql, {"run_id": run_id, "limit": limit}).mappings().all()
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+    return jsonify([
+        {
+            "id": r["id"],
+            "ts": r["ts"].isoformat() if hasattr(r["ts"], "isoformat") else str(r["ts"]),
+            "event_type": r["event_type"],
+            "user_id": r["user_id"],
+            "session_id": r["session_id"],
+            "run_id": r["run_id"],
+            "data": parse_data(r["data_json"]),
+            "duration_ms": r["duration_ms"],
+        }
+        for r in rows
+    ]), 200
 
 
 # ---------------------------------------------------------------------------

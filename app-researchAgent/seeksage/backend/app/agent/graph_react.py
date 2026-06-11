@@ -190,7 +190,7 @@ def react_tool_executor_node(state: dict) -> dict:
             {"tool": tool_name},
             user_id=user_id, session_id=session_id, run_id=run_id,
         )
-        return {"messages": [ToolMessage(content=cached, tool_call_id=tool_call_id)]}
+        return {"messages": [ToolMessage(content=cached, tool_call_id=tool_call_id, name=tool_name)]}
 
     actlog.log(
         EVT_TOOL_CALL,
@@ -227,7 +227,7 @@ def react_tool_executor_node(state: dict) -> dict:
             duration_ms=duration_ms,
         )
 
-    return {"messages": [ToolMessage(content=content, tool_call_id=tool_call_id)]}
+    return {"messages": [ToolMessage(content=content, tool_call_id=tool_call_id, name=tool_name)]}
 
 
 def resolve_final_answer(final_state_values: dict) -> str:

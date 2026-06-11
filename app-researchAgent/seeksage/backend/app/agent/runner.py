@@ -256,7 +256,9 @@ def _run_once(app: Flask, run_id: str) -> None:
                     if node_name == "tool_executor":
                         messages = node_update.get("messages") or []
                         if messages:
-                            payload["tool_result"] = str(messages[0].content)
+                            first_message = messages[0]
+                            payload["tool_name"] = getattr(first_message, "name", "") or node_update.get("tool_name") or ""
+                            payload["tool_result"] = str(first_message.content)
                     if node_name == "agent_node":
                         messages = node_update.get("messages") or []
                         if messages:

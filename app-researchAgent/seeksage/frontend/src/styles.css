@@ -1523,9 +1523,29 @@ hr {
 
 .step-detail-card {
   border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
   border-radius: var(--radius-sm);
   padding: 6px 8px;
   background: var(--card);
+}
+
+.step-detail-card.step-node-agent_node {
+  border-left-color: #6f42c1;
+  background: linear-gradient(90deg, rgba(111, 66, 193, 0.08), var(--card) 45%);
+}
+
+.step-detail-card.step-node-tool_executor {
+  border-left-color: #1f6b3a;
+  background: linear-gradient(90deg, rgba(31, 107, 58, 0.08), var(--card) 45%);
+}
+
+.step-detail-card.step-node-running {
+  border-left-color: #b07a00;
+}
+
+.step-detail-card.step-node-done,
+.step-detail-card.step-node-error {
+  border-left-color: var(--danger);
 }
 
 .step-detail-card summary {
@@ -1545,6 +1565,7 @@ hr {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .step-detail-text {
@@ -1554,11 +1575,28 @@ hr {
   white-space: pre-wrap;
 }
 
+.tool-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.tool-chip {
+  color: var(--accent);
+  border-color: rgba(31, 110, 212, 0.35);
+  background: rgba(31, 110, 212, 0.06);
+}
+
 .log-row {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 8px;
   background: var(--card);
+}
+
+.log-row--backend {
+  border-left: 3px solid #0f766e;
 }
 
 .log-row-title {
@@ -1569,6 +1607,19 @@ hr {
 .log-row-detail {
   color: var(--ink-muted);
   font-size: 0.82rem;
+}
+
+.log-json {
+  white-space: pre-wrap;
+  margin: 6px 0 0;
+  font-size: 0.74rem;
+}
+
+.log-error {
+  border: 1px solid rgba(232, 58, 58, 0.35);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  background: rgba(232, 58, 58, 0.06);
 }
 
 .note-item {

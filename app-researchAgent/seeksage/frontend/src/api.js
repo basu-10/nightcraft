@@ -161,6 +161,7 @@ export const api = {
     }),
   getRun: (runId) => request(`/api/runs/${runId}`),
   listRunEvents: (runId) => request(`/api/runs/${runId}/events`),
+  listRunActivityLogs: (runId) => request(`/api/runs/${runId}/activity-logs`),
   listSessionRuns: (sessionId) => request(`/api/sessions/${sessionId}/runs`),
 
   // ── Profiles ──────────────────────────────────────────────────────────────

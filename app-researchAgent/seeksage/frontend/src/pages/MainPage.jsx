@@ -28,7 +28,7 @@ export default function MainPage({ user, onLogout, workspaces = [], activeWorksp
   const [notes, setNotes] = useState([]);
   const [filesBySession, setFilesBySession] = useState({});
 
-  const { run, events, polling } = useRunPoller(activeRunId);
+  const { run, events, activityLogs, activityLogError, polling } = useRunPoller(activeRunId);
   const { settings, updateSettings } = useWorkspaceSettings(activeWorkspaceId);
 
   // Load sessions + projects for all workspaces
@@ -337,6 +337,9 @@ export default function MainPage({ user, onLogout, workspaces = [], activeWorksp
             session={activeSession}
             run={run}
             events={events}
+            activityLogs={activityLogs}
+            activityLogError={activityLogError}
+            activeWorkspace={activeWorkspace}
             workspaceSettings={settings}
             notes={currentNotes}
             onSaveNote={handleSaveNote}
