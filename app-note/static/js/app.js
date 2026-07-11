@@ -1571,10 +1571,27 @@
       .forEach((el) => el.classList.remove("note-card--active"));
   }
 
+  function readableOn(hex) {
+    const c = (hex || "#6B7280").replace("#", "");
+    if (c.length !== 6) return "#fff";
+    const r = parseInt(c.slice(0, 2), 16);
+    const g = parseInt(c.slice(2, 4), 16);
+    const b = parseInt(c.slice(4, 6), 16);
+    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return lum > 0.6 ? "#0d0d0d" : "#fff";
+  }
+
   function renderEditorTags(tagsStr) {
     const tags = (tagsStr || "").split(",").filter(Boolean);
     editorTagsDisplay.innerHTML = tags
-      .map((t) => `<span class="tag-pill">${esc(t)}</span>`)
+      .map((t) => {
+        const tagData = state.tags.find(
+          (st) => st.name.toLowerCase() === t.toLowerCase(),
+        );
+        const color = tagData?.color || "#6B7280";
+        const text = readableOn(color);
+        return `<span class="tag-pill" style="background:${color};border-color:${color};color:${text}" title="Tag: ${esc(t)}">${esc(t)}</span>`;
+      })
       .join("");
   }
 
@@ -2588,7 +2605,27 @@
     $("tags-input").addEventListener("keydown", (e) => {
       if (e.key === "Enter") saveTags();
     });
-    $("tags-input").addEventListener("input", populateTagDropdown);
+    $("tags-input").addEventListener("input", () => {
+      populateTagDropdown();
+      // Live-update the footer pills for the note currently open in the editor.
+      if (tagModalNoteId != null && tagModalNoteId === state.activeNoteId) {
+        const live = $("tags-input")
+          .value.split(",")
+          .map((t) => t.trim())
+          .filter(Boolean)
+          .join(",");
+        renderEditorTags(live);
+      }
+    });
+
+    // Clicking a footer pill filters the note list by that tag (like note cards).
+    editorTagsDisplay.addEventListener("click", (e) => {
+      const pill = e.target.closest(".tag-pill");
+      if (!pill) return;
+      const name = pill.textContent.trim();
+      const tag = state.tags.find((t) => t.name.toLowerCase() === name.toLowerCase());
+      if (tag) toggleTagFilter(tag.id);
+    });
 
     $("tag-color-btn")?.addEventListener("click", openTagCreateColorPicker);
     $("btn-tag-manager-close")?.addEventListener("click", () => {
