@@ -66,6 +66,19 @@
         </tr>
       </table>
     </section>
+
+    <!-- Delete All Data -->
+    <section class="settings-section">
+      <h2 class="settings-section__title">Delete All Data</h2>
+      <p class="form-hint">
+        Permanently delete <strong>all</strong> of your notes, folders, tags, and trash in this NoteStack space.
+        This cannot be undone. Your account and API token will remain.
+      </p>
+      <div class="u-mt-md">
+        <button id="delete-all-btn" class="btn btn--danger btn--sm" type="button">Delete All My Data</button>
+      </div>
+      <div id="delete-all-status" style="margin-top: 12px; display: none;" class="form-hint"></div>
+    </section>
   </div>
 </div>
 {% endblock %}
@@ -218,6 +231,50 @@
       return;
     }
     await loadApiToken();
+  });
+
+  document.getElementById('delete-all-btn').addEventListener('click', async () => {
+    const confirmed = window.confirm(
+      'This will permanently delete ALL your notes, folders, tags, and trash. ' +
+      'This action cannot be undone. Are you sure you want to continue?'
+    );
+    if (!confirmed) return;
+
+    const finalConfirm = window.prompt(
+      'Type DELETE to confirm deletion of all your NoteStack data:'
+    );
+    if (finalConfirm !== 'DELETE') {
+      if (finalConfirm !== null) alert('Deletion cancelled: confirmation text did not match.');
+      return;
+    }
+
+    const btn = document.getElementById('delete-all-btn');
+    const statusDiv = document.getElementById('delete-all-status');
+    const origText = btn.textContent;
+    btn.textContent = 'Deleting...';
+    btn.disabled = true;
+    statusDiv.style.display = 'none';
+
+    try {
+      const response = await fetch(apiRoot + '/data/delete-all', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Deletion failed');
+      }
+      statusDiv.style.display = 'block';
+      statusDiv.textContent = '✓ All your NoteStack data has been deleted.';
+      statusDiv.style.color = 'var(--color-success, #22c55e)';
+      setTimeout(() => window.location.href = scriptRoot + '/app', 1500);
+    } catch (err) {
+      statusDiv.style.display = 'block';
+      statusDiv.textContent = '✗ ' + err.message;
+      statusDiv.style.color = 'var(--color-error, #ef4444)';
+      btn.textContent = origText;
+      btn.disabled = false;
+    }
   });
 
   loadApiToken();

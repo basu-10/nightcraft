@@ -46,6 +46,7 @@ from ..database import (
     resolve_conflict,
     export_user_backup,
     import_user_backup,
+    delete_all_user_data,
     get_user_id_for_api_token,
 )
 from ..sync_logging import get_sync_logger
@@ -976,3 +977,11 @@ def import_backup():
     except Exception as e:
         _sync_log.error("Import error: %s", str(e))
         return _err(f"Import failed: {str(e)}", 400)
+
+
+@api_bp.route("/data/delete-all", methods=["POST"])
+@require_auth
+def delete_all_data():
+    """Permanently delete all of the authenticated user's NoteStack content."""
+    stats = delete_all_user_data(g.user_id)
+    return _ok({"deleted": True, "stats": stats})

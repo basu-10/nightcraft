@@ -126,3 +126,65 @@ def test_api_accepts_bearer_token(monkeypatch, tmp_path):
 
     assert response.status_code == 200
     assert response.get_json() == []
+
+
+def test_delete_all_data_removes_user_content(monkeypatch, tmp_path):
+    app = _create_app(monkeypatch, tmp_path, auth_mode="local")
+
+    import app.database as database
+
+    with app.app_context():
+        conn = database.get_connection()
+        conn.execute(
+            "INSERT INTO users (username, email, password, is_admin) VALUES (?,?,?,?)",
+            ("wipe-user", "wipe-user@example.com", "unused", 0),
+        )
+        user_id = int(conn.execute("SELECT last_insert_rowid() AS id").fetchone()["id"])
+        conn.execute(
+            "INSERT INTO api_tokens (user_id, token, label) VALUES (?,?,?)",
+            (user_id, "wipe-token", "desktop"),
+        )
+        conn.execute(
+            "INSERT INTO folders (user_id, name, sync_id) VALUES (?,?,?)",
+            (user_id, "Folder 1", "sync-folder-1"),
+        )
+        conn.execute(
+            "INSERT INTO tags (user_id, name, sync_id) VALUES (?,?,?)",
+            (user_id, "Tag 1", "sync-tag-1"),
+        )
+        conn.execute(
+            "INSERT INTO notes (user_id, title, content, sync_id, server_rev) VALUES (?,?,?,?,?)",
+            (user_id, "Note 1", "body", "sync-note-1", 1),
+        )
+        conn.execute(
+            "INSERT INTO trash (user_id, title, content, created_at, updated_at) VALUES (?,?,?,?,?)",
+            (user_id, "Trashed", "x", "2024-01-01T00:00:00", "2024-01-01T00:00:00"),
+        )
+        conn.commit()
+        conn.close()
+
+    client = app.test_client()
+    response = client.post(
+        "/api/data/delete-all",
+        headers={"Authorization": "Bearer wipe-token"},
+    )
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["deleted"] is True
+
+    with app.app_context():
+        conn = database.get_connection()
+        folders = int(conn.execute("SELECT COUNT(*) AS c FROM folders WHERE user_id=?", (user_id,)).fetchone()["c"])
+        notes = int(conn.execute("SELECT COUNT(*) AS c FROM notes WHERE user_id=?", (user_id,)).fetchone()["c"])
+        tags = int(conn.execute("SELECT COUNT(*) AS c FROM tags WHERE user_id=?", (user_id,)).fetchone()["c"])
+        trash = int(conn.execute("SELECT COUNT(*) AS c FROM trash WHERE user_id=?", (user_id,)).fetchone()["c"])
+        tokens = int(conn.execute("SELECT COUNT(*) AS c FROM api_tokens WHERE user_id=?", (user_id,)).fetchone()["c"])
+        conn.close()
+
+    assert folders == 0
+    assert notes == 0
+    assert tags == 0
+    assert trash == 0
+    # Account and API tokens are preserved.
+    assert tokens == 1

@@ -1958,3 +1958,39 @@ def import_user_backup(user_id: int, lines: list[str]) -> dict:
     conn.commit()
     conn.close()
     return stats
+
+
+def delete_all_user_data(user_id: int) -> dict:
+    """Permanently delete all of a user's NoteStack content.
+
+    Removes notes, folders, tags, trash, sync tombstones and unresolved
+    conflicts for the given user. The account itself and its API tokens are
+    preserved so the user can keep signing in.
+
+    Returns a stats dict describing how many rows were removed per category.
+    """
+    conn = get_connection()
+    try:
+        stats = {}
+        # note_tags has no user_id column; clear it via the linked note/tag ids.
+        cur = conn.execute(
+            "DELETE FROM note_tags WHERE note_id IN (SELECT id FROM notes WHERE user_id=?)",
+            (user_id,),
+        )
+        stats["note_tags"] = int(getattr(cur, "rowcount", 0) or 0)
+        for table in (
+            "note_tombstones",
+            "folder_tombstones",
+            "tag_tombstones",
+            "conflicts",
+            "trash",
+            "notes",
+            "tags",
+            "folders",
+        ):
+            cur = conn.execute(f"DELETE FROM {table} WHERE user_id=?", (user_id,))
+            stats[table] = int(getattr(cur, "rowcount", 0) or 0)
+        conn.commit()
+        return stats
+    finally:
+        conn.close()
