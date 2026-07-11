@@ -3012,6 +3012,67 @@ html[data-theme="dark"] .ProseMirror .placeholder {
   color: var(--text-primary);
 }
 
+/* Brand dropdown (NoteStack ▾ → Home) */
+.brand-dropdown {
+  position: relative;
+  display: inline-flex;
+}
+
+.brand-dropdown__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.brand-dropdown__caret {
+  font-size: 0.7em;
+  line-height: 1;
+  opacity: 0.7;
+  transform: translateY(1px);
+}
+
+.brand-dropdown__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 160px;
+  background: var(--bg-modal);
+  border: 1px solid color-mix(in srgb, var(--border-med) 70%, transparent);
+  border-radius: var(--radius-sm);
+  padding: 4px 0;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  z-index: 1000;
+}
+
+.brand-dropdown__menu[hidden] {
+  display: none;
+}
+
+.brand-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 14px;
+  font-size: var(--type-base);
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.brand-dropdown__item:hover {
+  background: var(--bg-card-hov);
+  color: var(--text-primary);
+}
+
 .landing-nav__actions {
   display: flex;
   align-items: center;

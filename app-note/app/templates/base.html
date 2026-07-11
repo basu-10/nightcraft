@@ -71,6 +71,37 @@
         setTheme: setTheme,
         toggleTheme: toggleTheme,
       };
+
+      function closeAllBrandDropdowns(except) {
+        document.querySelectorAll('.brand-dropdown').forEach(function (dd) {
+          if (dd === except) return;
+          const menu = dd.querySelector('.brand-dropdown__menu');
+          const trigger = dd.querySelector('[data-brand-dropdown]');
+          if (menu) menu.hidden = true;
+          if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        });
+      }
+
+      document.addEventListener('click', function (e) {
+        const trigger = e.target.closest('[data-brand-dropdown]');
+        if (trigger) {
+          const dd = trigger.closest('.brand-dropdown');
+          const menu = dd && dd.querySelector('.brand-dropdown__menu');
+          if (menu) {
+            const willOpen = menu.hasAttribute('hidden');
+            closeAllBrandDropdowns(dd);
+            menu.hidden = !willOpen;
+            trigger.setAttribute('aria-expanded', String(willOpen));
+            e.stopPropagation();
+            return;
+          }
+        }
+        closeAllBrandDropdowns(null);
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeAllBrandDropdowns(null);
+      });
     })();
   </script>
 

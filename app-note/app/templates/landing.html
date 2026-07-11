@@ -5,7 +5,20 @@ Organized{% endblock %} {% block body %}
   <div class="landing-bg-orb landing-bg-orb--two" aria-hidden="true"></div>
 
   <header class="landing-nav neu-raised">
-    <div class="landing-brand">NoteStack</div>
+    <div class="brand-dropdown">
+      <button
+        type="button"
+        class="brand-dropdown__trigger landing-brand"
+        data-brand-dropdown
+        aria-haspopup="true"
+        aria-expanded="false"
+      >
+        NoteStack <span class="brand-dropdown__caret">&#9662;</span>
+      </button>
+      <div class="brand-dropdown__menu" hidden role="menu">
+        <a class="brand-dropdown__item" href="/" role="menuitem">Home</a>
+      </div>
+    </div>
     <div class="landing-nav__actions">
       <button
         class="btn btn--ghost btn--sm landing-theme-toggle"

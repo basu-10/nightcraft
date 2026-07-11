@@ -13,7 +13,20 @@
   <!-- ── Sidebar ────────────────────────────────────────────────────────── -->
   <aside id="sidebar" class="sidebar">
     <div class="sidebar__header">
-      <span class="sidebar__logo">NoteStack</span>
+      <div class="brand-dropdown">
+        <button
+          type="button"
+          class="brand-dropdown__trigger sidebar__logo"
+          data-brand-dropdown
+          aria-haspopup="true"
+          aria-expanded="false"
+        >
+          NoteStack <span class="brand-dropdown__caret">&#9662;</span>
+        </button>
+        <div class="brand-dropdown__menu" hidden role="menu">
+          <a class="brand-dropdown__item" href="/" role="menuitem">Home</a>
+        </div>
+      </div>
       <button id="btn-sidebar-close" class="sidebar__close-btn" title="Close menu" aria-label="Close menu">✕</button>
       <button id="btn-new-note" class="btn btn--primary btn--sm" title="New note (Ctrl+N)">
         + New
@@ -101,7 +114,20 @@
           </svg>
         </button>
       </div>
-      <span class="topbar__brand">NoteStack</span>
+      <div class="brand-dropdown">
+        <button
+          type="button"
+          class="brand-dropdown__trigger topbar__brand"
+          data-brand-dropdown
+          aria-haspopup="true"
+          aria-expanded="false"
+        >
+          NoteStack <span class="brand-dropdown__caret">&#9662;</span>
+        </button>
+        <div class="brand-dropdown__menu" hidden role="menu">
+          <a class="brand-dropdown__item" href="/" role="menuitem">Home</a>
+        </div>
+      </div>
       <div id="topbar-search-wrap" class="topbar__search-wrap">
         <input id="search-input" class="topbar__search" type="search"
                placeholder="Search notes…" autocomplete="off" />
