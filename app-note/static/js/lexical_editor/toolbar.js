@@ -17,11 +17,41 @@ import {
 } from './deps.js';
 import { insertTable, insertImage } from './insertions.js';
 
+const ICON = (inner) =>
+  `<svg class="lexical-toolbar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" ` +
+  `stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+
+const ICONS = {
+  bold: ICON('<path d="M7 5h5a3.5 3.5 0 0 1 0 7H7z"/><path d="M7 12h6a3.5 3.5 0 0 1 0 7H7z"/><line x1="7" y1="5" x2="7" y2="19"/>'),
+  italic: ICON('<line x1="11" y1="5" x2="17" y2="5"/><line x1="7" y1="19" x2="13" y2="19"/><line x1="14" y1="5" x2="10" y2="19"/>'),
+  underline: ICON('<path d="M7 4v5a5 5 0 0 0 10 0V4"/><line x1="5" y1="20" x2="19" y2="20"/>'),
+  strikethrough: ICON('<line x1="5" y1="12" x2="19" y2="12"/><path d="M8 7c1.5-1.6 4-2 6-1.4 2 .6 3 2 3 3.4"/><path d="M8 17c1.5 1.6 4 2 6 1.4 2-.6 3-2 3-3.4"/>'),
+  h1: ICON('<path d="M4 18V6"/><path d="M4 13 11 6"/>'),
+  h2: ICON('<path d="M4 6v12"/><path d="M4 12h4"/><path d="M4 18h4"/><path d="M12 9.5a2.5 2.5 0 1 1 2.5 2.5H12"/>'),
+  h3: ICON('<path d="M4 6v12"/><path d="M4 12h4"/><path d="M4 18h4"/><path d="M12 9h4.5a2 2 0 1 1 0 4H12a2 2 0 0 0 0 4h5"/>'),
+  paragraph: ICON('<path d="M12 5v14"/><path d="M12 5a4 4 0 0 1 0 8h4"/>'),
+  quote: ICON('<path d="M9 7H6.5a1.5 1.5 0 0 0-1.5 1.5v3A1.5 1.5 0 0 0 6.5 13H8v-2H6.5V9H9z"/><path d="M18 7h-2.5a1.5 1.5 0 0 0-1.5 1.5v3A1.5 1.5 0 0 0 15.5 13H17v-2h-1.5V9H18z"/>'),
+  bulletList: ICON('<line x1="9" y1="7" x2="19" y2="7"/><line x1="9" y1="12" x2="19" y2="12"/><line x1="9" y1="17" x2="19" y2="17"/><circle cx="4.5" cy="7" r="1.4" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="4.5" cy="17" r="1.4" fill="currentColor" stroke="none"/>'),
+  orderedList: ICON('<line x1="10" y1="7" x2="19" y2="7"/><line x1="10" y1="12" x2="19" y2="12"/><line x1="10" y1="17" x2="19" y2="17"/><path d="M4 5h2v3.4"/><path d="M4 10.5h2V14"/><path d="M4 16.2h2V19"/>'),
+  alignLeft: ICON('<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="17" y2="18"/>'),
+  alignCenter: ICON('<line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="5" y1="18" x2="19" y2="18"/>'),
+  alignRight: ICON('<line x1="4" y1="6" x2="20" y2="6"/><line x1="10" y1="12" x2="20" y2="12"/><line x1="7" y1="18" x2="20" y2="18"/>'),
+  alignJustify: ICON('<line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>'),
+  table: ICON('<rect x="4" y="5" width="16" height="14" rx="1.5"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="5" x2="10" y2="19"/><line x1="15" y1="5" x2="15" y2="19"/>'),
+  image: ICON('<rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M5 17l4.5-4 3 3 3-3 3.5 3.5"/>'),
+  clear: ICON('<path d="M4 14 12 6l4 4-7 7H7z"/><line x1="9" y1="19" x2="19" y2="19"/>'),
+  undo: ICON('<path d="M9 7 4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 0 12H9"/>'),
+  redo: ICON('<path d="M15 7 20 12l-5 5"/><path d="M20 12H10a6 6 0 0 0 0 12h5"/>'),
+  textColor: (clr) => ICON('<path d="M5 15 8.5 6 12 15"/><line x1="6.4" y1="12" x2="11" y2="12"/><rect x="4.5" y="18.2" width="15" height="2.6" rx="1.3" style="fill: var(--clr, #e8e8e8)"/>').replace('--clr, #e8e8e8', `--clr, ${clr}`),
+  highlight: (clr) => ICON('<path d="M4 17 12 9l3 3-7 7H7z"/><path d="M12 9l2.5-2.5a1.5 1.5 0 0 1 2 0l1 1a1.5 1.5 0 0 1 0 2L15 12"/><rect x="4.5" y="19.4" width="15" height="2.6" rx="1.3" style="fill: var(--clr, #ffff00); opacity: 0.5"/>').replace('--clr, #ffff00', `--clr, ${clr}`),
+};
+
 function buildToolbar(editor) {
   const bar = document.createElement('div');
   bar.className = 'lexical-toolbar';
   bar.setAttribute('aria-label', 'Formatting toolbar');
 
+  const buttons = {};
   let savedSelection = null;
   const floatingMenus = [];
 
@@ -62,12 +92,13 @@ function buildToolbar(editor) {
     if (!bar.contains(e.target)) closeMenus();
   });
 
-  function btn(title, html, action) {
+  function btn(key, title, icon, action) {
     const b = document.createElement('button');
     b.type = 'button';
     b.title = title;
     b.className = 'lexical-toolbar__btn';
-    b.innerHTML = html;
+    b.innerHTML = icon;
+    if (key) buttons[key] = b;
     b.addEventListener('mousedown', e => {
       e.preventDefault();
       snapshotSelection();
@@ -75,6 +106,52 @@ function buildToolbar(editor) {
     });
     return b;
   }
+
+  function setActive(key, on) {
+    const b = buttons[key];
+    if (b) b.classList.toggle('is-active', !!on);
+  }
+
+  function refreshToolbarState() {
+    const sel = $getSelection();
+    const fmt = { bold: false, italic: false, underline: false, strikethrough: false };
+    let blockType = null;
+    let alignType = null;
+    if ($isRangeSelection(sel)) {
+      fmt.bold = sel.hasFormat('bold');
+      fmt.italic = sel.hasFormat('italic');
+      fmt.underline = sel.hasFormat('underline');
+      fmt.strikethrough = sel.hasFormat('strikethrough');
+      const anchorNode = sel.anchor.getNode();
+      const top = anchorNode.getTopLevelElement ? anchorNode.getTopLevelElement() : null;
+      if (top) {
+        blockType = top.getType();
+        alignType = top.getFormatType();
+      }
+    }
+    setActive('bold', fmt.bold);
+    setActive('italic', fmt.italic);
+    setActive('underline', fmt.underline);
+    setActive('strikethrough', fmt.strikethrough);
+    setActive('paragraph', blockType === 'paragraph');
+    setActive('h1', blockType === 'h1');
+    setActive('h2', blockType === 'h2');
+    setActive('h3', blockType === 'h3');
+    setActive('quote', blockType === 'quote');
+    setActive('align-left', alignType === 'left' || alignType === '');
+    setActive('align-center', alignType === 'center');
+    setActive('align-right', alignType === 'right');
+    setActive('align-justify', alignType === 'justify');
+  }
+
+  editor.registerUpdateListener((payload) => {
+    const state = payload && typeof payload.read === 'function'
+      ? payload
+      : (payload && payload.editorState);
+    if (state && typeof state.read === 'function') {
+      state.read(refreshToolbarState);
+    }
+  });
 
   function sep() {
     const s = document.createElement('span');
@@ -101,7 +178,7 @@ function buildToolbar(editor) {
     return s;
   }
 
-  function colorSplitBtn(title, labelHtml, defaultColor, onApply) {
+  function colorSplitBtn(title, iconHtml, defaultColor, onApply) {
     const wrap = document.createElement('span');
     wrap.className = 'lexical-toolbar__split-color';
     wrap.title = title;
@@ -109,7 +186,7 @@ function buildToolbar(editor) {
     const main = document.createElement('button');
     main.type = 'button';
     main.className = 'lexical-toolbar__btn lexical-toolbar__split-main';
-    main.innerHTML = labelHtml;
+    main.innerHTML = iconHtml;
 
     const caret = document.createElement('button');
     caret.type = 'button';
@@ -216,7 +293,7 @@ function buildToolbar(editor) {
     trigger.type = 'button';
     trigger.className = 'lexical-toolbar__btn';
     trigger.title = 'Insert table';
-    trigger.textContent = '⊞';
+    trigger.innerHTML = ICONS.table;
 
     const menu = document.createElement('div');
     menu.className = 'lexical-toolbar__menu lexical-toolbar__menu--table';
@@ -300,27 +377,27 @@ function buildToolbar(editor) {
     });
   }
 
-  bar.appendChild(btn('Bold (Ctrl+B)', '<b>B</b>', () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold')));
-  bar.appendChild(btn('Italic (Ctrl+I)', '<i>I</i>', () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic')));
-  bar.appendChild(btn('Underline (Ctrl+U)', '<u>U</u>', () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline')));
-  bar.appendChild(btn('Strikethrough', '<s>S</s>', () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough')));
+  bar.appendChild(btn('bold', 'Bold (Ctrl+B)', ICONS.bold, () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold')));
+  bar.appendChild(btn('italic', 'Italic (Ctrl+I)', ICONS.italic, () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic')));
+  bar.appendChild(btn('underline', 'Underline (Ctrl+U)', ICONS.underline, () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline')));
+  bar.appendChild(btn('strikethrough', 'Strikethrough', ICONS.strikethrough, () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough')));
   bar.appendChild(sep());
 
-  bar.appendChild(btn('Heading 1', 'H1', () => setBlock(() => $createHeadingNode('h1'))));
-  bar.appendChild(btn('Heading 2', 'H2', () => setBlock(() => $createHeadingNode('h2'))));
-  bar.appendChild(btn('Heading 3', 'H3', () => setBlock(() => $createHeadingNode('h3'))));
-  bar.appendChild(btn('Paragraph', '¶', () => setBlock(() => $createParagraphNode())));
-  bar.appendChild(btn('Blockquote', '❝', () => setBlock(() => $createQuoteNode())));
+  bar.appendChild(btn('h1', 'Heading 1', ICONS.h1, () => setBlock(() => $createHeadingNode('h1'))));
+  bar.appendChild(btn('h2', 'Heading 2', ICONS.h2, () => setBlock(() => $createHeadingNode('h2'))));
+  bar.appendChild(btn('h3', 'Heading 3', ICONS.h3, () => setBlock(() => $createHeadingNode('h3'))));
+  bar.appendChild(btn('paragraph', 'Paragraph', ICONS.paragraph, () => setBlock(() => $createParagraphNode())));
+  bar.appendChild(btn('quote', 'Blockquote', ICONS.quote, () => setBlock(() => $createQuoteNode())));
   bar.appendChild(sep());
 
-  bar.appendChild(btn('Bullet list', '• —', () => editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined)));
-  bar.appendChild(btn('Numbered list', '1. —', () => editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined)));
+  bar.appendChild(btn(null, 'Bullet list', ICONS.bulletList, () => editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined)));
+  bar.appendChild(btn(null, 'Numbered list', ICONS.orderedList, () => editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined)));
   bar.appendChild(sep());
 
-  bar.appendChild(btn('Align left', '⬅', () => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left')));
-  bar.appendChild(btn('Align center', '↔', () => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center')));
-  bar.appendChild(btn('Align right', '➡', () => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right')));
-  bar.appendChild(btn('Justify', '☰', () => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify')));
+  bar.appendChild(btn('align-left', 'Align left', ICONS.alignLeft, () => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left')));
+  bar.appendChild(btn('align-center', 'Align center', ICONS.alignCenter, () => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center')));
+  bar.appendChild(btn('align-right', 'Align right', ICONS.alignRight, () => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right')));
+  bar.appendChild(btn('align-justify', 'Justify', ICONS.alignJustify, () => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify')));
   bar.appendChild(sep());
 
   bar.appendChild(dropdown('Font family', [
@@ -351,13 +428,13 @@ function buildToolbar(editor) {
 
   bar.appendChild(colorSplitBtn(
     'Text colour',
-    '<span class="lex-color-icon">A</span>',
+    ICONS.textColor('#e8e8e8'),
     '#e8e8e8',
     color => patchStyle({ color }),
   ));
   bar.appendChild(colorSplitBtn(
     'Highlight colour',
-    '<span class="lex-hl-icon">H</span>',
+    ICONS.highlight('#ffff00'),
     '#ffff00',
     color => patchStyle({ 'background-color': color }),
   ));
@@ -393,13 +470,13 @@ function buildToolbar(editor) {
     reader.readAsDataURL(file);
   });
 
-  bar.appendChild(btn('Insert image', '🖼', () => {
+  bar.appendChild(btn(null, 'Insert image', ICONS.image, () => {
     imagePicker.click();
   }));
   bar.appendChild(imagePicker);
   bar.appendChild(sep());
 
-  bar.appendChild(btn('Clear formatting', '✕ fmt', () => {
+  bar.appendChild(btn(null, 'Clear formatting', ICONS.clear, () => {
     editor.update(() => {
       const s = $getSelection();
       if (!$isRangeSelection(s)) return;
@@ -417,8 +494,8 @@ function buildToolbar(editor) {
   }));
   bar.appendChild(sep());
 
-  bar.appendChild(btn('Undo (Ctrl+Z)', '↩', () => editor.dispatchCommand(UNDO_COMMAND, undefined)));
-  bar.appendChild(btn('Redo (Ctrl+Shift+Z)', '↪', () => editor.dispatchCommand(REDO_COMMAND, undefined)));
+  bar.appendChild(btn(null, 'Undo (Ctrl+Z)', ICONS.undo, () => editor.dispatchCommand(UNDO_COMMAND, undefined)));
+  bar.appendChild(btn(null, 'Redo (Ctrl+Shift+Z)', ICONS.redo, () => editor.dispatchCommand(REDO_COMMAND, undefined)));
 
   return bar;
 }

@@ -13,21 +13,6 @@
   <!-- ── Sidebar ────────────────────────────────────────────────────────── -->
   <aside id="sidebar" class="sidebar">
     <div class="sidebar__header">
-      <div class="brand-dropdown">
-        <button
-          type="button"
-          class="brand-dropdown__trigger sidebar__logo"
-          data-brand-dropdown
-          aria-haspopup="true"
-          aria-expanded="false"
-        >
-          NoteStack <span class="brand-dropdown__caret">&#9662;</span>
-        </button>
-        <div class="brand-dropdown__menu" hidden role="menu">
-          <a class="brand-dropdown__item" href="/notestack/" role="menuitem">NoteStack Home</a>
-          <a class="brand-dropdown__item" href="/" role="menuitem">Home</a>
-        </div>
-      </div>
       <button id="btn-sidebar-close" class="sidebar__close-btn" title="Close menu" aria-label="Close menu">✕</button>
       <button id="btn-new-note" class="btn btn--primary btn--sm" title="New note (Ctrl+N)">
         + New
@@ -98,11 +83,6 @@
             <line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/>
           </svg>
         </button>
-        <button id="btn-search-toggle" class="topbar__icon-btn" title="Search" aria-label="Search" aria-expanded="false">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-            <circle cx="6.5" cy="6.5" r="4.2"/><line x1="9.8" y1="9.8" x2="14" y2="14"/>
-          </svg>
-        </button>
       </div>
       <div class="brand-dropdown">
         <button
@@ -123,6 +103,11 @@
         <input id="search-input" class="topbar__search" type="search"
                placeholder="Search notes…" autocomplete="off" />
       </div>
+      <button id="btn-search-toggle" class="topbar__icon-btn" title="Search" aria-label="Search" aria-expanded="false">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <circle cx="6.5" cy="6.5" r="4.2"/><line x1="9.8" y1="9.8" x2="14" y2="14"/>
+        </svg>
+      </button>
       <div class="topbar__actions">
         <select id="sort-select" class="topbar__select" title="Sort">
           <option value="newest">Newest</option>
