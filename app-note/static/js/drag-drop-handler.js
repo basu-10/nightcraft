@@ -43,6 +43,7 @@
         dragOverlayEl = document.createElement("div");
         dragOverlayEl.id = "drag-overlay";
         dragOverlayEl.className = "drag-overlay";
+        dragOverlayEl.hidden = true;
         dragOverlayEl.innerHTML = `
             <div class="drag-overlay__content">
                 <div class="drag-overlay__icon">📄</div>
@@ -60,6 +61,7 @@
         toastEl = document.createElement("div");
         toastEl.id = "toast-notification";
         toastEl.className = "toast-notification";
+        toastEl.hidden = true;
         toastEl.innerHTML = `
             <div class="toast-notification__icon" id="toast-icon"></div>
             <div class="toast-notification__message" id="toast-message"></div>
@@ -124,6 +126,7 @@
         }
         
         toastEl.className = "toast-notification";
+        toastEl.hidden = true;
         toastEl.classList.add(`toast-notification--${type}`);
         toastEl.hidden = false;
         

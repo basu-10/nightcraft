@@ -3485,6 +3485,8 @@ html[data-theme="dark"] .ProseMirror .placeholder {
     padding: 0;
     flex-shrink: 0;
     transition: background 0.15s ease;
+
+.drag-overlay[hidden] { display: none; }
   }
 
   .mobile-nav__split-caret:hover,
@@ -3637,16 +3639,18 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 
 /* ── Drag and Drop Overlay ──────────────────────────────────────────────── */
 .drag-overlay {
+  display: flex;
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(4px);
-  display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
   transition: background 0.15s ease;
 }
+
+.drag-overlay[hidden] { display: none; }
 
 .drag-overlay__content {
   display: flex;
@@ -3717,6 +3721,7 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 }
 
 .toast-notification:not([hidden]) {
+  display: flex;
   transform: translateY(0);
   opacity: 1;
 }
