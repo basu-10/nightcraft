@@ -17,8 +17,16 @@ Organized{% endblock %} {% block body %}
       </button>
       <div class="brand-dropdown__menu" hidden role="menu">
         <a class="brand-dropdown__item" href="/" role="menuitem">Home</a>
+        <a class="brand-dropdown__item" href="#features" role="menuitem">Features</a>
+        <a class="brand-dropdown__item" href="#sync" role="menuitem">Sync</a>
+        <a class="brand-dropdown__item" href="#guest" role="menuitem">Guest Mode</a>
       </div>
     </div>
+    <nav class="landing-nav__links" aria-label="Landing sections">
+      <a class="landing-nav__link" href="#features">Features</a>
+      <a class="landing-nav__link" href="#sync">Sync</a>
+      <a class="landing-nav__link" href="#guest">Guest Mode</a>
+    </nav>
     <div class="landing-nav__actions">
       <button
         class="btn btn--ghost btn--sm landing-theme-toggle"
@@ -41,66 +49,349 @@ Organized{% endblock %} {% block body %}
   </header>
 
   <main class="landing-main">
+    <!-- ── HERO ───────────────────────────────────────────────────────── -->
     <section class="landing-hero neu-raised-strong">
-      <p class="landing-kicker">Organize Fast. Find Faster.</p>
-      <h1 class="landing-title">
-        Your notes stay structured as your work grows.
-      </h1>
-      <p class="landing-subtitle">
-        Capture ideas quickly, organize them with folders and tags, and keep
-        progress in sync between desktop and web. Built for daily use without
-        getting in your way.
-      </p>
-      <div class="landing-cta-row">
-        {% if is_authenticated %}
-        <a class="btn btn--primary" href="{{ url_for('main.app_view') }}"
-          >Continue to Notes</a
-        >
-        <a class="btn btn--ghost" href="{{ url_for('main.settings_view') }}"
-          >Manage Settings</a
-        >
-        {% else %}
-        <a class="btn btn--primary" href="{{ url_for('main.app_view') }}"
-          >Continue as Guest</a
-        >
-        <a class="btn btn--primary" href="{{ url_for('auth.register') }}"
-          >Create Free Account</a
-        >
-        <a class="btn btn--ghost" href="{{ url_for('auth.login') }}"
-          >I Already Have One</a
-        >
-        {% endif %}
+      <div class="landing-hero__content">
+        <p class="landing-kicker">Organize Fast. Find Faster.</p>
+        <h1 class="landing-title">
+          Your notes stay structured as your work grows.
+        </h1>
+        <p class="landing-subtitle">
+          Capture ideas quickly, organize them with nested folders and tags, and
+          keep everything in sync between the NoteStack desktop app and the web.
+          Rich formatting, drag-and-drop import, and conflict-safe sync — built
+          for daily use without getting in your way.
+        </p>
+        <div class="landing-cta-row">
+          {% if is_authenticated %}
+          <a class="btn btn--primary" href="{{ url_for('main.app_view') }}"
+            >Continue to Notes</a
+          >
+          <a class="btn btn--ghost" href="{{ url_for('main.settings_view') }}"
+            >Manage Settings</a
+          >
+          {% else %}
+          <a class="btn btn--primary" href="{{ url_for('main.app_view') }}"
+            >Continue as Guest</a
+          >
+          <a class="btn btn--primary" href="{{ url_for('auth.register') }}"
+            >Create Free Account</a
+          >
+          <a class="btn btn--ghost" href="{{ url_for('auth.login') }}"
+            >I Already Have One</a
+          >
+          {% endif %}
+        </div>
+        <div class="landing-meta-row">
+          <span class="landing-pill neu-inset">Folders + Nested Structure</span>
+          <span class="landing-pill neu-inset">Tag-First Retrieval</span>
+          <span class="landing-pill neu-inset">Desktop + Web Sync</span>
+          <span class="landing-pill neu-inset">Rich Text Editor</span>
+          <span class="landing-pill neu-inset">Drag &amp; Drop Import</span>
+        </div>
       </div>
-      <div class="landing-meta-row">
-        <span class="landing-pill neu-inset">Folders + Nested Structure</span>
-        <span class="landing-pill neu-inset">Tag-First Retrieval</span>
-        <span class="landing-pill neu-inset">Desktop + Web Sync</span>
+
+      <!-- Decorative app preview built from the design tokens -->
+      <div class="hero-preview neu-raised-strong" aria-hidden="true">
+        <div class="hero-preview__bar">
+          <span class="hero-preview__dot"></span>
+          <span class="hero-preview__dot"></span>
+          <span class="hero-preview__dot"></span>
+          <span class="hero-preview__bar-label">NoteStack</span>
+        </div>
+        <div class="hero-preview__body">
+          <div class="hero-preview__side">
+            <div class="hero-preview__row hero-preview__row--active">
+              <span>🗒️</span> All Notes
+            </div>
+            <div class="hero-preview__row"><span>⭐</span> Favorites</div>
+            <div class="hero-preview__folder">📁 Work</div>
+            <div class="hero-preview__folder hero-preview__folder--sub">
+              📁 Projects
+            </div>
+            <div class="hero-preview__folder hero-preview__folder--sub">
+              📁 Research
+            </div>
+            <div class="hero-preview__tags">
+              <span class="hero-preview__tag">python</span>
+              <span class="hero-preview__tag">ideas</span>
+              <span class="hero-preview__tag">work</span>
+            </div>
+          </div>
+          <div class="hero-preview__notes">
+            <div class="hero-preview__note">
+              <div class="hero-preview__note-title">Meeting notes</div>
+              <div class="hero-preview__note-line"></div>
+              <div class="hero-preview__note-line hero-preview__note-line--short"></div>
+              <div class="hero-preview__note-tags"><span>#work</span><span>#projects</span></div>
+            </div>
+            <div class="hero-preview__note">
+              <div class="hero-preview__note-title">Reading list</div>
+              <div class="hero-preview__note-line"></div>
+              <div class="hero-preview__note-line"></div>
+              <div class="hero-preview__note-tags"><span>#ideas</span></div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="landing-grid">
-      <article class="landing-panel neu-raised">
-        <h2>Structure without friction</h2>
-        <p>
-          Keep notes in trees of folders, switch to favorites in one click, and
-          use tags to connect ideas across topics.
+    <!-- ── FEATURES ───────────────────────────────────────────────────── -->
+    <section id="features" class="landing-section">
+      <div class="landing-section__head">
+        <p class="landing-kicker">What's inside</p>
+        <h2 class="landing-section__title">
+          Everything you need to capture and structure notes
+        </h2>
+        <p class="landing-section__sub">
+          NoteStack is a focused note workspace — not a blank page with a hundred
+          buttons. The features below are all live in the web app today.
         </p>
-      </article>
-      <article class="landing-panel neu-raised">
-        <h2>Fast navigation</h2>
-        <p>
-          Jump between all notes, favorites, and trash instantly, with search
-          and sorting built into your core workflow.
+      </div>
+
+      <div class="landing-features">
+        <article class="landing-feature neu-raised">
+          <div class="landing-feature__icon">🗂️</div>
+          <h3 class="landing-feature__title">Folders &amp; nesting</h3>
+          <p class="landing-feature__desc">
+            Organize notes in trees of folders, color-code them, and move notes
+            between folders from a right-click menu or the editor.
+          </p>
+          <ul class="landing-feature__list">
+            <li>Nested subfolders</li>
+            <li>Per-folder colors</li>
+            <li>Move-to-folder from context menu</li>
+          </ul>
+        </article>
+
+        <article class="landing-feature neu-raised">
+          <div class="landing-feature__icon">🏷️</div>
+          <h3 class="landing-feature__title">Tags that connect</h3>
+          <p class="landing-feature__desc">
+            Tag notes to link ideas across folders, then filter by tag to pull
+            related work together no matter where it lives.
+          </p>
+          <ul class="landing-feature__list">
+            <li>Create &amp; color tags</li>
+            <li>Multi-tag filtering</li>
+            <li>Tag chips on every card</li>
+          </ul>
+        </article>
+
+        <article class="landing-feature neu-raised">
+          <div class="landing-feature__icon">✍️</div>
+          <h3 class="landing-feature__title">Rich text editor</h3>
+          <p class="landing-feature__desc">
+            A Lexical-powered editor with headings, lists, checkboxes, code
+            blocks, quotes, and inline images — saved as you type.
+          </p>
+          <ul class="landing-feature__list">
+            <li>Headings, lists, checklists</li>
+            <li>Code &amp; quote blocks</li>
+            <li>Images &amp; formatting</li>
+          </ul>
+        </article>
+
+        <article class="landing-feature neu-raised">
+          <div class="landing-feature__icon">📥</div>
+          <h3 class="landing-feature__title">Drag, drop &amp; import</h3>
+          <p class="landing-feature__desc">
+            Drop files onto the app to import them as notes, or use the
+            right-click upload option. Bring in text and markdown in seconds.
+          </p>
+          <ul class="landing-feature__list">
+            <li>Drag-and-drop import</li>
+            <li>Right-click upload</li>
+            <li>Text &amp; markdown parsing</li>
+          </ul>
+        </article>
+
+        <article class="landing-feature neu-raised">
+          <div class="landing-feature__icon">🔎</div>
+          <h3 class="landing-feature__title">Find anything fast</h3>
+          <p class="landing-feature__desc">
+            Search across every note, sort by date or title, jump to favorites,
+            and filter by a specific day to surface what you worked on.
+          </p>
+          <ul class="landing-feature__list">
+            <li>Full-text search</li>
+            <li>Sort &amp; favorite views</li>
+            <li>Date-based filtering</li>
+          </ul>
+        </article>
+
+        <article class="landing-feature neu-raised">
+          <div class="landing-feature__icon">🗑️</div>
+          <h3 class="landing-feature__title">Trash &amp; recovery</h3>
+          <p class="landing-feature__desc">
+            Send notes to trash without losing them, restore when you need them
+            back, and clear everything from a single data-controls panel.
+          </p>
+          <ul class="landing-feature__list">
+            <li>Soft-delete to trash</li>
+            <li>One-click restore</li>
+            <li>Delete-all data control</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- ── SYNC ───────────────────────────────────────────────────────── -->
+    <section id="sync" class="landing-section landing-section--alt neu-raised-strong">
+      <div class="landing-section__head">
+        <p class="landing-kicker">Desktop + Web</p>
+        <h2 class="landing-section__title">Your notes, everywhere you are</h2>
+        <p class="landing-section__sub">
+          Pair the web app with the NoteStack desktop client using an API token
+          from Settings. Changes flow both ways and conflicts are handled
+          safely.
         </p>
-      </article>
-      <article class="landing-panel neu-raised">
-        <h2>Cross-platform continuity</h2>
-        <p>
-          Sign in once and continue anywhere. Your notes and structure stay
-          aligned across desktop and browser.
-        </p>
-      </article>
+      </div>
+
+      <div class="landing-steps">
+        <div class="landing-step">
+          <div class="landing-step__num">1</div>
+          <h3 class="landing-step__title">Pull on startup</h3>
+          <p class="landing-step__desc">
+            The desktop app pulls your latest notes from the server the moment it
+            opens, so you always start from the current state.
+          </p>
+        </div>
+        <div class="landing-step">
+          <div class="landing-step__num">2</div>
+          <h3 class="landing-step__title">Push after every save</h3>
+          <p class="landing-step__desc">
+            Edits sync to the web 3 seconds after each save. Press
+            <kbd class="landing-kbd">Ctrl</kbd>+<kbd class="landing-kbd">S</kbd>
+            and the web view updates in step.
+          </p>
+        </div>
+        <div class="landing-step">
+          <div class="landing-step__num">3</div>
+          <h3 class="landing-step__title">Resolve conflicts</h3>
+          <p class="landing-step__desc">
+            If a note changes on both sides, a banner appears. Open the
+            side-by-side diff and keep one version or merge them.
+          </p>
+        </div>
+      </div>
+
+      <div class="landing-sync-note neu-inset">
+        <span class="landing-sync-note__icon">🔗</span>
+        <span>
+          Connect from <strong>Settings → generate an API token</strong>, then
+          paste it into the desktop app's SYNC section. A sync log is available
+          for troubleshooting.
+        </span>
+      </div>
+    </section>
+
+    <!-- ── GUEST MODE ─────────────────────────────────────────────────── -->
+    <section id="guest" class="landing-section">
+      <div class="landing-split">
+        <div class="landing-split__text">
+          <p class="landing-kicker">No account? No problem.</p>
+          <h2 class="landing-section__title">Guest mode, ready in one click</h2>
+          <p class="landing-section__sub">
+            Hit <strong>Continue as Guest</strong> and start writing immediately.
+            Notes are stored in your browser via IndexedDB — no signup, no
+            server, just a fast local notebook.
+          </p>
+          <ul class="landing-ticklist">
+            <li>Browser-only storage, no login required</li>
+            <li>Export everything to a JSON backup</li>
+            <li>Import a backup on any device</li>
+            <li>Sign in later and import guest notes into your account</li>
+          </ul>
+          <a class="btn btn--primary" href="{{ url_for('main.app_view') }}"
+            >Try Guest Mode</a
+          >
+        </div>
+        <div class="landing-split__card neu-raised-strong">
+          <div class="landing-guest-badge">
+            <span class="landing-guest-badge__dot"></span> Guest mode active
+          </div>
+          <p class="landing-guest-card__text">
+            Everything you save stays in <strong>this browser</strong> — it won't
+            sync to other devices until you sign in.
+          </p>
+          <div class="landing-guest-actions">
+            <span class="btn btn--ghost btn--sm">⤓ Export</span>
+            <span class="btn btn--ghost btn--sm">⤒ Import</span>
+            <span class="btn btn--ghost btn--sm">↪ Sign in</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── POWER / ADMIN ──────────────────────────────────────────────── -->
+    <section class="landing-section landing-section--alt neu-raised-strong">
+      <div class="landing-section__head">
+        <p class="landing-kicker">Power features</p>
+        <h2 class="landing-section__title">Built for speed and control</h2>
+      </div>
+      <div class="landing-mini-grid">
+        <div class="landing-mini">
+          <div class="landing-mini__icon">⌨️</div>
+          <h3>Keyboard-first</h3>
+          <p>
+            <kbd class="landing-kbd">Ctrl</kbd>+<kbd class="landing-kbd">N</kbd>
+            for a new note,
+            <kbd class="landing-kbd">Ctrl</kbd>+<kbd class="landing-kbd">S</kbd>
+            to save. Fly through your notes without the mouse.
+          </p>
+        </div>
+        <div class="landing-mini">
+          <div class="landing-mini__icon">🖱️</div>
+          <h3>Right-click menus</h3>
+          <p>
+            Upload a file, move a note to a folder, rename, or delete — straight
+            from the card's context menu.
+          </p>
+        </div>
+        <div class="landing-mini">
+          <div class="landing-mini__icon">📊</div>
+          <h3>Admin dashboard</h3>
+          <p>
+            Instance owners get usage stats and a common details view to keep
+            track of the workspace.
+          </p>
+        </div>
+        <div class="landing-mini">
+          <div class="landing-mini__icon">🛡️</div>
+          <h3>Data controls</h3>
+          <p>
+            Generate API tokens, review the sync log, and wipe all NoteStack data
+            from one place.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── FINAL CTA ──────────────────────────────────────────────────── -->
+    <section class="landing-cta neu-raised-strong">
+      <h2 class="landing-cta__title">Start writing in seconds</h2>
+      <p class="landing-cta__sub">
+        No setup required. Open the app and your first note is one click away.
+      </p>
+      <div class="landing-cta-row">
+        <a class="btn btn--primary" href="{{ url_for('main.app_view') }}"
+          >Continue as Guest</a
+        >
+        <a class="btn btn--ghost" href="{{ url_for('auth.register') }}"
+          >Create Free Account</a
+        >
+      </div>
     </section>
   </main>
+
+  <footer class="landing-footer">
+    <span>NoteStack · part of the Nightcraft stack</span>
+    <span class="landing-footer__links">
+      <a href="{{ url_for('main.app_view') }}">Open App</a>
+      <a href="{{ url_for('main.settings_view') }}">Settings</a>
+      <a href="/">Home</a>
+    </span>
+  </footer>
 </div>
 {% endblock %}

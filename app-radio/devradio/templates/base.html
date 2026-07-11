@@ -15,7 +15,14 @@
     <div class="bg-layer"></div>
     {% block page_header %}
     <header class="topbar">
-      <a class="brand" href="{{ url_for('listener.home') }}">DevRadio</a>
+      <div class="brand-dropdown" x-data="{ open: false }" @click.outside="open = false">
+        <button class="brand" type="button" @click="open = !open" :aria-expanded="open" aria-haspopup="true">
+          DevRadio <span class="brand-caret" :class="{ 'open': open }">&#8711;</span>
+        </button>
+        <div class="brand-menu" x-show="open" x-transition.opacity x-cloak>
+          <a href="{{ url_for('listener.home') }}">Home</a>
+        </div>
+      </div>
       <nav class="topnav">
         {% if app_user.is_authenticated and app_user.is_admin %}
           <a href="{{ url_for('admin.content') }}">Content</a>

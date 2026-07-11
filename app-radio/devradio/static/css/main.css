@@ -64,6 +64,67 @@ body {
   letter-spacing: 0.01em;
 }
 
+.brand-dropdown {
+  position: relative;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font: inherit;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.brand-caret {
+  font-size: 0.8rem;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+
+.brand-caret.open {
+  transform: rotate(180deg);
+}
+
+.brand-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  min-width: 10rem;
+  padding: 0.4rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 12px);
+  box-shadow: var(--shadow-out);
+  z-index: 200;
+}
+
+.brand-menu a {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: var(--radius, 12px);
+  transition: background 0.15s;
+}
+
+.brand-menu a:hover {
+  background: var(--border);
+}
+
+[x-cloak] {
+  display: none !important;
+}
+
 .topnav {
   display: flex;
   gap: 0;
