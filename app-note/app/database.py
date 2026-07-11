@@ -520,6 +520,32 @@ def _initialize_postgres_db() -> None:
                 raise
     conn.commit()
     conn.close()
+
+    # PostgreSQL migrations for existing databases
+    conn = get_connection()
+    cur = conn.cursor()
+
+    # Check if users.timezone column exists and add it if missing
+    user_cols = {row["column_name"] for row in cur.execute(
+        "SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='users'"
+    ).fetchall()}
+    if "timezone" not in user_cols:
+        cur.execute("ALTER TABLE users ADD COLUMN timezone TEXT NOT NULL DEFAULT 'UTC'")
+    conn.commit()
+
+    # Check notes table columns
+    note_cols = {row["column_name"] for row in cur.execute(
+        "SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='notes'"
+    ).fetchall()}
+    if "server_rev" not in note_cols:
+        cur.execute("ALTER TABLE notes ADD COLUMN server_rev BIGINT NOT NULL DEFAULT 0")
+    if "editor_type" not in note_cols:
+        cur.execute("ALTER TABLE notes ADD COLUMN editor_type TEXT NOT NULL DEFAULT 'lexical'")
+    if "original_extension" not in note_cols:
+        cur.execute("ALTER TABLE notes ADD COLUMN original_extension TEXT DEFAULT NULL")
+    conn.commit()
+    conn.close()
+
     # SQLite migration logic below relies on PRAGMA and sqlite-specific DDL.
     # For postgres backend we only run the bootstrap statements above.
     return
