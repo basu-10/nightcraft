@@ -1714,6 +1714,11 @@
         label: "📁  New Folder",
         action: () => openFolderModal(state.filter.folderId || null),
       },
+      "sep",
+      {
+        label: "📄  Upload Text File",
+        action: () => window.DragDropHandler && window.DragDropHandler.openFilePicker(),
+      },
     ]);
   }
 

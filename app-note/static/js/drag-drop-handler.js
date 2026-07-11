@@ -2,7 +2,8 @@
  * drag-drop-handler.js — Drag and drop file import handler.
  *
  * Modular, testable drag-and-drop functionality for importing plaintext files.
- * Only allows import in All Notes, Folder views. Shows visual feedback.
+ * Only allows import in All Notes / Folder views. Shows visual feedback.
+ * Also exposes a programmatic file picker for "Upload Text File" actions.
  */
 
 (() => {
@@ -17,6 +18,7 @@
     let mainContentEl = null;
     let dragOverlayEl = null;
     let toastEl = null;
+    let fileInputEl = null;
 
     // Track current view state (provided by app)
     let getCurrentSection = () => "all";
@@ -32,6 +34,7 @@
         if (options.getFolderId) getCurrentFolderId = options.getFolderId;
         createDragOverlay();
         createToastContainer();
+        createFileInput();
         bindDragEvents();
     }
 
@@ -70,11 +73,39 @@
     }
 
     /**
+     * Create the hidden file input used by the "Upload Text File" picker.
+     */
+    function createFileInput() {
+        if (fileInputEl) return;
+        fileInputEl = document.createElement("input");
+        fileInputEl.type = "file";
+        fileInputEl.id = "import-file-input";
+        fileInputEl.hidden = true;
+        fileInputEl.accept = buildAcceptAttribute();
+        fileInputEl.addEventListener("change", () => {
+            const file = fileInputEl.files && fileInputEl.files[0];
+            if (file) importFile(file);
+            // Reset so the same file can be picked again later
+            fileInputEl.value = "";
+        });
+        document.body.appendChild(fileInputEl);
+    }
+
+    /**
+     * Build the `accept` attribute from supported extensions.
+     */
+    function buildAcceptAttribute() {
+        const exts = (window.FileParser && window.FileParser.SUPPORTED_EXTENSIONS)
+            ? Array.from(window.FileParser.SUPPORTED_EXTENSIONS)
+            : ["txt", "md"];
+        return exts.map((e) => "." + e).join(",");
+    }
+
+    /**
      * Check if the current view allows drag and drop.
      */
     function isDropAllowed() {
         const section = getCurrentSection();
-        const folderId = getCurrentFolderId();
         // Allow: all notes view, any folder view
         // Deny: trash, favorites
         if (section === "trash") return false;
@@ -110,7 +141,7 @@
         }
         const iconEl = document.getElementById("toast-icon");
         const msgEl = document.getElementById("toast-message");
-        
+
         if (iconEl) {
             const icons = {
                 "success": "✓",
@@ -124,12 +155,12 @@
         if (msgEl) {
             msgEl.textContent = message;
         }
-        
+
         toastEl.className = "toast-notification";
         toastEl.hidden = true;
         toastEl.classList.add(`toast-notification--${type}`);
         toastEl.hidden = false;
-        
+
         // Auto-hide after duration
         clearTimeout(hideToast._timer);
         hideToast._timer = setTimeout(() => hideToast(), duration);
@@ -141,6 +172,74 @@
     function hideToast() {
         if (!toastEl) return;
         toastEl.hidden = true;
+    }
+
+    /**
+     * Open the native file picker (used by "Upload Text File").
+     */
+    function openFilePicker() {
+        if (!fileInputEl) createFileInput();
+        if (fileInputEl) fileInputEl.click();
+    }
+
+    /**
+     * Import a single plaintext file as a new note.
+     * Shared by both the drop handler and the file picker.
+     */
+    async function importFile(file) {
+        if (!file) {
+            showToast("No file selected", "warning");
+            return;
+        }
+
+        if (!isDropAllowed()) {
+            showToast("Cannot import files to this view (Trash/Favorites not supported)", "error");
+            return;
+        }
+
+        if (!window.FileParser || !window.FileParser.isSupportedFile(file)) {
+            showToast(`"${file.name}" is not a supported plaintext file. Only .txt, .md, and similar text formats are supported.`, "error");
+            return;
+        }
+
+        if (!window.FileParser.parseFile) {
+            showToast("File parser not available", "error");
+            return;
+        }
+
+        try {
+            const parsed = await window.FileParser.parseFile(file);
+            if (!parsed) {
+                showToast(`Could not read "${file.name}"`, "error");
+                return;
+            }
+
+            // Create note via API (folder hierarchy only, no tags/dates)
+            const folderId = getCurrentFolderId();
+            const noteData = {
+                title: parsed.title,
+                content: parsed.content,
+                folder_id: folderId || null,
+                editor_type: "lexical",
+                original_extension: parsed.extension
+            };
+
+            if (window.DragDropAPI && window.DragDropAPI.createNote) {
+                await window.DragDropAPI.createNote(noteData);
+                showToast(`Imported "${parsed.title}" as a note`, "success", 2500);
+
+                if (window.DragDropAPI.refreshNotes) {
+                    window.DragDropAPI.refreshNotes();
+                }
+
+                highlightNewNote(parsed.title);
+            } else {
+                showToast("Import handler not connected to API", "error");
+            }
+        } catch (err) {
+            console.error("File import failed:", err);
+            showToast(`Failed to import "${file.name}": ${err?.message || "Unknown error"}`, "error");
+        }
     }
 
     /**
@@ -192,76 +291,16 @@
      */
     async function handleDrop(e) {
         hideDragOverlay();
-        
+
         const dt = e.dataTransfer;
         if (!dt || !dt.files || dt.files.length === 0) {
             showToast("No files detected", "warning");
             return;
         }
 
-        const files = Array.from(dt.files);
-        if (files.length === 0) {
-            showToast("No files detected", "warning");
-            return;
-        }
-
         // Only process single file for now
-        const file = files[0];
-        
-        // Check if drop is allowed
-        if (!isDropAllowed()) {
-            showToast("Cannot import files to this view (Trash/Favorites not supported)", "error");
-            return;
-        }
-
-        // Validate file type
-        if (!window.FileParser || !window.FileParser.isSupportedFile(file)) {
-            showToast(`"${file.name}" is not a supported plaintext file. Only .txt, .md, and similar text formats are supported.`, "error");
-            return;
-        }
-
-        // Parse the file
-        if (!window.FileParser || !window.FileParser.parseFile) {
-            showToast("File parser not available", "error");
-            return;
-        }
-
-        try {
-            const parsed = await window.FileParser.parseFile(file);
-            if (!parsed) {
-                showToast(`Could not read "${file.name}"`, "error");
-                return;
-            }
-
-            // Create note via API (folder hierarchy only, no tags/dates)
-            const folderId = getCurrentFolderId();
-            const noteData = {
-                title: parsed.title,
-                content: parsed.content,
-                folder_id: folderId || null,
-                editor_type: "lexical",
-                original_extension: parsed.extension
-            };
-
-            // Call the API through app's api function or directly
-            if (window.DragDropAPI && window.DragDropAPI.createNote) {
-                await window.DragDropAPI.createNote(noteData);
-                showToast(`Imported "${parsed.title}" as a note`, "success", 2500);
-                
-                // Trigger UI refresh
-                if (window.DragDropAPI.refreshNotes) {
-                    window.DragDropAPI.refreshNotes();
-                }
-                
-                // Highlight the new note briefly
-                highlightNewNote(parsed.title);
-            } else {
-                showToast("Import handler not connected to API", "error");
-            }
-        } catch (err) {
-            console.error("Drop import failed:", err);
-            showToast(`Failed to import "${file.name}": ${err?.message || "Unknown error"}`, "error");
-        }
+        const file = dt.files[0];
+        await importFile(file);
     }
 
     /**
@@ -289,6 +328,8 @@
         hideToast,
         showDragOverlay,
         hideDragOverlay,
+        openFilePicker,
+        importFile,
         isDropAllowed,
         DragState
     };
