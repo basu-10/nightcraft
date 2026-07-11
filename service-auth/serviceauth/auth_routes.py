@@ -648,3 +648,252 @@ def userinfo():
         return _token_error(401, "invalid_token", "user no longer exists")
 
     return jsonify(_claims_for_user(user))
+
+
+def _require_admin_user():
+    """Return the current user if they are an admin, otherwise an error response tuple."""
+    user = _current_user()
+    if user is None:
+        return None, (jsonify({"error": "unauthenticated", "error_description": "Admin login required"}), 401)
+    if not user.is_admin:
+        return None, (jsonify({"error": "forbidden", "error_description": "Admin access required"}), 403)
+    return user, None
+
+
+def _serialize_user(user, include_counts=False):
+    data = {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "is_admin": bool(user.is_admin),
+        "timezone_name": user.timezone_name,
+        "created_at": user.created_at.isoformat() if user.created_at else None,
+        "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+    }
+    if include_counts:
+        data["active_sessions"] = Session.query.filter(
+            Session.user_id == user.id, Session.expires_at > _utcnow()
+        ).count()
+    return data
+
+
+def _paginate(query, page, per_page):
+    page = max(1, int(page))
+    total = query.count()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
+    return items, total, page
+
+
+@bp.get("/admin/users")
+def admin_list_users():
+    _, err = _require_admin_user()
+    if err is not None:
+        return err
+
+    query = (request.args.get("q") or "").strip()
+    page = request.args.get("page", 1)
+    per_page = 25
+
+    stmt = User.query
+    if query:
+        like = f"%{query}%"
+        stmt = stmt.filter((User.username.ilike(like)) | (User.email.ilike(like)))
+    stmt = stmt.order_by(User.created_at.desc())
+
+    users, total, page = _paginate(stmt, page, per_page)
+    return jsonify(
+        {
+            "users": [_serialize_user(u, include_counts=True) for u in users],
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "pages": max(1, (total + per_page - 1) // per_page),
+        }
+    )
+
+
+@bp.get("/admin/users/<int:user_id>")
+def admin_user_detail(user_id):
+    _, err = _require_admin_user()
+    if err is not None:
+        return err
+
+    user = db.session.get(User, user_id)
+    if user is None:
+        return jsonify({"error": "not_found", "error_description": "User not found"}), 404
+
+    sessions = (
+        Session.query.filter_by(user_id=user.id).order_by(Session.created_at.desc()).limit(20).all()
+    )
+    refresh_tokens = (
+        RefreshToken.query.filter_by(user_id=user.id).order_by(RefreshToken.created_at.desc()).limit(20).all()
+    )
+    codes = (
+        AuthorizationCode.query.filter_by(user_id=user.id)
+        .order_by(AuthorizationCode.created_at.desc())
+        .limit(20)
+        .all()
+    )
+
+    return jsonify(
+        {
+            "user": _serialize_user(user, include_counts=True),
+            "sessions": [
+                {
+                    "id": s.id,
+                    "created_at": s.created_at.isoformat() if s.created_at else None,
+                    "expires_at": s.expires_at.isoformat() if s.expires_at else None,
+                    "is_active": s.expires_at > _utcnow() if s.expires_at else False,
+                }
+                for s in sessions
+            ],
+            "refresh_tokens": [
+                {
+                    "id": t.id,
+                    "client_id": t.client_id,
+                    "scope": t.scope,
+                    "revoked": bool(t.revoked),
+                    "created_at": t.created_at.isoformat() if t.created_at else None,
+                    "expires_at": t.expires_at.isoformat() if t.expires_at else None,
+                }
+                for t in refresh_tokens
+            ],
+            "authorization_codes": [
+                {
+                    "id": c.id,
+                    "client_id": c.client_id,
+                    "scope": c.scope,
+                    "consumed_at": c.consumed_at.isoformat() if c.consumed_at else None,
+                    "created_at": c.created_at.isoformat() if c.created_at else None,
+                }
+                for c in codes
+            ],
+        }
+    )
+
+
+@bp.post("/admin/users/<int:user_id>/role")
+def admin_set_user_role(user_id):
+    _, err = _require_admin_user()
+    if err is not None:
+        return err
+
+    user = db.session.get(User, user_id)
+    if user is None:
+        return jsonify({"error": "not_found", "error_description": "User not found"}), 404
+
+    payload = request.get_json(silent=True) or {}
+    user.is_admin = bool(payload.get("is_admin", user.is_admin))
+    db.session.commit()
+    return jsonify(_serialize_user(user))
+
+
+@bp.post("/admin/users/<int:user_id>/reset-password")
+def admin_reset_password(user_id):
+    _, err = _require_admin_user()
+    if err is not None:
+        return err
+
+    user = db.session.get(User, user_id)
+    if user is None:
+        return jsonify({"error": "not_found", "error_description": "User not found"}), 404
+
+    payload = request.get_json(silent=True) or {}
+    new_password = _clean_value(payload.get("password", ""))
+    if len(new_password) < 8:
+        return jsonify({"error": "invalid_password", "error_description": "Password must be at least 8 characters."}), 400
+
+    user.set_password(new_password)
+    db.session.commit()
+    return jsonify({"id": user.id, "reset": True})
+
+
+@bp.post("/admin/users/<int:user_id>/revoke-sessions")
+def admin_revoke_sessions(user_id):
+    _, err = _require_admin_user()
+    if err is not None:
+        return err
+
+    user = db.session.get(User, user_id)
+    if user is None:
+        return jsonify({"error": "not_found", "error_description": "User not found"}), 404
+
+    deleted = Session.query.filter_by(user_id=user.id).delete()
+    db.session.commit()
+    return jsonify({"id": user.id, "revoked_sessions": deleted})
+
+
+@bp.delete("/admin/users/<int:user_id>")
+def admin_delete_user(user_id):
+    admin, err = _require_admin_user()
+    if err is not None:
+        return err
+
+    user = db.session.get(User, user_id)
+    if user is None:
+        return jsonify({"error": "not_found", "error_description": "User not found"}), 404
+
+    if user.id == admin.id:
+        return jsonify({"error": "self_delete", "error_description": "You cannot delete your own account."}), 400
+
+    Session.query.filter_by(user_id=user.id).delete()
+    RefreshToken.query.filter_by(user_id=user.id).delete()
+    AuthorizationCode.query.filter_by(user_id=user.id).delete()
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({"deleted": user.id})
+
+
+@bp.get("/admin/logs")
+def admin_logs():
+    _, err = _require_admin_user()
+    if err is not None:
+        return err
+
+    limit = 60
+    sessions = Session.query.order_by(Session.created_at.desc()).limit(limit).all()
+    codes = AuthorizationCode.query.order_by(AuthorizationCode.created_at.desc()).limit(limit).all()
+    tokens = RefreshToken.query.order_by(RefreshToken.created_at.desc()).limit(limit).all()
+    clients = OauthClient.query.order_by(OauthClient.created_at.desc()).all()
+
+    user_map = {u.id: u.username for u in User.query.all()}
+
+    def _entry(kind, ts, username, detail):
+        return {
+            "kind": kind,
+            "timestamp": ts.isoformat() if ts else None,
+            "username": username,
+            "detail": detail,
+        }
+
+    entries = []
+    for s in sessions:
+        entries.append(_entry("session", s.created_at, user_map.get(s.user_id, "unknown"), "Signed in (new session created)"))
+    for c in codes:
+        entries.append(_entry("authorization", c.created_at, user_map.get(c.user_id, "unknown"), f"Authorized client {c.client_id} ({c.scope})"))
+    for t in tokens:
+        state = "revoked" if t.revoked else "issued"
+        entries.append(_entry("token", t.created_at, user_map.get(t.user_id, "unknown"), f"Refresh token {state} for {t.client_id}"))
+
+    entries.sort(key=lambda e: (e["timestamp"] or ""), reverse=True)
+    entries = entries[:limit]
+
+    return jsonify(
+        {
+            "activity": entries,
+            "clients": [
+                {
+                    "client_id": c.client_id,
+                    "scope": c.scope,
+                    "is_confidential": bool(c.is_confidential),
+                    "created_at": c.created_at.isoformat() if c.created_at else None,
+                }
+                for c in clients
+            ],
+            "stats": {
+                "users": User.query.count(),
+                "active_sessions": Session.query.filter(Session.expires_at > _utcnow()).count(),
+                "oauth_clients": OauthClient.query.count(),
+            },
+        }
+    )

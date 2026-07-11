@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Platform Users</title>
+    <meta name="description" content="Central user management for the shared identity service.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+
+    <header class="site-header container">
+        <div class="brand">ADMIN HUB</div>
+        <nav class="header-actions">
+            <a class="btn btn-outline" href="{{ home_url }}">Back Home</a>
+            {% if shared_user %}
+            <a class="btn btn-outline" href="{{ logout_url }}">Sign Out</a>
+            {% else %}
+            <a class="btn btn-outline" href="{{ auth_url }}">Unified Login</a>
+            {% endif %}
+            {% if not is_admin %}
+            <a class="btn btn-solid" href="{{ auth_admin_url }}">Admin Login</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="container">
+        <nav class="admin-tabs" aria-label="Admin sections">
+            <a class="admin-tab" href="{{ admin_url }}">Overview</a>
+            <a class="admin-tab is-active" href="{{ admin_url }}/users">Users</a>
+            <a class="admin-tab" href="{{ admin_url }}/logs">Logs</a>
+        </nav>
+
+        <section class="hero">
+            <p class="eyebrow">Shared Identity</p>
+            {% if shared_user %}
+            <p class="eyebrow">Hi, {{ shared_user.username }} welcome</p>
+            {% endif %}
+            <h1>Platform Users</h1>
+            <p class="hero-copy">
+                These accounts are shared across every product through the central OIDC server.
+                Manage them here so a single identity works everywhere.
+            </p>
+        </section>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-stack">
+                {% for category, message in messages %}
+                <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+
+        {% if not is_admin %}
+        <div class="admin-notice admin-notice-warn">
+            Sign in with an admin account to view and manage platform users.
+        </div>
+        {% else %}
+            {% if error %}
+            <div class="admin-notice admin-notice-warn">{{ error }}</div>
+            {% endif %}
+
+            <form class="user-search" method="get" action="{{ admin_url }}/users">
+                <input type="search" name="q" value="{{ query }}" placeholder="Search username or email" aria-label="Search users">
+                <button class="btn btn-solid" type="submit">Search</button>
+            </form>
+
+            {% if users %}
+            <div class="table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Active sessions</th>
+                            <th>Joined</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td>
+                                <div class="cell-title">{{ u.username }}</div>
+                                <div class="cell-sub">{{ u.email }}</div>
+                            </td>
+                            <td>
+                                {% if u.is_admin %}
+                                <span class="badge badge-admin">Admin</span>
+                                {% else %}
+                                <span class="badge badge-user">User</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ u.active_sessions }}</td>
+                            <td>{{ u.created_at[:10] if u.created_at else "—" }}</td>
+                            <td class="cell-actions">
+                                <a class="btn btn-outline btn-sm" href="{{ admin_url }}/users/{{ u.id }}">Manage</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if pages > 1 %}
+            <nav class="pager" aria-label="Pages">
+                {% if page > 1 %}
+                <a class="btn btn-outline btn-sm" href="{{ admin_url }}/users?q={{ query }}&page={{ page - 1 }}">Previous</a>
+                {% endif %}
+                <span class="pager-info">Page {{ page }} of {{ pages }}</span>
+                {% if page < pages %}
+                <a class="btn btn-outline btn-sm" href="{{ admin_url }}/users?q={{ query }}&page={{ page + 1 }}">Next</a>
+                {% endif %}
+            </nav>
+            {% endif %}
+
+            <p class="result-count">{{ total }} user{{ '' if total == 1 else 's' }} total</p>
+            {% else %}
+            <div class="admin-notice">
+                {% if query %}No users match "{{ query }}".{% else %}No users found.{% endif %}
+            </div>
+            {% endif %}
+        {% endif %}
+    </main>
+</body>
+</html>

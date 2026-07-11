@@ -30,6 +30,12 @@
     </header>
 
     <main class="container">
+        <nav class="admin-tabs" aria-label="Admin sections">
+            <a class="admin-tab is-active" href="{{ admin_url }}">Overview</a>
+            <a class="admin-tab" href="{{ admin_url }}/users">Users</a>
+            <a class="admin-tab" href="{{ admin_url }}/logs">Logs</a>
+        </nav>
+
         <section class="hero">
             <p class="eyebrow">Central Admin Entry</p>
             {% if shared_user %}

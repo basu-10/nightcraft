@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>User Detail</title>
+    <meta name="description" content="Manage a shared platform user account.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+
+    <header class="site-header container">
+        <div class="brand">ADMIN HUB</div>
+        <nav class="header-actions">
+            <a class="btn btn-outline" href="{{ home_url }}">Back Home</a>
+            {% if shared_user %}
+            <a class="btn btn-outline" href="{{ logout_url }}">Sign Out</a>
+            {% else %}
+            <a class="btn btn-outline" href="{{ auth_url }}">Unified Login</a>
+            {% endif %}
+            {% if not is_admin %}
+            <a class="btn btn-solid" href="{{ auth_admin_url }}">Admin Login</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="container">
+        <nav class="admin-tabs" aria-label="Admin sections">
+            <a class="admin-tab" href="{{ admin_url }}">Overview</a>
+            <a class="admin-tab is-active" href="{{ admin_url }}/users">Users</a>
+            <a class="admin-tab" href="{{ admin_url }}/logs">Logs</a>
+        </nav>
+
+        <section class="hero">
+            <p class="eyebrow">Shared Identity</p>
+            <h1>
+                {% if detail %}
+                {{ detail.user.username }}
+                {% else %}
+                User #{{ user_id }}
+                {% endif %}
+            </h1>
+        </section>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-stack">
+                {% for category, message in messages %}
+                <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+
+        {% if not is_admin %}
+        <div class="admin-notice admin-notice-warn">
+            Sign in with an admin account to manage this user.
+        </div>
+        {% elif error %}
+        <div class="admin-notice admin-notice-warn">{{ error }}</div>
+        <p><a class="card-link" href="{{ admin_url }}/users">Back to users</a></p>
+        {% else %}
+        {% set u = detail.user %}
+
+        <section class="detail-grid">
+            <article class="panel">
+                <h2 class="panel-title">Account</h2>
+                <dl class="meta-list">
+                    <div><dt>Username</dt><dd>{{ u.username }}</dd></div>
+                    <div><dt>Email</dt><dd>{{ u.email }}</dd></div>
+                    <div><dt>Role</dt><dd>{% if u.is_admin %}Admin{% else %}User{% endif %}</dd></div>
+                    <div><dt>Timezone</dt><dd>{{ u.timezone_name }}</dd></div>
+                    <div><dt>Joined</dt><dd>{{ u.created_at[:10] if u.created_at else "—" }}</dd></div>
+                    <div><dt>Active sessions</dt><dd>{{ u.active_sessions }}</dd></div>
+                </dl>
+            </article>
+
+            <article class="panel">
+                <h2 class="panel-title">Management</h2>
+
+                <form method="post" action="{{ admin_url }}/users/{{ u.id }}/role" class="manage-form">
+                    <label class="switch-row">
+                        <input type="checkbox" name="is_admin" value="1" {{ 'checked' if u.is_admin else '' }}>
+                        <span>Grant admin role</span>
+                    </label>
+                    <button class="btn btn-solid btn-sm" type="submit">Save role</button>
+                </form>
+
+                <form method="post" action="{{ admin_url }}/users/{{ u.id }}/reset-password" class="manage-form">
+                    <label class="field-label" for="password">Reset password</label>
+                    <input type="password" id="password" name="password" minlength="8" placeholder="At least 8 characters" required>
+                    <button class="btn btn-outline btn-sm" type="submit">Set password</button>
+                </form>
+
+                <form method="post" action="{{ admin_url }}/users/{{ u.id }}/revoke-sessions" class="manage-form">
+                    <p class="field-note">End all active sessions for this user.</p>
+                    <button class="btn btn-outline btn-sm" type="submit">Revoke sessions</button>
+                </form>
+
+                <form method="post" action="{{ admin_url }}/users/{{ u.id }}/delete" class="manage-form"
+                      onsubmit="return confirm('Delete this user and all of their sessions and tokens? This cannot be undone.');">
+                    <p class="field-note field-note-danger">Permanently delete this account.</p>
+                    <button class="btn btn-danger btn-sm" type="submit">Delete user</button>
+                </form>
+            </article>
+        </section>
+
+        <section class="panel">
+            <h2 class="panel-title">Recent sessions</h2>
+            {% if detail.sessions %}
+            <ul class="log-list">
+                {% for s in detail.sessions %}
+                <li>
+                    <span class="log-kind {{ 'is-active' if s.is_active else '' }}">{{ 'Active' if s.is_active else 'Expired' }}</span>
+                    <span class="log-text">Created {{ s.created_at[:19] if s.created_at else '—' }} · expires {{ s.expires_at[:19] if s.expires_at else '—' }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="field-note">No sessions recorded.</p>
+            {% endif %}
+        </section>
+
+        <section class="panel">
+            <h2 class="panel-title">Authorized clients</h2>
+            {% if detail.authorization_codes or detail.refresh_tokens %}
+            <ul class="log-list">
+                {% for c in detail.authorization_codes %}
+                <li>
+                    <span class="log-kind">Grant</span>
+                    <span class="log-text">{{ c.client_id }} · {{ c.scope }} · {{ c.created_at[:19] if c.created_at else '—' }}</span>
+                </li>
+                {% endfor %}
+                {% for t in detail.refresh_tokens %}
+                <li>
+                    <span class="log-kind {{ 'is-revoked' if t.revoked else '' }}">{{ 'Revoked' if t.revoked else 'Token' }}</span>
+                    <span class="log-text">{{ t.client_id }} · {{ t.scope }} · {{ t.created_at[:19] if t.created_at else '—' }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="field-note">No client authorizations recorded.</p>
+            {% endif %}
+        </section>
+
+        <p style="margin-top:1.5rem"><a class="card-link" href="{{ admin_url }}/users">Back to users</a></p>
+        {% endif %}
+    </main>
+</body>
+</html>

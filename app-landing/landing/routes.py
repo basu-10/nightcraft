@@ -2,10 +2,9 @@
 import json
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from urllib import request as urllib_request
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 
-from flask import Blueprint, current_app, render_template, request
-from flask import redirect
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 
 main_bp = Blueprint("main", __name__)
 
@@ -76,6 +75,48 @@ def _fetch_shared_auth_user():
         "username": username,
         "is_admin": "admin" in normalized_roles or bool(user.get("is_admin", False)),
     }
+
+
+def _auth_admin_url(path: str) -> str:
+    """Build a URL to an auth-service admin endpoint."""
+    configured = (current_app.config.get("AUTH_ADMIN_BASE_URL", "/auth") or "/auth").strip()
+    if configured.startswith("http://") or configured.startswith("https://"):
+        return f"{configured.rstrip('/')}{path}"
+    return f"{request.host_url.rstrip('/')}/{configured.lstrip('/')}{path}"
+
+
+def _call_auth_admin(method: str, path: str, *, params=None, json_body=None):
+    """Call an auth-service admin endpoint, forwarding the browser session cookie.
+
+    Returns a ``(status, payload)`` tuple. On transport failure ``status`` is
+    ``None`` and ``payload`` is an error dict.
+    """
+    if current_app.testing:
+        return None, {"error": "auth_service_unavailable", "error_description": "Auth service unavailable in testing"}
+
+    url = _auth_admin_url(path)
+    if params:
+        url = f"{url}?{urlencode(params)}"
+
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Cookie": request.headers.get("Cookie", ""),
+        "X-Forwarded-Prefix": request.headers.get("X-Forwarded-Prefix", ""),
+    }
+    data = json.dumps(json_body).encode("utf-8") if json_body is not None else None
+
+    req = urllib_request.Request(url, method=method, headers=headers, data=data)
+    try:
+        with urllib_request.urlopen(req, timeout=2.0) as response:
+            return response.status, json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        try:
+            return exc.code, json.loads(exc.read().decode("utf-8"))
+        except (ValueError, OSError):
+            return exc.code, {"error": "auth_service_error", "error_description": "Auth service returned an error"}
+    except (URLError, ValueError, OSError):
+        return None, {"error": "auth_service_unreachable", "error_description": "Could not reach the auth service"}
 
 
 def _admin_target(base_url: str) -> str:
@@ -225,6 +266,152 @@ def admin_dashboard():
         ),
         home_url=home_path,
     )
+
+
+def _admin_context(shared_user, is_admin):
+    """Shared template context for the platform-admin sub pages."""
+    home_path = "/"
+    admin_url = _central_admin_url()
+    return {
+        "shared_user": shared_user,
+        "is_admin": is_admin,
+        "auth_url": build_auth_handoff_url(
+            current_app.config["AUTH_URL"], home_path, current_app.config["AUTH_RETURN_PARAM"]
+        ),
+        "auth_admin_url": build_auth_handoff_url(
+            current_app.config["AUTH_URL"], admin_url, current_app.config["AUTH_RETURN_PARAM"]
+        ),
+        "logout_url": build_auth_handoff_url(
+            current_app.config["LOGOUT_URL"], home_path, current_app.config["AUTH_RETURN_PARAM"]
+        ),
+        "home_url": home_path,
+        "admin_url": admin_url,
+    }
+
+
+@main_bp.get("/platform-admin/users")
+def admin_users():
+    shared_user = _fetch_shared_auth_user()
+    is_admin = bool(shared_user and shared_user.get("is_admin"))
+    query = (request.args.get("q") or "").strip()
+    page = request.args.get("page", "1")
+
+    users, total, pages, error = [], 0, 1, None
+    if is_admin:
+        status, payload = _call_auth_admin("GET", "/admin/users", params={"q": query, "page": page})
+        if status == 200 and isinstance(payload, dict):
+            users = payload.get("users", [])
+            total = payload.get("total", 0)
+            pages = payload.get("pages", 1)
+        elif status is None:
+            error = payload.get("error_description", "Could not reach the auth service")
+
+    ctx = _admin_context(shared_user, is_admin)
+    ctx.update(
+        users=users,
+        query=query,
+        total=total,
+        pages=pages,
+        page=int(page) if str(page).isdigit() else 1,
+        error=error,
+    )
+    return render_template("admin_users.html", **ctx)
+
+
+@main_bp.get("/platform-admin/users/<int:user_id>")
+def admin_user_detail(user_id):
+    shared_user = _fetch_shared_auth_user()
+    is_admin = bool(shared_user and shared_user.get("is_admin"))
+
+    detail, error = None, None
+    if is_admin:
+        status, payload = _call_auth_admin("GET", f"/admin/users/{user_id}")
+        if status == 200 and isinstance(payload, dict):
+            detail = payload
+        elif status == 404:
+            error = "User not found."
+        elif status is None:
+            error = payload.get("error_description", "Could not reach the auth service")
+
+    ctx = _admin_context(shared_user, is_admin)
+    ctx.update(detail=detail, error=error, user_id=user_id)
+    return render_template("admin_user_detail.html", **ctx)
+
+
+@main_bp.post("/platform-admin/users/<int:user_id>/role")
+def admin_user_role_action(user_id):
+    shared_user = _fetch_shared_auth_user()
+    if not (shared_user and shared_user.get("is_admin")):
+        return redirect(url_for("main.admin_users"))
+
+    is_admin_flag = request.form.get("is_admin") in ("1", "true", "on")
+    _call_auth_admin("POST", f"/admin/users/{user_id}/role", json_body={"is_admin": is_admin_flag})
+    flash("User role updated.", "success")
+    return redirect(url_for("main.admin_user_detail", user_id=user_id))
+
+
+@main_bp.post("/platform-admin/users/<int:user_id>/reset-password")
+def admin_user_reset_action(user_id):
+    shared_user = _fetch_shared_auth_user()
+    if not (shared_user and shared_user.get("is_admin")):
+        return redirect(url_for("main.admin_user_detail", user_id=user_id))
+
+    new_password = request.form.get("password", "")
+    status, payload = _call_auth_admin(
+        "POST", f"/admin/users/{user_id}/reset-password", json_body={"password": new_password}
+    )
+    if status == 200:
+        flash("Password updated.", "success")
+    else:
+        message = (payload or {}).get("error_description", "Could not reset password.")
+        flash(message, "error")
+    return redirect(url_for("main.admin_user_detail", user_id=user_id))
+
+
+@main_bp.post("/platform-admin/users/<int:user_id>/revoke-sessions")
+def admin_user_revoke_action(user_id):
+    shared_user = _fetch_shared_auth_user()
+    if not (shared_user and shared_user.get("is_admin")):
+        return redirect(url_for("main.admin_user_detail", user_id=user_id))
+
+    _call_auth_admin("POST", f"/admin/users/{user_id}/revoke-sessions")
+    flash("All sessions revoked.", "success")
+    return redirect(url_for("main.admin_user_detail", user_id=user_id))
+
+
+@main_bp.post("/platform-admin/users/<int:user_id>/delete")
+def admin_user_delete_action(user_id):
+    shared_user = _fetch_shared_auth_user()
+    if not (shared_user and shared_user.get("is_admin")):
+        return redirect(url_for("main.admin_users"))
+
+    status, payload = _call_auth_admin("DELETE", f"/admin/users/{user_id}")
+    if status == 200:
+        flash("User deleted.", "success")
+    else:
+        message = (payload or {}).get("error_description", "Could not delete user.")
+        flash(message, "error")
+    return redirect(url_for("main.admin_users"))
+
+
+@main_bp.get("/platform-admin/logs")
+def admin_logs():
+    shared_user = _fetch_shared_auth_user()
+    is_admin = bool(shared_user and shared_user.get("is_admin"))
+
+    activity, clients, stats, error = [], [], {}, None
+    if is_admin:
+        status, payload = _call_auth_admin("GET", "/admin/logs")
+        if status == 200 and isinstance(payload, dict):
+            activity = payload.get("activity", [])
+            clients = payload.get("clients", [])
+            stats = payload.get("stats", {})
+        elif status is None:
+            error = payload.get("error_description", "Could not reach the auth service")
+
+    ctx = _admin_context(shared_user, is_admin)
+    ctx.update(activity=activity, clients=clients, stats=stats, error=error)
+    return render_template("admin_logs.html", **ctx)
 
 
 @main_bp.get("/login")

@@ -581,3 +581,80 @@ def test_session_me_returns_claims_for_authenticated_session():
     assert payload["user"]["email"] == "session-user@example.com"
     assert payload["user"]["roles"] == ["listener"]
     assert payload["user"]["is_admin"] is False
+
+
+def _seed_admin_and_login(app, client, username="admin-user", email="admin@example.com"):
+    with app.app_context():
+        admin = User(username=username, email=email, password_hash="", is_admin=True)
+        admin.set_password("secret123")
+        db.session.add(admin)
+        db.session.commit()
+
+    login_response = client.post(
+        "/login",
+        data={"username": username, "password": "secret123"},
+        follow_redirects=False,
+    )
+    assert login_response.status_code == 302
+
+
+def test_admin_users_requires_admin_role():
+    app = _make_test_app()
+    client = app.test_client()
+
+    client.post(
+        "/register",
+        data={"username": "plain-user", "email": "plain@example.com", "password": "secret123"},
+        follow_redirects=False,
+    )
+
+    response = client.get("/admin/users")
+    assert response.status_code == 401
+
+    client.post(
+        "/login",
+        data={"username": "plain-user", "password": "secret123"},
+        follow_redirects=False,
+    )
+    authed = client.get("/admin/users")
+    assert authed.status_code == 403
+
+
+def test_admin_users_lists_users_for_admin():
+    app = _make_test_app()
+    client = app.test_client()
+    _seed_admin_and_login(app, client)
+
+    response = client.get("/admin/users")
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["total"] >= 1
+    assert any(u["username"] == "admin-user" for u in body["users"])
+
+
+def test_admin_logs_returns_activity_and_stats():
+    app = _make_test_app()
+    client = app.test_client()
+    _seed_admin_and_login(app, client)
+
+    response = client.get("/admin/logs")
+    assert response.status_code == 200
+    body = response.get_json()
+    assert "activity" in body
+    assert "clients" in body
+    assert "stats" in body
+    assert body["stats"]["users"] >= 1
+
+
+def test_admin_delete_user_forbids_self_delete():
+    app = _make_test_app()
+    client = app.test_client()
+    _seed_admin_and_login(app, client)
+
+    with app.app_context():
+        admin_id = User.query.filter_by(username="admin-user").first().id
+
+    response = client.delete(f"/admin/users/{admin_id}")
+    assert response.status_code == 400
+    body = response.get_json()
+    assert body["error"] == "self_delete"

@@ -114,3 +114,88 @@ def test_legacy_curio_route_redirects_to_neera():
 
     assert response.status_code == 302
     assert response.headers["Location"] == "/neera"
+
+
+def test_platform_admin_users_prompts_login_when_not_admin():
+    client = _client()
+
+    response = client.get("/platform-admin/users")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Platform Users" in html
+    assert "Sign in with an admin account" in html
+    assert "user-search" not in html
+
+
+def test_platform_admin_users_lists_users_for_admin():
+    app = create_app()
+    app.config.update(TESTING=True)
+
+    sample_payload = {
+        "users": [
+            {"id": 1, "username": "seedadmin", "email": "admin@example.com", "is_admin": True, "active_sessions": 2, "created_at": "2026-01-01T00:00:00+00:00"},
+            {"id": 2, "username": "seeduser", "email": "user@example.com", "is_admin": False, "active_sessions": 0, "created_at": "2026-01-02T00:00:00+00:00"},
+        ],
+        "total": 2,
+        "page": 1,
+        "pages": 1,
+    }
+
+    with patch("landing.routes._fetch_shared_auth_user", return_value={"username": "seedadmin", "is_admin": True}), \
+         patch("landing.routes._call_auth_admin", return_value=(200, sample_payload)):
+        client = app.test_client()
+        response = client.get("/platform-admin/users")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "seedadmin" in html
+    assert "seeduser" in html
+    assert "2 users total" in html
+
+
+def test_platform_admin_logs_renders_for_admin():
+    app = create_app()
+    app.config.update(TESTING=True)
+
+    sample_payload = {
+        "activity": [
+            {"kind": "session", "timestamp": "2026-01-01T00:00:00+00:00", "username": "seedadmin", "detail": "Signed in"},
+        ],
+        "clients": [
+            {"client_id": "radio-app", "scope": "openid profile email", "is_confidential": True, "created_at": "2026-01-01T00:00:00+00:00"},
+        ],
+        "stats": {"users": 2, "active_sessions": 1, "oauth_clients": 1},
+    }
+
+    with patch("landing.routes._fetch_shared_auth_user", return_value={"username": "seedadmin", "is_admin": True}), \
+         patch("landing.routes._call_auth_admin", return_value=(200, sample_payload)):
+        client = app.test_client()
+        response = client.get("/platform-admin/logs")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Activity" in html
+    assert "radio-app" in html
+
+
+def test_platform_admin_user_detail_renders_for_admin():
+    app = create_app()
+    app.config.update(TESTING=True)
+
+    sample_payload = {
+        "user": {"id": 2, "username": "seeduser", "email": "user@example.com", "is_admin": False, "active_sessions": 0, "created_at": "2026-01-02T00:00:00+00:00"},
+        "sessions": [],
+        "refresh_tokens": [],
+        "authorization_codes": [],
+    }
+
+    with patch("landing.routes._fetch_shared_auth_user", return_value={"username": "seedadmin", "is_admin": True}), \
+         patch("landing.routes._call_auth_admin", return_value=(200, sample_payload)):
+        client = app.test_client()
+        response = client.get("/platform-admin/users/2")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "seeduser" in html
+    assert "Reset password" in html
