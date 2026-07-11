@@ -310,17 +310,28 @@ def del_tag(tag_id):
 @require_auth
 def list_notes():
     folder_id = request.args.get("folder_id", type=int)
-    tag_id = request.args.get("tag_id", type=int)
+    raw_tags = request.args.get("tags")
+    if raw_tags is None:
+        single = request.args.get("tag_id", type=int)
+        raw_tags = str(single) if single is not None else ""
+    tag_ids = []
+    if raw_tags:
+        for part in str(raw_tags).split(","):
+            part = part.strip()
+            if part.isdigit():
+                tag_ids.append(int(part))
     keyword = (request.args.get("q") or "").strip() or None
     favorites = request.args.get("favorites") == "1"
     sort = request.args.get("sort", "newest")
     limit = min(request.args.get("limit", 200, type=int), 500)
     offset = request.args.get("offset", 0, type=int)
     date_filter = (request.args.get("date") or "").strip() or None
-    return _ok(get_notes(g.user_id, folder_id=folder_id, tag_id=tag_id,
+    recursive = request.args.get("recursive", "1") != "0"
+    return _ok(get_notes(g.user_id, folder_id=folder_id,
+                         tag_ids=tag_ids or None,
                          keyword=keyword, favorites_only=favorites,
                          sort=sort, limit=limit, offset=offset,
-                         date_filter=date_filter))
+                         date_filter=date_filter, recursive=recursive))
 
 
 @api_bp.route("/trash", methods=["GET"])
@@ -330,12 +341,25 @@ def list_trash_notes():
     sort = request.args.get("sort", "newest")
     limit = min(request.args.get("limit", 200, type=int), 500)
     offset = request.args.get("offset", 0, type=int)
+    raw_tags = request.args.get("tags")
+    if raw_tags is None:
+        single = request.args.get("tag_id", type=int)
+        raw_tags = str(single) if single is not None else ""
+    tag_ids = []
+    if raw_tags:
+        for part in str(raw_tags).split(","):
+            part = part.strip()
+            if part.isdigit():
+                tag_ids.append(int(part))
+    date_filter = (request.args.get("date") or "").strip() or None
     return _ok(get_trash_notes(
         g.user_id,
         keyword=keyword,
         sort=sort,
         limit=limit,
         offset=offset,
+        tag_ids=tag_ids or None,
+        date_filter=date_filter,
     ))
 
 

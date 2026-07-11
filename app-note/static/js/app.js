@@ -23,7 +23,7 @@
     filter: {
       section: "all",
       folderId: null,
-      tagId: null,
+      tagIds: [],
       keyword: "",
       sort: "newest",
       dateFilter: null,
@@ -276,7 +276,6 @@
   const listPagination = $("list-pagination");
   const btnLoadMore = $("btn-load-more");
   const folderList = $("folder-list");
-  const tagList = $("tag-list");
   const searchInput = $("search-input");
   const topbarSearchWrap = $("topbar-search-wrap");
   const btnSearchToggle = $("btn-search-toggle");
@@ -295,14 +294,20 @@
   const btnMobileMenu = $("btn-mobile-menu");
   const btnMobileNewNote = $("btn-mobile-new-note");
   const viewTitle = $("view-title");
+  const headerTagPills = $("header-tag-pills");
+  const headerTagGroup = $("header-tag-group");
+  const btnTagMore = $("btn-tag-more");
+  const btnHeaderFiltersClear = $("btn-header-filters-clear");
+  const tagFlyout = $("tag-flyout");
+  const tagFlyoutSearch = $("tag-flyout-search");
+  const tagFlyoutList = $("tag-flyout-list");
+  const btnTagFlyoutManage = $("btn-tag-flyout-manage");
   const folderNav = $("folder-nav");
   const folderNavBack = $("folder-nav-back");
   const folderNavLabel = $("folder-nav-label");
   const folderNavChips = $("folder-nav-chips");
   const sidebarBody = $("sidebar-body");
   const sidebarFolderSection = $("sidebar-folder-section");
-  const sidebarTagSection = $("sidebar-tag-section");
-  const sidebarSectionsResizer = $("sidebar-sections-resizer");
   const btnGuestExport = $("btn-guest-export");
   const btnGuestImport = $("btn-guest-import");
   const guestImportFile = $("guest-import-file");
@@ -822,8 +827,13 @@
     state.filter.folderId =
       Number.isInteger(folderId) && folderId > 0 ? folderId : null;
 
-    const tagId = Number.parseInt(params.get("tag_id") || "", 10);
-    state.filter.tagId = Number.isInteger(tagId) && tagId > 0 ? tagId : null;
+    const tagIdsRaw = params.get("tags");
+    state.filter.tagIds = tagIdsRaw
+      ? tagIdsRaw
+          .split(",")
+          .map((s) => Number.parseInt(s.trim(), 10))
+          .filter((n) => Number.isInteger(n) && n > 0)
+      : [];
 
     const sort = (params.get("sort") || "newest").trim();
     state.filter.sort = ["newest", "oldest", "alpha"].includes(sort)
@@ -832,7 +842,7 @@
     state.filter.keyword = (params.get("q") || "").trim();
     state.filter.dateFilter = params.get("date") || null;
 
-    if (state.filter.folderId || state.filter.tagId) {
+    if (state.filter.folderId) {
       state.filter.section = "all";
     }
   }
@@ -843,7 +853,8 @@
       params.set("section", state.filter.section);
     if (state.filter.folderId)
       params.set("folder_id", String(state.filter.folderId));
-    if (state.filter.tagId) params.set("tag_id", String(state.filter.tagId));
+    if (state.filter.tagIds.length)
+      params.set("tags", state.filter.tagIds.join(","));
     if (state.filter.sort !== "newest") params.set("sort", state.filter.sort);
     if (state.filter.keyword) params.set("q", state.filter.keyword);
     if (state.filter.dateFilter) params.set("date", state.filter.dateFilter);
@@ -881,8 +892,11 @@
       limit: String(state.paging.limit),
       offset: String(state.paging.offset),
     });
-    if (f.folderId) params.set("folder_id", f.folderId);
-    if (f.tagId) params.set("tag_id", f.tagId);
+    if (f.folderId) {
+      params.set("folder_id", f.folderId);
+      params.set("recursive", "1");
+    }
+    if (f.tagIds.length) params.set("tags", f.tagIds.join(","));
     if (f.keyword) params.set("q", f.keyword);
     if (f.section === "favorites") params.set("favorites", "1");
     if (f.dateFilter) params.set("date", f.dateFilter);
@@ -925,23 +939,19 @@
   async function loadTags() {
     state.tags = await api("GET", "/tags");
     const validTagIds = new Set(state.tags.map((t) => t.id));
-    if (state.filter.tagId && !validTagIds.has(state.filter.tagId)) {
-      state.filter.tagId = null;
-      state.filter.section = "all";
+    const pruned = state.filter.tagIds.filter((id) => validTagIds.has(id));
+    if (pruned.length !== state.filter.tagIds.length) {
+      state.filter.tagIds = pruned;
       syncFilterToUrl();
     }
     updateViewTitle();
-    renderTagPills();
+    renderHeaderTagPills();
   }
 
   function getCurrentViewTitle() {
     if (state.filter.folderId) {
       const folder = state.folders.find((f) => f.id === state.filter.folderId);
       return folder ? folder.name : "Folder";
-    }
-    if (state.filter.tagId) {
-      const tag = state.tags.find((t) => t.id === state.filter.tagId);
-      return tag ? `#${tag.name}` : "Tag";
     }
     if (state.filter.section === "favorites") return "Favorites";
     if (state.filter.section === "trash") return "Trash";
@@ -979,6 +989,7 @@
     state.filter.dateFilter = dateStr;
     _syncDateFilterUI();
     syncFilterToUrl();
+    renderHeaderTagPills();
     loadNotes({ reset: true });
   }
 
@@ -986,6 +997,7 @@
     state.filter.dateFilter = null;
     _syncDateFilterUI();
     syncFilterToUrl();
+    renderHeaderTagPills();
     loadNotes({ reset: true });
   }
 
@@ -1140,7 +1152,7 @@
         const clickedTag = state.tags.find(
           (t) => t.name.toLowerCase() === clickedTagName,
         );
-        if (clickedTag) setTagFilterExact(clickedTag.id);
+        if (clickedTag) toggleTagFilter(clickedTag.id);
         return;
       }
 
@@ -1253,17 +1265,113 @@
     (byParent[0] || []).forEach((f) => addFolder(f, 0));
   }
 
-  function renderTagPills() {
-    tagList.innerHTML = "";
-    state.tags.forEach((t) => {
-      const btn = document.createElement("button");
-      btn.className = `tag-pill${state.filter.tagId === t.id ? " active" : ""}`;
-      const color = t.color || "#4F6EF7";
-      btn.style.cssText = `background:${color}; border-color:${color};`;
-      btn.textContent = `#${t.name}`;
-      btn.addEventListener("click", () => setTagFilter(t.id));
-      tagList.appendChild(btn);
+  const MAX_VISIBLE_TAGS = 6;
+
+  function renderHeaderTagPills() {
+    const container = headerTagPills;
+    if (!container) return;
+    container.innerHTML = "";
+
+    const active = new Set(state.filter.tagIds);
+    const tags = [...state.tags];
+    tags.sort((a, b) => {
+      const ai = active.has(a.id) ? 0 : 1;
+      const bi = active.has(b.id) ? 0 : 1;
+      if (ai !== bi) return ai - bi;
+      return a.name.localeCompare(b.name);
     });
+
+    const visible = tags.slice(0, MAX_VISIBLE_TAGS);
+    visible.forEach((t) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      const color = t.color || "#4F6EF7";
+      btn.className = `header-tag-pill${active.has(t.id) ? " is-active" : ""}`;
+      if (active.has(t.id)) {
+        btn.style.cssText = `background:${color};border-color:${color};color:#fff;`;
+      } else {
+        btn.style.cssText = `border-color:${color};color:${color};`;
+      }
+      btn.textContent = `#${t.name}`;
+      btn.title = active.has(t.id) ? `Remove #${t.name} filter` : `Filter by #${t.name}`;
+      btn.addEventListener("click", () => toggleTagFilter(t.id));
+      container.appendChild(btn);
+    });
+
+    if (btnTagMore) btnTagMore.hidden = tags.length <= MAX_VISIBLE_TAGS;
+    if (headerTagGroup) headerTagGroup.hidden = tags.length === 0;
+    if (btnHeaderFiltersClear)
+      btnHeaderFiltersClear.hidden =
+        active.size === 0 && !state.filter.dateFilter;
+  }
+
+  function renderTagFlyoutList(query = "") {
+    const list = tagFlyoutList;
+    if (!list) return;
+    list.innerHTML = "";
+    const q = String(query || "").trim().toLowerCase();
+    const active = new Set(state.filter.tagIds);
+    const tags = state.tags
+      .filter((t) => !q || t.name.toLowerCase().includes(q))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    if (!tags.length) {
+      const empty = document.createElement("div");
+      empty.className = "tag-flyout__empty";
+      empty.textContent = q ? "No tags match your search." : "No tags yet.";
+      list.appendChild(empty);
+      return;
+    }
+
+    tags.forEach((t) => {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = `tag-flyout__item${active.has(t.id) ? " is-active" : ""}`;
+      row.innerHTML =
+        '<span class="tag-flyout__dot" style="background:' +
+        (t.color || "#6B7280") +
+        '"></span><span class="tag-flyout__name"></span><span class="tag-flyout__check">✓</span>';
+      row.querySelector(".tag-flyout__name").textContent = t.name;
+      row.addEventListener("click", () => {
+        toggleTagFilter(t.id);
+        renderTagFlyoutList(tagFlyoutSearch ? tagFlyoutSearch.value : "");
+      });
+      list.appendChild(row);
+    });
+  }
+
+  function openTagFlyout() {
+    if (!tagFlyout) return;
+    renderTagFlyoutList();
+    if (tagFlyoutSearch) tagFlyoutSearch.value = "";
+    tagFlyout.hidden = false;
+    if (btnTagMore) btnTagMore.setAttribute("aria-expanded", "true");
+    if (tagFlyoutSearch) requestAnimationFrame(() => tagFlyoutSearch.focus());
+    document.addEventListener("click", _onDocClickCloseFlyout, true);
+    document.addEventListener("keydown", _onEscCloseFlyout);
+  }
+
+  function closeTagFlyout() {
+    if (tagFlyout) tagFlyout.hidden = true;
+    if (btnTagMore) btnTagMore.setAttribute("aria-expanded", "false");
+    document.removeEventListener("click", _onDocClickCloseFlyout, true);
+    document.removeEventListener("keydown", _onEscCloseFlyout);
+  }
+
+  function _onDocClickCloseFlyout(e) {
+    if (
+      tagFlyout &&
+      !tagFlyout.hidden &&
+      !tagFlyout.contains(e.target) &&
+      e.target !== btnTagMore &&
+      !(btnTagMore && btnTagMore.contains(e.target))
+    ) {
+      closeTagFlyout();
+    }
+  }
+
+  function _onEscCloseFlyout(e) {
+    if (e.key === "Escape") closeTagFlyout();
   }
 
   function updateCounts() {
@@ -1337,69 +1445,71 @@
     setSearchVisible(!isVisible);
   }
 
+  // Reset filters that are scoped to the current view (tags + date).
+  // Called whenever the user navigates to a different view/folder, per the
+  // new architecture where tag/date filters apply only within the active view.
+  function _resetViewScopedFilters() {
+    state.filter.tagIds = [];
+    state.filter.dateFilter = null;
+    _syncDateFilterUI();
+  }
+
   function setSectionFilter(section) {
+    _resetViewScopedFilters();
     state.filter.section = section;
     state.filter.folderId = null;
-    state.filter.tagId = null;
     syncFilterToUrl();
     syncSectionButtons();
     updateViewTitle();
     renderFolderTree();
-    renderTagPills();
+    renderHeaderTagPills();
     closeSidebar();
     loadNotes({ reset: true });
   }
 
   function setFolderFilter(folderId) {
-    state.filter.folderId =
-      state.filter.folderId === folderId ? null : folderId;
-    state.filter.tagId = null;
-    state.filter.section = "all";
+    if (state.filter.folderId === folderId) {
+      _resetViewScopedFilters();
+      state.filter.folderId = null;
+      state.filter.section = "all";
+    } else {
+      _resetViewScopedFilters();
+      state.filter.folderId = folderId;
+      state.filter.section = "all";
+    }
     syncFilterToUrl();
     syncSectionButtons();
     updateViewTitle();
     renderFolderTree();
-    renderTagPills();
+    renderHeaderTagPills();
     closeSidebar();
     loadNotes({ reset: true });
   }
 
   function setFolderFilterExact(folderId) {
+    _resetViewScopedFilters();
     state.filter.folderId = folderId || null;
-    state.filter.tagId = null;
     state.filter.section = "all";
     syncFilterToUrl();
     syncSectionButtons();
     updateViewTitle();
     renderFolderTree();
-    renderTagPills();
+    renderHeaderTagPills();
     closeSidebar();
     loadNotes({ reset: true });
   }
 
-  function setTagFilter(tagId) {
-    state.filter.tagId = state.filter.tagId === tagId ? null : tagId;
-    state.filter.folderId = null;
-    state.filter.section = "all";
+  // Toggle a tag filter while staying inside the current view/folder scope.
+  // Tags are a sub-filter of the active view: selecting one does NOT navigate
+  // away, so the folder/section context is preserved.
+  function toggleTagFilter(tagId) {
+    if (!tagId) return;
+    const ids = new Set(state.filter.tagIds);
+    if (ids.has(tagId)) ids.delete(tagId);
+    else ids.add(tagId);
+    state.filter.tagIds = [...ids];
     syncFilterToUrl();
-    syncSectionButtons();
-    updateViewTitle();
-    renderFolderTree();
-    renderTagPills();
-    closeSidebar();
-    loadNotes({ reset: true });
-  }
-
-  function setTagFilterExact(tagId) {
-    state.filter.tagId = tagId || null;
-    state.filter.folderId = null;
-    state.filter.section = "all";
-    syncFilterToUrl();
-    syncSectionButtons();
-    updateViewTitle();
-    renderFolderTree();
-    renderTagPills();
-    closeSidebar();
+    renderHeaderTagPills();
     loadNotes({ reset: true });
   }
 
@@ -1571,10 +1681,13 @@
       folder_id: state.filter.folderId || null,
       editor_type: "lexical",
     };
-    // Mirror desktop behaviour: prefill tag when browsing a tag filter
-    if (state.filter.tagId) {
-      const tag = state.tags.find((t) => t.id === state.filter.tagId);
-      if (tag) body.tags = tag.name;
+    // Mirror desktop behaviour: prefill tags when browsing a tag filter
+    if (state.filter.tagIds.length) {
+      const names = state.filter.tagIds
+        .map((id) => state.tags.find((t) => t.id === id))
+        .filter(Boolean)
+        .map((t) => t.name);
+      if (names.length) body.tags = names.join(",");
     }
     const data = await api("POST", "/notes", body);
     await openNote(data.id);
@@ -1610,9 +1723,13 @@
       folder_id: state.filter.folderId || null,
       editor_type: "lexical",
     };
-    if (state.filter.tagId) {
-      const tag = state.tags.find((t) => t.id === state.filter.tagId);
-      if (tag) body.tags = tag.name;
+    // Mirror desktop behaviour: prefill tags when browsing a tag filter
+    if (state.filter.tagIds.length) {
+      const names = state.filter.tagIds
+        .map((id) => state.tags.find((t) => t.id === id))
+        .filter(Boolean)
+        .map((t) => t.name);
+      if (names.length) body.tags = names.join(",");
     }
     try {
       const data = await api("POST", "/notes", body);
@@ -2473,13 +2590,13 @@
     });
     $("tags-input").addEventListener("input", populateTagDropdown);
 
-    // Tag manager modal (create/edit/delete tags)
-    $("btn-add-tag")?.addEventListener("click", openTagManagerModal);
-    $("btn-tag-add")?.addEventListener("click", createTag);
+    $("tag-color-btn")?.addEventListener("click", openTagCreateColorPicker);
     $("btn-tag-manager-close")?.addEventListener("click", () => {
       $("tag-manager-modal").hidden = true;
     });
     $("tag-color-btn")?.addEventListener("click", openTagCreateColorPicker);
+    // Tag manager modal (create/edit/delete tags)
+    $("btn-tag-add")?.addEventListener("click", createTag);
     $("tag-new-input")?.addEventListener("keydown", (e) => {
       if (e.key === "Enter") createTag();
     });
@@ -2503,8 +2620,6 @@
 
     // Search
     setSearchVisible(false);
-
-    initSidebarSectionResizer();
 
     let searchTimer;
     searchInput.addEventListener("input", () => {
@@ -2538,6 +2653,28 @@
     });
     $("btn-date-clear")?.addEventListener("click", () => clearDateFilter());
     _syncDateFilterUI();
+
+    // Header tag filter ("…" flyout with search + full tag management)
+    btnTagMore?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (tagFlyout && !tagFlyout.hidden) closeTagFlyout();
+      else openTagFlyout();
+    });
+    tagFlyoutSearch?.addEventListener("input", (e) =>
+      renderTagFlyoutList(e.target.value),
+    );
+    btnTagFlyoutManage?.addEventListener("click", () => {
+      closeTagFlyout();
+      openTagManagerModal();
+    });
+    btnHeaderFiltersClear?.addEventListener("click", () => {
+      state.filter.tagIds = [];
+      state.filter.dateFilter = null;
+      _syncDateFilterUI();
+      syncFilterToUrl();
+      renderHeaderTagPills();
+      loadNotes({ reset: true });
+    });
 
     btnLoadMore?.addEventListener("click", () => {
       if (!state.paging.hasMore || state.paging.loading) return;
@@ -2608,103 +2745,6 @@
     if (state.filter.section !== "trash" && state.filter.section !== "favorites") {
       emptyState.appendChild(hint);
     }
-  }
-
-  function initSidebarSectionResizer() {
-    if (
-      !sidebarBody ||
-      !sidebarFolderSection ||
-      !sidebarTagSection ||
-      !sidebarSectionsResizer
-    )
-      return;
-
-    const minPaneHeight = 90;
-    const storageKey = "notestack.sidebar.folderPaneHeight";
-    let dragging = false;
-
-    function clamp(value, min, max) {
-      return Math.max(min, Math.min(max, value));
-    }
-
-    function maxFolderHeight() {
-      const total = sidebarBody.clientHeight;
-      const handle = sidebarSectionsResizer.offsetHeight || 14;
-      return Math.max(minPaneHeight, total - handle - minPaneHeight);
-    }
-
-    function applyFolderHeight(px, { persist = false } = {}) {
-      const next = clamp(Math.round(px), minPaneHeight, maxFolderHeight());
-      sidebarFolderSection.style.flex = `0 0 ${next}px`;
-      sidebarTagSection.style.flex = "1 1 auto";
-      sidebarSectionsResizer.setAttribute("aria-valuenow", String(next));
-      if (persist) {
-        try {
-          localStorage.setItem(storageKey, String(next));
-        } catch {}
-      }
-    }
-
-    function yToFolderHeight(clientY) {
-      const bodyRect = sidebarBody.getBoundingClientRect();
-      const handleHalf = (sidebarSectionsResizer.offsetHeight || 14) / 2;
-      return clientY - bodyRect.top - handleHalf;
-    }
-
-    sidebarSectionsResizer.setAttribute("role", "separator");
-    sidebarSectionsResizer.setAttribute("aria-orientation", "horizontal");
-    sidebarSectionsResizer.setAttribute("aria-valuemin", String(minPaneHeight));
-
-    let initial = sidebarFolderSection.getBoundingClientRect().height;
-    try {
-      const saved = Number.parseInt(localStorage.getItem(storageKey) || "", 10);
-      if (Number.isInteger(saved) && saved > 0) initial = saved;
-    } catch {}
-    applyFolderHeight(initial);
-
-    sidebarSectionsResizer.addEventListener("pointerdown", (e) => {
-      if (e.button !== 0) return;
-      dragging = true;
-      e.preventDefault();
-      sidebarSectionsResizer.setPointerCapture(e.pointerId);
-    });
-
-    sidebarSectionsResizer.addEventListener("pointermove", (e) => {
-      if (!dragging) return;
-      applyFolderHeight(yToFolderHeight(e.clientY));
-    });
-
-    sidebarSectionsResizer.addEventListener("pointerup", (e) => {
-      if (!dragging) return;
-      dragging = false;
-      applyFolderHeight(yToFolderHeight(e.clientY), { persist: true });
-      if (sidebarSectionsResizer.hasPointerCapture(e.pointerId)) {
-        sidebarSectionsResizer.releasePointerCapture(e.pointerId);
-      }
-    });
-
-    sidebarSectionsResizer.addEventListener("pointercancel", () => {
-      dragging = false;
-    });
-
-    sidebarSectionsResizer.addEventListener("keydown", (e) => {
-      if (!["ArrowUp", "ArrowDown", "Home", "End"].includes(e.key)) return;
-      e.preventDefault();
-      const current = sidebarFolderSection.getBoundingClientRect().height;
-      if (e.key === "ArrowUp")
-        applyFolderHeight(current - 24, { persist: true });
-      if (e.key === "ArrowDown")
-        applyFolderHeight(current + 24, { persist: true });
-      if (e.key === "Home") applyFolderHeight(minPaneHeight, { persist: true });
-      if (e.key === "End")
-        applyFolderHeight(maxFolderHeight(), { persist: true });
-    });
-
-    window.addEventListener("resize", () => {
-      if (!sidebarFolderSection.style.flexBasis) return;
-      const current = sidebarFolderSection.getBoundingClientRect().height;
-      applyFolderHeight(current);
-    });
   }
 
   function syncViewToggleButton() {

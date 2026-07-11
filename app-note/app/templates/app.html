@@ -48,27 +48,16 @@
       </button>
     </nav>
 
-    <div id="sidebar-body" class="sidebar__body">
-      <!-- Folders -->
-      <div id="sidebar-folder-section" class="sidebar__section sidebar__section--folders">
-        <div class="sidebar__section-header">
-          <span>Folders</span>
-          <button class="sidebar__add-btn" id="btn-add-folder" title="New folder">+</button>
+      <div id="sidebar-body" class="sidebar__body">
+        <!-- Folders -->
+        <div id="sidebar-folder-section" class="sidebar__section sidebar__section--folders">
+          <div class="sidebar__section-header">
+            <span>Folders</span>
+            <button class="sidebar__add-btn" id="btn-add-folder" title="New folder">+</button>
+          </div>
+          <ul id="folder-list" class="sidebar__tree"></ul>
         </div>
-        <ul id="folder-list" class="sidebar__tree"></ul>
       </div>
-
-      <button id="sidebar-sections-resizer" class="sidebar__sections-resizer" type="button" title="Resize folders and tags" aria-label="Resize folders and tags" aria-orientation="horizontal"></button>
-
-      <!-- Tags -->
-      <div id="sidebar-tag-section" class="sidebar__section sidebar__section--tags">
-        <div class="sidebar__section-header">
-          <span>Tags</span>
-          <button class="sidebar__add-btn" id="btn-add-tag" title="New tag">+</button>
-        </div>
-        <div id="tag-list" class="sidebar__tags"></div>
-      </div>
-    </div>
 
     <!-- Sync status -->
     <div class="sidebar__footer">
@@ -173,13 +162,40 @@
 
     <div class="view-header">
       <h1 id="view-title" class="view-header__title">All Notes</h1>
-      <div class="date-filter">
-        <div class="date-filter__group">
-          <button id="btn-date-today" class="date-filter__btn" title="Show today's notes" type="button">🕐</button>
-          <button id="btn-date-pick" class="date-filter__btn date-filter__btn--pick" title="Pick a specific date" type="button">▾</button>
+
+      <div class="view-filters" id="view-filters">
+        <span class="view-filters__label">Filter by:</span>
+
+        <div class="view-filters__group" id="header-tag-group">
+          <span class="view-filters__group-label">Tags:</span>
+          <div id="header-tag-pills" class="header-tag-pills"></div>
+          <button id="btn-tag-more" class="view-filters__more" type="button" title="More tags" aria-haspopup="true" aria-expanded="false" hidden>…</button>
         </div>
-        <input id="date-filter-input" type="date" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;" tabindex="-1" aria-hidden="true" />
-        <button id="btn-date-clear" class="date-filter__clear" title="Clear date filter" type="button" hidden>✕</button>
+
+        <div class="view-filters__group">
+          <span class="view-filters__group-label">Date:</span>
+          <div class="date-filter">
+            <div class="date-filter__group">
+              <button id="btn-date-today" class="date-filter__btn" title="Show today's notes" type="button">🕐</button>
+              <button id="btn-date-pick" class="date-filter__btn date-filter__btn--pick" title="Pick a specific date" type="button">▾</button>
+            </div>
+            <input id="date-filter-input" type="date" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;" tabindex="-1" aria-hidden="true" />
+            <button id="btn-date-clear" class="date-filter__clear" title="Clear date filter" type="button" hidden>✕</button>
+          </div>
+        </div>
+
+        <button id="btn-header-filters-clear" class="view-filters__clear" type="button" title="Clear all filters" hidden>Clear filters</button>
+      </div>
+
+      <!-- Tag flyout (search + full tag management) -->
+      <div id="tag-flyout" class="tag-flyout" hidden role="dialog" aria-label="Filter by tag">
+        <div class="tag-flyout__search">
+          <input id="tag-flyout-search" class="form-input" type="search" placeholder="Search tags…" autocomplete="off" />
+        </div>
+        <div id="tag-flyout-list" class="tag-flyout__list"></div>
+        <div class="tag-flyout__footer">
+          <button id="btn-tag-flyout-manage" class="btn btn--ghost btn--sm" type="button">Manage tags</button>
+        </div>
       </div>
     </div>
 

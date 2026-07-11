@@ -1408,17 +1408,46 @@ def _delete_tag_row(conn: sqlite3.Connection, user_id: int, tag_id: int, *, crea
 
 # ─── Note helpers ─────────────────────────────────────────────────────────────
 
-def get_notes(user_id: int, folder_id: Optional[int] = None, tag_id: Optional[int] = None,
+def _descendant_folder_ids(conn, user_id: int, root_id: int) -> list[int]:
+    """Return ``root_id`` plus the ids of every folder nested beneath it."""
+    rows = conn.execute(
+        "SELECT id, parent_id FROM folders WHERE user_id=?", (user_id,)
+    ).fetchall()
+    children: dict = {}
+    for r in rows:
+        children.setdefault(r["parent_id"], []).append(r["id"])
+    result: list[int] = []
+    stack = [root_id]
+    while stack:
+        cur = stack.pop()
+        result.append(cur)
+        for child in children.get(cur, []):
+            stack.append(child)
+    return result
+
+
+def get_notes(user_id: int, folder_id: Optional[int] = None,
+              tag_id: Optional[int] = None, tag_ids: Optional[list] = None,
               keyword: Optional[str] = None, favorites_only: bool = False,
               sort: str = "newest", limit: int = 200, offset: int = 0,
-              date_filter: Optional[str] = None) -> list[dict]:
+              date_filter: Optional[str] = None, recursive: bool = True) -> list[dict]:
     conn = get_connection()
     conditions = ["n.user_id=?"]
     params: list = [user_id]
 
     if folder_id is not None:
-        conditions.append("n.folder_id=?"); params.append(folder_id)
-    if tag_id is not None:
+        if recursive:
+            ids = _descendant_folder_ids(conn, user_id, folder_id)
+            placeholders = ",".join("?" for _ in ids) or "?"
+            conditions.append(f"n.folder_id IN ({placeholders})")
+            params.extend(ids)
+        else:
+            conditions.append("n.folder_id=?"); params.append(folder_id)
+    if tag_ids:
+        for tid in tag_ids:
+            conditions.append("EXISTS(SELECT 1 FROM note_tags nt WHERE nt.note_id=n.id AND nt.tag_id=?)")
+            params.append(tid)
+    elif tag_id is not None:
         conditions.append("EXISTS(SELECT 1 FROM note_tags nt WHERE nt.note_id=n.id AND nt.tag_id=?)")
         params.append(tag_id)
     if favorites_only:
@@ -1458,7 +1487,8 @@ def get_notes(user_id: int, folder_id: Optional[int] = None, tag_id: Optional[in
 
 def get_trash_notes(user_id: int, keyword: Optional[str] = None,
                     sort: str = "newest", limit: int = 200,
-                    offset: int = 0) -> list[dict]:
+                    offset: int = 0, tag_ids: Optional[list] = None,
+                    date_filter: Optional[str] = None) -> list[dict]:
     conn = get_connection()
     conditions = ["user_id=?"]
     params: list = [user_id]
@@ -1467,6 +1497,21 @@ def get_trash_notes(user_id: int, keyword: Optional[str] = None,
         kw = f"%{keyword}%"
         conditions.append("(title LIKE ? OR content LIKE ?)")
         params += [kw, kw]
+
+    if tag_ids:
+        rows = conn.execute(
+            "SELECT name FROM tags WHERE user_id=? AND id IN (%s)"
+            % (",".join("?" for _ in tag_ids) or "?"),
+            [user_id, *tag_ids],
+        ).fetchall()
+        names = [r["name"] for r in rows]
+        for name in names:
+            conditions.append("',' || COALESCE(tag_names,'') || ',' LIKE ?")
+            params.append(f"%,{name},%")
+
+    if date_filter:
+        conditions.append("DATE(deleted_at) = ?")
+        params.append(date_filter)
 
     order = {
         "newest": "deleted_at DESC",

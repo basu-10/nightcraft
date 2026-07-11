@@ -412,21 +412,18 @@ a:active {
   flex-shrink: 0;
 }
 
-.sidebar__section--folders,
-.sidebar__section--tags {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
+ .sidebar__section--folders {
+   display: flex;
+   flex-direction: column;
+   min-height: 0;
+   flex: 1 1 auto;
+   padding-top: 0;
+ }
 
-.sidebar__section--folders {
-  flex: 0 0 44%;
-}
-
-.sidebar__section--tags {
-  flex: 1 1 auto;
-  padding-top: 0;
-}
+ .sidebar__section--tags {
+   flex: 1 1 auto;
+   padding-top: 0;
+ }
 
 .sidebar__sections-resizer {
   position: relative;
@@ -1041,14 +1038,16 @@ a:active {
   color: color-mix(in srgb, var(--success) 82%, var(--text-primary));
 }
 
-.view-header {
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
+ .view-header {
+   padding: var(--space-3) var(--space-4);
+   border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+   display: flex;
+   align-items: center;
+   flex-wrap: wrap;
+   justify-content: flex-start;
+   gap: var(--space-3);
+   position: relative;
+ }
 
 .date-filter {
   display: flex;
@@ -1118,14 +1117,209 @@ a:active {
   color: var(--text-primary);
 }
 
-.view-header__title {
-  font-size: var(--type-lg);
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  color: var(--text-primary);
-  opacity: 0.85;
-}
+ .view-header__title {
+   font-size: var(--type-lg);
+   font-weight: 700;
+   letter-spacing: 0.01em;
+   text-transform: uppercase;
+   color: var(--text-primary);
+   opacity: 0.85;
+   margin-right: auto;
+ }
+
+ /* ── View-scoped filters row (tags + date) ──────────────────────────────── */
+ .view-filters {
+   display: flex;
+   align-items: center;
+   flex-wrap: wrap;
+   gap: var(--space-3);
+ }
+
+ .view-filters__label {
+   font-size: var(--type-xs);
+   font-weight: 600;
+   text-transform: uppercase;
+   letter-spacing: 0.04em;
+   color: var(--text-muted);
+ }
+
+ .view-filters__group {
+   display: flex;
+   align-items: center;
+   gap: var(--space-2);
+ }
+
+ .view-filters__group-label {
+   font-size: var(--type-xs);
+   font-weight: 600;
+   color: var(--text-muted);
+ }
+
+ .header-tag-pills {
+   display: flex;
+   align-items: center;
+   flex-wrap: wrap;
+   gap: 6px;
+ }
+
+ .header-tag-pill {
+   border: 1px solid var(--border-med);
+   background: var(--bg-card);
+   color: var(--text-secondary);
+   border-radius: var(--radius-pill);
+   padding: 3px 10px;
+   font-size: var(--type-xs);
+   font-weight: 600;
+   cursor: pointer;
+   line-height: 1.4;
+   transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+   white-space: nowrap;
+ }
+
+ .header-tag-pill:hover {
+   border-color: var(--accent);
+   color: var(--accent);
+ }
+
+ .header-tag-pill.is-active {
+   box-shadow: var(--shadow-raised-sm);
+ }
+
+ .view-filters__more {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   min-width: 26px;
+   height: 24px;
+   padding: 0 8px;
+   border-radius: var(--radius-pill);
+   border: 1px dashed color-mix(in srgb, var(--border-med) 80%, transparent);
+   background: transparent;
+   color: var(--text-secondary);
+   font-size: var(--type-sm);
+   font-weight: 700;
+   cursor: pointer;
+   transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+ }
+
+ .view-filters__more:hover {
+   background: var(--bg-card-hov);
+   border-color: var(--accent);
+   color: var(--accent);
+ }
+
+ .view-filters__clear {
+   border: 1px solid color-mix(in srgb, var(--border-med) 70%, transparent);
+   background: var(--bg-card);
+   color: var(--text-secondary);
+   border-radius: var(--radius-pill);
+   padding: 3px 12px;
+   font-size: var(--type-xs);
+   font-weight: 600;
+   cursor: pointer;
+   transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+ }
+
+ .view-filters__clear:hover {
+   background: var(--bg-card-hov);
+   border-color: var(--accent);
+   color: var(--accent);
+ }
+
+ /* ── Tag filter flyout ──────────────────────────────────────────────────── */
+ .tag-flyout {
+   position: absolute;
+   top: calc(100% - 4px);
+   right: var(--space-4);
+   z-index: 40;
+   width: 280px;
+   max-width: calc(100vw - var(--space-6));
+   background: var(--bg-card);
+   border: 1px solid color-mix(in srgb, var(--border-med) 70%, transparent);
+   border-radius: var(--radius-lg);
+   box-shadow: var(--shadow-raised);
+   overflow: hidden;
+ }
+
+ .tag-flyout__search {
+   padding: var(--space-2);
+   border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+ }
+
+ .tag-flyout__search .form-input {
+   width: 100%;
+ }
+
+ .tag-flyout__list {
+   max-height: 260px;
+   overflow-y: auto;
+   padding: var(--space-1);
+   display: flex;
+   flex-direction: column;
+   gap: 2px;
+ }
+
+ .tag-flyout__item {
+   display: flex;
+   align-items: center;
+   gap: var(--space-2);
+   width: 100%;
+   text-align: left;
+   border: none;
+   background: transparent;
+   color: var(--text-primary);
+   border-radius: var(--radius-md);
+   padding: 7px 8px;
+   font-size: var(--type-sm);
+   cursor: pointer;
+   transition: background 0.12s ease;
+ }
+
+ .tag-flyout__item:hover {
+   background: var(--bg-card-hov);
+ }
+
+ .tag-flyout__item.is-active {
+   background: color-mix(in srgb, var(--accent) 12%, transparent);
+ }
+
+ .tag-flyout__dot {
+   width: 10px;
+   height: 10px;
+   border-radius: 50%;
+   flex-shrink: 0;
+ }
+
+ .tag-flyout__name {
+   flex: 1;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+ }
+
+ .tag-flyout__check {
+   color: var(--accent);
+   font-weight: 700;
+   opacity: 0;
+ }
+
+ .tag-flyout__item.is-active .tag-flyout__check {
+   opacity: 1;
+ }
+
+ .tag-flyout__empty {
+   padding: var(--space-4);
+   text-align: center;
+   font-size: var(--type-sm);
+   color: var(--text-muted);
+ }
+
+ .tag-flyout__footer {
+   padding: var(--space-2);
+   border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+   display: flex;
+   justify-content: flex-end;
+ }
 
 .folder-nav {
   display: flex;
