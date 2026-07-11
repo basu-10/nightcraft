@@ -319,6 +319,17 @@ def initialize_db() -> None:
             created_at    TEXT NOT NULL DEFAULT (datetime('now')),
             UNIQUE(user_id, method, path, idem_key)
         );
+
+        CREATE TABLE IF NOT EXISTS usage_events (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id      INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            event_type   TEXT NOT NULL,
+            event_detail TEXT DEFAULT NULL,
+            ip_address   TEXT DEFAULT NULL,
+            user_agent   TEXT DEFAULT NULL,
+            status_code  INTEGER DEFAULT NULL,
+            created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+        );
         """
     )
     conn.commit()
@@ -328,6 +339,15 @@ def initialize_db() -> None:
         CREATE INDEX IF NOT EXISTS idx_sync_idempotency_lookup
         ON sync_idempotency(user_id, method, path, idem_key)
         """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_usage_events_created ON usage_events(created_at)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_usage_events_type ON usage_events(event_type)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_usage_events_user ON usage_events(user_id)"
     )
     conn.commit()
     conn.close()
@@ -502,6 +522,21 @@ def _initialize_postgres_db() -> None:
         CREATE INDEX IF NOT EXISTS idx_sync_idempotency_lookup
         ON sync_idempotency(user_id, method, path, idem_key)
         """,
+        """
+        CREATE TABLE IF NOT EXISTS usage_events (
+            id BIGSERIAL PRIMARY KEY,
+            user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+            event_type TEXT NOT NULL,
+            event_detail TEXT DEFAULT NULL,
+            ip_address TEXT DEFAULT NULL,
+            user_agent TEXT DEFAULT NULL,
+            status_code INTEGER DEFAULT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS idx_usage_events_created ON usage_events(created_at)",
+        "CREATE INDEX IF NOT EXISTS idx_usage_events_type ON usage_events(event_type)",
+        "CREATE INDEX IF NOT EXISTS idx_usage_events_user ON usage_events(user_id)",
     ]
     for stmt in statements:
         for attempt in range(3):
@@ -991,6 +1026,215 @@ def delete_user(target_user_id: int) -> bool:
     conn.commit()
     conn.close()
     return True
+
+
+# ─── Usage analytics ──────────────────────────────────────────────────────────
+#
+# Captures (legal) product usage events for admin visibility. Only behaviour that
+# is already necessary to operate the app is recorded: which features/pages are
+# used, by which user, when, and from what client IP/agent. No note contents or
+# secrets are stored here.
+
+def record_usage_event(
+    user_id: Optional[int],
+    event_type: str,
+    event_detail: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+    status_code: Optional[int] = None,
+) -> int:
+    """Persist a single usage event and return its id."""
+    conn = get_connection()
+    try:
+        conn.execute(
+            """INSERT INTO usage_events
+               (user_id, event_type, event_detail, ip_address, user_agent, status_code)
+               VALUES (?,?,?,?,?,?)""",
+            (
+                int(user_id) if user_id else None,
+                (event_type or "unknown")[:64],
+                event_detail,
+                (ip_address or "")[:64] or None,
+                (user_agent or "")[:512] or None,
+                int(status_code) if status_code is not None else None,
+            ),
+        )
+        event_id = _get_last_insert_id(conn)
+        conn.commit()
+        return int(event_id)
+    finally:
+        conn.close()
+
+
+def _build_usage_filters(
+    user_id: Optional[int] = None,
+    event_type: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    search: Optional[str] = None,
+) -> tuple[list[str], list[Any]]:
+    clauses: list[str] = []
+    params: list[Any] = []
+    if user_id is not None:
+        clauses.append("user_id = ?")
+        params.append(int(user_id))
+    if event_type:
+        clauses.append("event_type = ?")
+        params.append(event_type)
+    if date_from:
+        clauses.append("substr(created_at,1,10) >= ?")
+        params.append(date_from[:10])
+    if date_to:
+        clauses.append("substr(created_at,1,10) <= ?")
+        params.append(date_to[:10])
+    if search:
+        like = f"%{search}%"
+        clauses.append(
+            "(event_type LIKE ? OR event_detail LIKE ? OR ip_address LIKE ? OR CAST(user_id AS TEXT) LIKE ?)"
+        )
+        params.extend([like, like, like, like])
+    return clauses, params
+
+
+def get_usage_summary(days: int = 30) -> dict:
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    conn = get_connection()
+    try:
+        total = int(conn.execute("SELECT COUNT(*) AS c FROM usage_events").fetchone()["c"])
+        today_count = int(conn.execute(
+            "SELECT COUNT(*) AS c FROM usage_events WHERE substr(created_at,1,10) = ?",
+            (today,),
+        ).fetchone()["c"])
+        active_users = int(conn.execute(
+            "SELECT COUNT(DISTINCT user_id) AS c FROM usage_events WHERE user_id IS NOT NULL"
+        ).fetchone()["c"])
+        active_today = int(conn.execute(
+            "SELECT COUNT(DISTINCT user_id) AS c FROM usage_events "
+            "WHERE user_id IS NOT NULL AND substr(created_at,1,10) = ?",
+            (today,),
+        ).fetchone()["c"])
+
+        top_types = [
+            dict(r) for r in conn.execute(
+                "SELECT event_type, COUNT(*) AS c FROM usage_events "
+                "GROUP BY event_type ORDER BY c DESC LIMIT 10"
+            ).fetchall()
+        ]
+
+        daily_rows = conn.execute(
+            "SELECT substr(created_at,1,10) AS day, COUNT(*) AS c "
+            "FROM usage_events WHERE created_at >= ? "
+            "GROUP BY day ORDER BY day ASC",
+            ((datetime.now(timezone.utc) - __import__("datetime").timedelta(days=days)).strftime("%Y-%m-%d"),),
+        ).fetchall()
+        daily = [dict(r) for r in daily_rows]
+        return {
+            "total_events": total,
+            "today_events": today_count,
+            "active_users": active_users,
+            "active_today": active_today,
+            "top_event_types": top_types,
+            "daily": daily,
+            "days": int(days),
+        }
+    finally:
+        conn.close()
+
+
+def get_usage_events(
+    user_id: Optional[int] = None,
+    event_type: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> dict:
+    clauses, params = _build_usage_filters(user_id, event_type, date_from, date_to, search)
+    where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+    conn = get_connection()
+    try:
+        total = int(conn.execute(
+            f"SELECT COUNT(*) AS c FROM usage_events{where}", params
+        ).fetchone()["c"])
+        rows = conn.execute(
+            f"SELECT * FROM usage_events{where} ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
+            params + [int(limit), int(offset)],
+        ).fetchall()
+        events = []
+        for r in rows:
+            row = dict(r)
+            if row.get("event_detail"):
+                try:
+                    row["event_detail_parsed"] = json.loads(row["event_detail"])
+                except Exception:
+                    row["event_detail_parsed"] = None
+            else:
+                row["event_detail_parsed"] = None
+            events.append(row)
+        return {"events": events, "total": total}
+    finally:
+        conn.close()
+
+
+def get_usage_filter_options() -> dict:
+    conn = get_connection()
+    try:
+        event_types = [
+            row["event_type"] for row in conn.execute(
+                "SELECT DISTINCT event_type FROM usage_events ORDER BY event_type"
+            ).fetchall()
+        ]
+        users = [
+            dict(r) for r in conn.execute(
+                "SELECT id, username FROM users ORDER BY username"
+            ).fetchall()
+        ]
+        return {"event_types": event_types, "users": users}
+    finally:
+        conn.close()
+
+
+def get_usage_event(event_id: int) -> Optional[dict]:
+    conn = get_connection()
+    try:
+        row = conn.execute("SELECT * FROM usage_events WHERE id=?", (int(event_id),)).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def delete_usage_event(event_id: int) -> bool:
+    conn = get_connection()
+    try:
+        row = conn.execute("SELECT id FROM usage_events WHERE id=?", (int(event_id),)).fetchone()
+        if not row:
+            return False
+        conn.execute("DELETE FROM usage_events WHERE id=?", (int(event_id),))
+        conn.commit()
+        return True
+    finally:
+        conn.close()
+
+
+def clear_usage_events(
+    user_id: Optional[int] = None,
+    event_type: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+) -> int:
+    clauses, params = _build_usage_filters(user_id, event_type, date_from, date_to, None)
+    where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+    conn = get_connection()
+    try:
+        before = int(conn.execute(
+            f"SELECT COUNT(*) AS c FROM usage_events{where}", params
+        ).fetchone()["c"])
+        conn.execute(f"DELETE FROM usage_events{where}", params)
+        conn.commit()
+        return before
+    finally:
+        conn.close()
 
 
 # ─── Folder helpers ───────────────────────────────────────────────────────────

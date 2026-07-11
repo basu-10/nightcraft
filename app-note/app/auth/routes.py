@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 
 from ..database import get_connection
+from ..usage_tracking import record_event
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -66,6 +67,7 @@ def register():
     conn.close()
 
     session["user_id"] = user["id"]
+    record_event("auth_register", {"username": username}, int(user["id"]))
     if is_json:
         return jsonify({"id": user["id"], "username": user["username"], "timezone": user["timezone"]}), 201
     return redirect(_normalize_next_target(request.args.get("next"), url_for("main.app_view")))
@@ -93,6 +95,7 @@ def login():
         return _json_or_redirect(is_json, "Invalid username or password.", 401, "auth.login")
 
     session["user_id"] = user["id"]
+    record_event("auth_login", {"username": username}, int(user["id"]))
     if is_json:
         return jsonify({"id": user["id"], "username": user["username"], "timezone": user.get("timezone", "UTC")})
     return redirect(_normalize_next_target(request.args.get("next"), url_for("main.app_view")))
@@ -102,6 +105,7 @@ def login():
 
 @auth_bp.route("/logout", methods=["POST"])
 def logout():
+    record_event("auth_logout", {"user_id": g.user_id}, g.user_id)
     session.clear()
     return redirect(url_for("auth.login"))
 

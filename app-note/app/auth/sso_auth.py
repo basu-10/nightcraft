@@ -8,6 +8,7 @@ from urllib.parse import quote, urlsplit
 from flask import Blueprint, current_app, g, redirect, request, session, url_for
 
 from ..database import upsert_sso_user
+from ..usage_tracking import record_event
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -91,6 +92,7 @@ def ensure_session_from_shared_auth() -> None:
 
     session["user_id"] = int(user["id"])
     g.user_id = int(user["id"])
+    record_event("auth_login", {"username": user.get("username"), "sso": True}, int(user["id"]))
 
 
 @auth_bp.route("/login")

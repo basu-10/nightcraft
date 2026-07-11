@@ -9,6 +9,12 @@ from ..database import (
     set_user_admin,
     update_user_password_hash,
     delete_user,
+    get_usage_summary,
+    get_usage_events,
+    get_usage_filter_options,
+    get_usage_event,
+    delete_usage_event,
+    clear_usage_events,
 )
 from ..sync_logging import get_sync_log_path
 
@@ -161,3 +167,193 @@ def admin_delete_user(target_user_id):
     else:
         flash("Failed to delete user.", "error")
     return redirect(url_for("main.admin_view"))
+
+
+# ── Usage analytics (per-app admin dashboard) ──────────────────────────────────
+
+def _parse_usage_filters():
+    # Read from request.values so the same helper works for GET (view/export)
+    # and POST (clear filtered) without duplicating logic.
+    raw_user = request.values.get("user_id", "").strip()
+    user_id = int(raw_user) if raw_user.isdigit() else None
+    event_type = (request.values.get("event_type") or "").strip() or None
+    date_from = (request.values.get("date_from") or "").strip() or None
+    date_to = (request.values.get("date_to") or "").strip() or None
+    search = (request.values.get("q") or "").strip() or None
+    return user_id, event_type, date_from, date_to, search
+
+
+@main_bp.route("/admin/usage")
+def admin_usage_view():
+    redirect_or_none = _require_admin()
+    if redirect_or_none:
+        return redirect_or_none
+
+    user_id, event_type, date_from, date_to, search = _parse_usage_filters()
+    try:
+        days = max(1, min(int(request.args.get("days", 30)), 365))
+    except (TypeError, ValueError):
+        days = 30
+    try:
+        per_page = max(10, min(int(request.args.get("per_page", 50)), 200))
+    except (TypeError, ValueError):
+        per_page = 50
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except (TypeError, ValueError):
+        page = 1
+    offset = (page - 1) * per_page
+
+    summary = get_usage_summary(days=days)
+    result = get_usage_events(
+        user_id=user_id,
+        event_type=event_type,
+        date_from=date_from,
+        date_to=date_to,
+        search=search,
+        limit=per_page,
+        offset=offset,
+    )
+    options = get_usage_filter_options()
+
+    total_pages = max(1, (result["total"] + per_page - 1) // per_page)
+    user_map = {int(u["id"]): u["username"] for u in options["users"]}
+
+    return render_template(
+        "usage.html",
+        user=get_user_by_id(g.user_id),
+        summary=summary,
+        events=result["events"],
+        total_events=result["total"],
+        options=options,
+        user_map=user_map,
+        filters={
+            "user_id": user_id or "",
+            "event_type": event_type or "",
+            "date_from": date_from or "",
+            "date_to": date_to or "",
+            "q": search or "",
+            "days": days,
+            "per_page": per_page,
+        },
+        page=page,
+        total_pages=total_pages,
+    )
+
+
+@main_bp.route("/admin/usage/export")
+def admin_usage_export():
+    redirect_or_none = _require_admin()
+    if redirect_or_none:
+        return redirect_or_none
+
+    user_id, event_type, date_from, date_to, search = _parse_usage_filters()
+    fmt = (request.args.get("format") or "csv").strip().lower()
+    result = get_usage_events(
+        user_id=user_id,
+        event_type=event_type,
+        date_from=date_from,
+        date_to=date_to,
+        search=search,
+        limit=100000,
+        offset=0,
+    )
+    events = result["events"]
+    user_map = {
+        int(u["id"]): u["username"]
+        for u in get_usage_filter_options()["users"]
+    }
+
+    if fmt == "json":
+        import json as _json
+        payload = [
+            {
+                "id": e["id"],
+                "user_id": e["user_id"],
+                "username": user_map.get(int(e["user_id"])) if e["user_id"] else None,
+                "event_type": e["event_type"],
+                "event_detail": e.get("event_detail_parsed") or e.get("event_detail"),
+                "ip_address": e.get("ip_address"),
+                "user_agent": e.get("user_agent"),
+                "status_code": e.get("status_code"),
+                "created_at": e.get("created_at"),
+            }
+            for e in events
+        ]
+        body = _json.dumps(payload, indent=2, default=str)
+        return Response(
+            body,
+            mimetype="application/json",
+            headers={"Content-Disposition": "attachment; filename=notestack_usage_events.json"},
+        )
+
+    # Default: CSV
+    import csv
+    import io
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow([
+        "id", "timestamp", "user_id", "username", "event_type",
+        "event_detail", "ip_address", "user_agent", "status_code",
+    ])
+    for e in events:
+        username = user_map.get(int(e["user_id"])) if e["user_id"] else ""
+        detail = e.get("event_detail") or ""
+        writer.writerow([
+            e["id"], e.get("created_at", ""), e["user_id"] or "", username or "",
+            e["event_type"], detail, e.get("ip_address") or "",
+            e.get("user_agent") or "", e.get("status_code") or "",
+        ])
+    return Response(
+        buf.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=notestack_usage_events.csv"},
+    )
+
+
+@main_bp.route("/admin/usage/events/<int:event_id>/delete", methods=["POST"])
+def admin_usage_delete_event(event_id):
+    redirect_or_none = _require_admin()
+    if redirect_or_none:
+        return redirect_or_none
+
+    event = get_usage_event(event_id)
+    if not event:
+        flash("Usage event not found.", "error")
+        return redirect(url_for("main.admin_usage_view"))
+
+    if delete_usage_event(event_id):
+        flash("Usage event deleted.", "success")
+    else:
+        flash("Failed to delete usage event.", "error")
+    return redirect(url_for("main.admin_usage_view", **_parse_usage_filters_as_dict()))
+
+
+@main_bp.route("/admin/usage/clear", methods=["POST"])
+def admin_usage_clear():
+    redirect_or_none = _require_admin()
+    if redirect_or_none:
+        return redirect_or_none
+
+    user_id, event_type, date_from, date_to, search = _parse_usage_filters()
+    # Management clear only honours structural filters, never free-text search,
+    # so admins explicitly scope what they wipe (user / type / date range).
+    deleted = clear_usage_events(
+        user_id=user_id,
+        event_type=event_type,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    flash(f"Cleared {deleted} usage event(s).", "success")
+    return redirect(url_for("main.admin_usage_view"))
+
+
+def _parse_usage_filters_as_dict():
+    user_id, event_type, date_from, date_to, search = _parse_usage_filters()
+    return {
+        "user_id": user_id or "",
+        "event_type": event_type or "",
+        "date_from": date_from or "",
+        "date_to": date_to or "",
+        "q": search or "",
+    }

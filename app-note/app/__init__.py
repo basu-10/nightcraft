@@ -6,6 +6,7 @@ from config import get_config
 from .database import initialize_db
 from .sync_logging import get_sync_logger
 from .auth import get_auth_blueprint
+from .usage_tracking import init_usage_tracking
 
 
 def create_app() -> Flask:
@@ -30,6 +31,8 @@ def create_app() -> Flask:
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(api_bp, url_prefix="/api")
     app.register_blueprint(main_bp)
+
+    init_usage_tracking(app)
 
     @app.before_request
     def _load_user():

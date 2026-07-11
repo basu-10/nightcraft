@@ -4603,3 +4603,136 @@ html[data-theme="dark"] .ProseMirror .placeholder {
       0 0 24px color-mix(in srgb, var(--success) 60%, transparent);
   }
 }
+
+/* ── Usage Analytics ──────────────────────────────────────────────────────── */
+.usage-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.usage-chart__row {
+  display: grid;
+  grid-template-columns: 96px 1fr 48px;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.usage-chart__day {
+  font-size: var(--type-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-chart__bar-wrap {
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  height: 18px;
+}
+
+.usage-chart__bar {
+  height: 100%;
+  min-width: 2px;
+  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 55%, var(--star-on)));
+  border-radius: var(--radius-sm);
+}
+
+.usage-chart__count {
+  font-size: var(--type-xs);
+  color: var(--text-secondary);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.usage-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--border-med) 65%, transparent);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-size: var(--type-xs);
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
+}
+
+.usage-tag strong {
+  color: var(--text-primary);
+}
+
+.usage-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: flex-end;
+  margin-bottom: var(--space-3);
+}
+
+.usage-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.usage-filter-field--grow {
+  flex: 1 1 180px;
+}
+
+.usage-filter-field .form-label {
+  margin: 0;
+}
+
+.usage-filter-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.usage-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.usage-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.usage-table code {
+  font-size: var(--type-xs);
+  color: var(--text-secondary);
+  word-break: break-word;
+}
+
+.usage-detail {
+  max-width: 360px;
+}
+
+.usage-pager {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+@media (max-width: 640px) {
+  .usage-chart__row {
+    grid-template-columns: 76px 1fr 40px;
+  }
+  .usage-detail {
+    max-width: 200px;
+  }
+}

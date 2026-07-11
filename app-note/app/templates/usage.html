@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block title %}Usage Analytics — NoteStack{% endblock %}
+
+{% block body %}
+<div class="settings-page">
+  <div class="settings-card admin-card">
+    <div class="settings-header">
+      <a href="{{ url_for('main.admin_view') }}" class="btn btn--ghost btn--sm">← Admin</a>
+      <h1 class="settings-title">Usage Analytics</h1>
+      <button data-theme-toggle class="btn btn--ghost btn--sm settings-theme-toggle" type="button">Light</button>
+    </div>
+
+    <p class="form-hint u-mb-sm">
+      Product usage captured for operational insight (feature/page usage, actor, time, and client).
+      No note contents are stored. Signed in as <strong>{{ user.username }}</strong>.
+    </p>
+
+    <section class="settings-section">
+      <h2 class="settings-section__title">Overview</h2>
+      <div class="admin-stats-grid">
+        <div class="admin-stat"><span class="admin-stat__label">Total Events</span><strong class="admin-stat__value">{{ summary.total_events }}</strong></div>
+        <div class="admin-stat"><span class="admin-stat__label">Events Today</span><strong class="admin-stat__value">{{ summary.today_events }}</strong></div>
+        <div class="admin-stat"><span class="admin-stat__label">Active Users</span><strong class="admin-stat__value">{{ summary.active_users }}</strong></div>
+        <div class="admin-stat"><span class="admin-stat__label">Active Today</span><strong class="admin-stat__value">{{ summary.active_today }}</strong></div>
+      </div>
+    </section>
+
+    <section class="settings-section">
+      <h2 class="settings-section__title">Daily Activity <span class="form-hint">(last {{ summary.days }} days)</span></h2>
+      {% if summary.daily %}
+        <div class="usage-chart">
+          {% set max_c = summary.daily | map(attribute='c') | max %}
+          {% for d in summary.daily %}
+            <div class="usage-chart__row">
+              <span class="usage-chart__day">{{ d.day }}</span>
+              <div class="usage-chart__bar-wrap">
+                <div class="usage-chart__bar" style="width: {{ (d.c / max_c * 100) | round(1) }}%"></div>
+              </div>
+              <span class="usage-chart__count">{{ d.c }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="form-hint">No activity recorded yet.</p>
+      {% endif %}
+    </section>
+
+    <section class="settings-section">
+      <h2 class="settings-section__title">Top Events</h2>
+      {% if summary.top_event_types %}
+        <div class="usage-top">
+          {% for t in summary.top_event_types %}
+            <span class="usage-tag">{{ t.event_type }} <strong>{{ t.c }}</strong></span>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="form-hint">No events recorded yet.</p>
+      {% endif %}
+    </section>
+
+    <section class="settings-section">
+      <h2 class="settings-section__title">Events</h2>
+
+      <form class="usage-filters" method="get" action="{{ url_for('main.admin_usage_view') }}">
+        <div class="usage-filter-field">
+          <label class="form-label" for="user_id">User</label>
+          <select class="form-input" id="user_id" name="user_id">
+            <option value="">All users</option>
+            {% for u in options.users %}
+              <option value="{{ u.id }}" {% if filters.user_id|string == u.id|string %}selected{% endif %}>{{ u.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="usage-filter-field">
+          <label class="form-label" for="event_type">Event</label>
+          <select class="form-input" id="event_type" name="event_type">
+            <option value="">All events</option>
+            {% for et in options.event_types %}
+              <option value="{{ et }}" {% if filters.event_type == et %}selected{% endif %}>{{ et }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="usage-filter-field">
+          <label class="form-label" for="date_from">From</label>
+          <input class="form-input" type="date" id="date_from" name="date_from" value="{{ filters.date_from }}" />
+        </div>
+        <div class="usage-filter-field">
+          <label class="form-label" for="date_to">To</label>
+          <input class="form-input" type="date" id="date_to" name="date_to" value="{{ filters.date_to }}" />
+        </div>
+        <div class="usage-filter-field usage-filter-field--grow">
+          <label class="form-label" for="q">Search</label>
+          <input class="form-input" type="text" id="q" name="q" placeholder="type, detail, ip…" value="{{ filters.q }}" />
+        </div>
+        <div class="usage-filter-actions">
+          <button class="btn btn--ghost btn--sm" type="submit">Filter</button>
+          <a class="btn btn--ghost btn--sm" href="{{ url_for('main.admin_usage_view') }}">Reset</a>
+        </div>
+      </form>
+
+      <div class="usage-toolbar">
+        <span class="form-hint">{{ total_events }} event(s)</span>
+        <div class="usage-toolbar__actions">
+          <a class="btn btn--ghost btn--sm" href="{{ url_for('main.admin_usage_export', format='csv', **filters) }}">Download CSV</a>
+          <a class="btn btn--ghost btn--sm" href="{{ url_for('main.admin_usage_export', format='json', **filters) }}">Download JSON</a>
+          <form action="{{ url_for('main.admin_usage_clear') }}" method="post" class="admin-inline-form" onsubmit="return confirm('Clear usage events matching the current filters? This cannot be undone.');">
+            <input type="hidden" name="user_id" value="{{ filters.user_id }}" />
+            <input type="hidden" name="event_type" value="{{ filters.event_type }}" />
+            <input type="hidden" name="date_from" value="{{ filters.date_from }}" />
+            <input type="hidden" name="date_to" value="{{ filters.date_to }}" />
+            <button class="btn btn--danger btn--sm" type="submit">Clear Filtered</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="admin-users-table-wrap">
+        <table class="admin-users-table usage-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>User</th>
+              <th>Event</th>
+              <th>Detail</th>
+              <th>IP</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for e in events %}
+              <tr>
+                <td class="form-hint">{{ e.created_at }}</td>
+                <td>
+                  {% if e.user_id %}
+                    {{ user_map.get(e.user_id|int, '#' ~ e.user_id) }}
+                  {% else %}
+                    <span class="form-hint">guest</span>
+                  {% endif %}
+                </td>
+                <td><span class="usage-tag">{{ e.event_type }}</span></td>
+                <td class="usage-detail">
+                  {% if e.event_detail_parsed %}
+                    <code>{{ e.event_detail }}</code>
+                  {% elif e.event_detail %}
+                    <code>{{ e.event_detail }}</code>
+                  {% else %}
+                    <span class="form-hint">—</span>
+                  {% endif %}
+                </td>
+                <td class="form-hint">{{ e.ip_address or '—' }}</td>
+                <td class="form-hint">{{ e.status_code or '—' }}</td>
+                <td>
+                  <form action="{{ url_for('main.admin_usage_delete_event', event_id=e.id) }}" method="post" class="admin-inline-form" onsubmit="return confirm('Delete this usage event?');">
+                    <button class="btn btn--ghost btn--sm" type="submit">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="7" class="form-hint">No events match the current filters.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if total_pages > 1 %}
+        <div class="usage-pager">
+          {% if page > 1 %}
+            <a class="btn btn--ghost btn--sm" href="{{ url_for('main.admin_usage_view', page=page-1, **filters) }}">← Prev</a>
+          {% endif %}
+          <span class="form-hint">Page {{ page }} of {{ total_pages }}</span>
+          {% if page < total_pages %}
+            <a class="btn btn--ghost btn--sm" href="{{ url_for('main.admin_usage_view', page=page+1, **filters) }}">Next →</a>
+          {% endif %}
+        </div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}
