@@ -42,6 +42,12 @@
     autoSaveMs: 1500, // debounce ms for auto-save
   };
 
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
   // ── Lexical editor (lazy) ──────────────────────────────────────────────────
   // Created on first use; kept alive for the session (survives note switches).
   let _lexicalEditor = null;
@@ -1949,25 +1955,172 @@
     }
   }
 
+  async   function showMoveToFolderMenu(noteId, x, y) {
+    hideContextMenu();
+
+    const note = state.notes.find((n) => n.id === noteId);
+    if (!note) return;
+
+    const topLevelFolders = state.folders
+      .filter((f) => !f.parent_id)
+      .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+    const currentFolderId = note.folder_id;
+
+    const buildSubmenu = () => {
+      const sm = document.createElement("div");
+      sm.className = "ctx-menu__submenu";
+      sm.hidden = false;
+
+      // "No folder" option
+      const unfiledBtn = document.createElement("button");
+      unfiledBtn.type = "button";
+      unfiledBtn.className = "ctx-menu__item";
+      unfiledBtn.textContent = "📁  No folder (Unfiled)";
+      if (currentFolderId == null || currentFolderId === 0) {
+        unfiledBtn.classList.add("ctx-menu__item--active");
+      }
+      unfiledBtn.addEventListener("mousedown", (e) => e.preventDefault());
+      unfiledBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        sm.hidden = true;
+        moveNoteToFolder(noteId, null);
+      });
+      sm.appendChild(unfiledBtn);
+
+      topLevelFolders.forEach((folder) => {
+        const folderBtn = document.createElement("button");
+        folderBtn.type = "button";
+        folderBtn.className = "ctx-menu__item";
+        const isActive = currentFolderId === folder.id;
+        const colorDot = folder.color
+          ? `<span class="ctx-menu__folder-dot" style="background:${folder.color}"></span>`
+          : "";
+        folderBtn.innerHTML = `${colorDot}${escapeHtml(folder.name)}`;
+        if (isActive) {
+          folderBtn.classList.add("ctx-menu__item--active");
+          folderBtn.style.fontWeight = "700";
+        }
+        folderBtn.addEventListener("mousedown", (e) => e.preventDefault());
+        folderBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          sm.hidden = true;
+          moveNoteToFolder(noteId, folder.id);
+        });
+        sm.appendChild(folderBtn);
+
+        const subfolders = state.folders
+          .filter((f) => f.parent_id === folder.id)
+          .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+        subfolders.forEach((sub) => {
+          const subBtn = document.createElement("button");
+          subBtn.type = "button";
+          subBtn.className = "ctx-menu__item ctx-menu__item--indent-2";
+          const subActive = currentFolderId === sub.id;
+          const subDot = sub.color
+            ? `<span class="ctx-menu__folder-dot" style="background:${sub.color}"></span>`
+            : "";
+          subBtn.innerHTML = `${subDot}${escapeHtml(sub.name)}`;
+          if (subActive) {
+            subBtn.classList.add("ctx-menu__item--active");
+            subBtn.style.fontWeight = "700";
+          }
+          subBtn.addEventListener("mousedown", (e) => e.preventDefault());
+          subBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            sm.hidden = true;
+            moveNoteToFolder(noteId, sub.id);
+          });
+          sm.appendChild(subBtn);
+        });
+      });
+
+      const sepBefore = document.createElement("div");
+      sepBefore.className = "ctx-menu__sep";
+      sm.insertBefore(sepBefore, sm.firstChild);
+
+      return sm;
+    };
+
+    const submenu = buildSubmenu();
+    document.body.appendChild(submenu);
+    positionCtxMenu(submenu, x, y);
+
+    const dismiss = (e) => {
+      if (submenu.contains(e.target)) return;
+      submenu.remove();
+      document.removeEventListener("mousedown", dismiss);
+      document.removeEventListener("contextmenu", dismiss);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") {
+        submenu.remove();
+        document.removeEventListener("mousedown", dismiss);
+        document.removeEventListener("contextmenu", dismiss);
+        document.removeEventListener("keydown", onKeyDown);
+      }
+    };
+    setTimeout(() => {
+      document.addEventListener("mousedown", dismiss);
+      document.addEventListener("contextmenu", dismiss);
+      document.addEventListener("keydown", onKeyDown);
+    }, 0);
+
+    function positionCtxMenu(el, x, y) {
+      el.hidden = false;
+      const vw = window.innerWidth,
+        vh = window.innerHeight;
+      const mw = el.offsetWidth || 180,
+        mh = el.offsetHeight || 200;
+      el.style.left = (x + mw > vw ? x - mw - 8 : x) + "px";
+      el.style.top = (y + mh > vh ? vh - mh - 8 : y) + "px";
+    }
+  }
+
+  async function moveNoteToFolder(noteId, folderId) {
+    try {
+      const folderIdPayload = folderId === null ? null : String(folderId);
+      const payload = {
+        folder_id: folderIdPayload,
+        append_tags: null,
+      };
+      await api("PUT", `/notes/${noteId}`, payload);
+      await loadNotes({ reset: true });
+      if (state.activeNoteId === noteId) {
+        const saved = state.notes.find((n) => n.id === noteId);
+        if (saved) {
+          state.notes = state.notes.map((n) =>
+            n.id === noteId ? { ...n, folder_id: folderId } : n,
+          );
+          openNote(noteId);
+        }
+      }
+    } catch (err) {
+      console.error("Move to folder failed:", err);
+    }
+  }
+
   function showNoteContextMenu(noteId, x, y) {
     const note = state.notes.find((n) => n.id === noteId);
+    if (!note) return;
+    const isTrash = state.filter.section === "trash";
+
     showContextMenu(x, y, [
-      { label: "✏️  Edit", action: () => openNote(noteId) },
-      "sep",
-      { label: "📋  Copy content", action: () => copyNoteContent(noteId) },
-      "sep",
+      { label: "📝  Open Note", action: () => openNote(noteId) },
       {
-        label: "🏷️  Add Tag…",
-        action: () => {
-          openNote(noteId).then(() => openTagsModal());
-        },
+        label: note.is_favorite ? "⭐  Unfavorite" : "☆  Favorite",
+        action: () => toggleFavorite(note),
       },
-      "sep",
-      {
-        label: "🗑️  Delete",
-        danger: true,
-        action: () => deleteSingleNote(noteId),
-      },
+      { label: "📁  Move to Folder", action: () => showMoveToFolderMenu(noteId, x, y) },
+      { label: "📋  Copy Content", action: () => copyNoteContent(noteId) },
+      ...(isTrash
+        ? []
+        : ["sep", { label: "🗑️  Delete", danger: true, action: () => deleteSingleNote(noteId) }]),
     ]);
   }
 
