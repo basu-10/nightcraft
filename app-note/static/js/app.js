@@ -2324,8 +2324,11 @@
   let tagModalNoteId = null;
 
   function openTagsModal(noteId) {
-    // Determine which note we are actually editing.
-    tagModalNoteId = noteId != null ? noteId : state.activeNoteId;
+    // Determine which note we are actually editing. When triggered without a
+    // valid note id (e.g. an event object leaking in from a click handler) we
+    // fall back to the note currently open in the editor.
+    tagModalNoteId =
+      noteId != null && typeof noteId === "string" ? noteId : state.activeNoteId;
     if (tagModalNoteId == null) return;
 
     // Seed the input from the TARGET note's own tags, never from the open
@@ -2594,8 +2597,12 @@
       state.saveTimer = setTimeout(saveCurrentNote, state.autoSaveMs);
     });
 
-    // Tags modal
-    $("btn-edit-tags").addEventListener("click", openTagsModal);
+    // Tags modal — reuse the same single function as the note-card context menu.
+    // Explicitly pass the active note id so we never leak the click event in as
+    // the target note (which would break populate + save).
+    $("btn-edit-tags").addEventListener("click", () =>
+      openTagsModal(state.activeNoteId),
+    );
     $("btn-tags-cancel").addEventListener("click", () => {
       $("tags-modal").hidden = true;
     });
