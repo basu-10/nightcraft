@@ -1506,11 +1506,29 @@
         saveIndicator.textContent = "";
       }, 2000);
 
+      const savedContent = activeEd ? activeEd.getContent() : "";
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      const updatedAt =
+        now.getFullYear() +
+        "-" +
+        pad(now.getMonth() + 1) +
+        "-" +
+        pad(now.getDate()) +
+        " " +
+        pad(now.getHours()) +
+        ":" +
+        pad(now.getMinutes()) +
+        ":" +
+        pad(now.getSeconds());
+
       // Update local state
       const idx = state.notes.findIndex((n) => n.id === id);
       if (idx !== -1) {
         state.notes[idx].title = noteTitle.value.trim() || "Untitled";
+        state.notes[idx].content = savedContent;
         state.notes[idx].tags = tagsStr;
+        state.notes[idx].updated_at = updatedAt;
         const card = noteList.querySelector(`[data-id="${id}"]`);
         if (card) {
           const updated = buildNoteCard(state.notes[idx]);
@@ -2116,6 +2134,10 @@
       if ((e.ctrlKey || e.metaKey) && e.key === "n") {
         e.preventDefault();
         createNoteSafely();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        saveCurrentNote(true);
       }
       if (e.key === "Escape") {
         closeSidebar();
