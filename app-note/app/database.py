@@ -217,21 +217,21 @@ def initialize_db() -> None:
             UNIQUE(user_id, name, parent_id)
         );
 
-CREATE TABLE IF NOT EXISTS notes (
-             id                INTEGER PRIMARY KEY AUTOINCREMENT,
-             user_id           INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-             folder_id         INTEGER REFERENCES folders(id) ON DELETE SET NULL,
-             title             TEXT NOT NULL,
-             content           TEXT NOT NULL DEFAULT '',
-             is_favorite       INTEGER NOT NULL DEFAULT 0,
-             created_at        TEXT NOT NULL DEFAULT (datetime('now')),
-             updated_at        TEXT NOT NULL DEFAULT (datetime('now')),
-             sync_id           TEXT UNIQUE,
-             client_updated_at TEXT DEFAULT NULL,
-             server_rev        INTEGER NOT NULL DEFAULT 0,
-             editor_type       TEXT NOT NULL DEFAULT 'lexical',
-             original_extension  TEXT DEFAULT NULL
-         );
+        CREATE TABLE IF NOT EXISTS notes (
+            id                INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id           INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            folder_id         INTEGER REFERENCES folders(id) ON DELETE SET NULL,
+            title             TEXT NOT NULL,
+            content           TEXT NOT NULL DEFAULT '',
+            is_favorite       INTEGER NOT NULL DEFAULT 0,
+            created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at        TEXT NOT NULL DEFAULT (datetime('now')),
+            sync_id           TEXT UNIQUE,
+            client_updated_at TEXT DEFAULT NULL,
+            server_rev        INTEGER NOT NULL DEFAULT 0,
+            editor_type       TEXT NOT NULL DEFAULT 'lexical',
+            original_extension  TEXT DEFAULT NULL
+        );
 
         CREATE TABLE IF NOT EXISTS sync_meta (
             id              INTEGER PRIMARY KEY CHECK (id = 1),
@@ -390,14 +390,14 @@ def _initialize_postgres_db() -> None:
             content TEXT NOT NULL DEFAULT '',
             is_favorite INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-             sync_id TEXT,
-             client_updated_at TEXT DEFAULT NULL,
-             server_rev BIGINT NOT NULL DEFAULT 0,
-             editor_type TEXT NOT NULL DEFAULT 'lexical',
-             original_extension TEXT DEFAULT NULL,
-             UNIQUE(user_id, sync_id)
-         )
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            sync_id TEXT,
+            client_updated_at TEXT DEFAULT NULL,
+            server_rev BIGINT NOT NULL DEFAULT 0,
+            editor_type TEXT NOT NULL DEFAULT 'lexical',
+            original_extension TEXT DEFAULT NULL,
+            UNIQUE(user_id, sync_id)
+        )
         """,
         """
         CREATE TABLE IF NOT EXISTS sync_meta (
