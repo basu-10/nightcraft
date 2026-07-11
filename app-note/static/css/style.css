@@ -888,6 +888,101 @@ a:active {
   border-color: color-mix(in srgb, var(--accent) 25%, var(--border));
 }
 
+/* Guest mode warning banner (flashing) */
+.guest-warning-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px var(--space-4);
+  background: color-mix(in srgb, var(--star-on) 18%, var(--bg-app));
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--star-on) 34%, var(--border-med));
+  color: color-mix(in srgb, var(--star-on) 82%, var(--text-primary));
+  font-size: var(--type-sm);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-inset);
+  font-weight: 500;
+  line-height: var(--lh-normal);
+}
+
+.guest-warning-banner__icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  animation: guest-warning-blink 1.1s steps(1, end) infinite;
+}
+
+.guest-warning-banner__text {
+  flex: 1;
+}
+
+.guest-warning-banner__close {
+  flex-shrink: 0;
+  border: none;
+  background: color-mix(in srgb, var(--star-on) 10%, transparent);
+  color: color-mix(in srgb, var(--star-on) 85%, var(--text-primary));
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.guest-warning-banner__close:hover {
+  background: color-mix(in srgb, var(--star-on) 22%, transparent);
+  color: var(--text-primary);
+}
+
+/* Periodic flare: the whole banner pulses so the warning keeps catching the eye. */
+.guest-warning-banner--flashing {
+  animation: guest-warning-flash 4.5s ease-in-out infinite;
+}
+
+.guest-warning-banner--muted {
+  opacity: 0.92;
+  animation: none;
+  background: color-mix(in srgb, var(--star-on) 9%, var(--bg-app));
+  border-bottom-color: color-mix(in srgb, var(--star-on) 22%, var(--border-med));
+}
+
+@keyframes guest-warning-flash {
+  0%,
+  100% {
+    background: color-mix(in srgb, var(--star-on) 9%, var(--bg-app));
+    border-bottom-color: color-mix(in srgb, var(--star-on) 22%, var(--border-med));
+    box-shadow: var(--shadow-inset);
+  }
+  12%,
+  38% {
+    background: color-mix(in srgb, var(--star-on) 34%, var(--bg-app));
+    border-bottom-color: color-mix(in srgb, var(--star-on) 55%, var(--border-med));
+    box-shadow:
+      var(--shadow-inset),
+      0 0 0 1px color-mix(in srgb, var(--star-on) 45%, transparent),
+      0 0 14px color-mix(in srgb, var(--star-on) 30%, transparent);
+  }
+  50%,
+  88% {
+    background: color-mix(in srgb, var(--star-on) 9%, var(--bg-app));
+    border-bottom-color: color-mix(in srgb, var(--star-on) 22%, var(--border-med));
+    box-shadow: var(--shadow-inset);
+  }
+}
+
+@keyframes guest-warning-blink {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.92);
+  }
+}
+
 /* Conflict banner */
 .conflict-banner {
   display: flex;

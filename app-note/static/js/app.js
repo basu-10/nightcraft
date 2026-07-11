@@ -304,7 +304,11 @@
   const btnGuestImportAccept = $("btn-guest-import-accept");
   const btnGuestImportDismiss = $("btn-guest-import-dismiss");
 
+  const guestWarningBanner = $("guest-warning-banner");
+  const btnGuestWarningDismiss = $("btn-guest-warning-dismiss");
+
   const GUEST_IMPORT_DISMISS_KEY = "notestack.guest-import-dismissed-snapshot";
+  const GUEST_WARNING_DISMISS_KEY = "notestack.guest-warning-dismissed";
   let guestImportPrompt = null;
 
   const sectionButtonsDesktop = () =>
@@ -334,6 +338,7 @@
         "#sync-status .sync-badge__label",
       );
       if (syncLabel) syncLabel.textContent = "Local only";
+      startGuestWarning();
     }
     restoreFilterFromUrl();
     bindUI();
@@ -345,6 +350,59 @@
       await maybeImportGuestDataIntoAccount();
     }
   });
+
+  // ── Guest mode warning (periodic flashing notification) ────────────────────
+  let _guestWarningTimer = null;
+
+  function startGuestWarning() {
+    if (!guestWarningBanner) return;
+
+    let dismissed = false;
+    try {
+      dismissed = localStorage.getItem(GUEST_WARNING_DISMISS_KEY) === "1";
+    } catch {}
+
+    const flash = () => {
+      // Brief attention flare, then settle back to the muted resting state.
+      guestWarningBanner.classList.remove("guest-warning-banner--muted");
+      guestWarningBanner.classList.add("guest-warning-banner--flashing");
+      setTimeout(() => {
+        if (!guestWarningBanner.hidden) {
+          guestWarningBanner.classList.remove(
+            "guest-warning-banner--flashing",
+          );
+          guestWarningBanner.classList.add("guest-warning-banner--muted");
+        }
+      }, 4500);
+    };
+
+    if (dismissed) {
+      // Keep the banner visible but calm — no periodic flashing.
+      guestWarningBanner.hidden = false;
+      guestWarningBanner.classList.add("guest-warning-banner--muted");
+    } else {
+      guestWarningBanner.hidden = false;
+      flash();
+      _guestWarningTimer = setInterval(flash, 12000);
+    }
+
+    if (btnGuestWarningDismiss) {
+      btnGuestWarningDismiss.addEventListener("click", () => {
+        guestWarningBanner.hidden = true;
+        guestWarningBanner.classList.remove(
+          "guest-warning-banner--flashing",
+          "guest-warning-banner--muted",
+        );
+        if (_guestWarningTimer) {
+          clearInterval(_guestWarningTimer);
+          _guestWarningTimer = null;
+        }
+        try {
+          localStorage.setItem(GUEST_WARNING_DISMISS_KEY, "1");
+        } catch {}
+      });
+    }
+  }
 
   // ── Sync status badge ─────────────────────────────────────────────────────
   const _syncEl = $("sync-status");

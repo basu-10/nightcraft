@@ -128,6 +128,13 @@
       <button id="btn-show-conflicts" class="btn btn--sm btn--warning">Resolve</button>
     </div>
 
+    <!-- Guest mode warning banner -->
+    <div id="guest-warning-banner" class="guest-warning-banner" hidden>
+      <span class="guest-warning-banner__icon">👤</span>
+      <span class="guest-warning-banner__text">You're using a guest account. Everything you save is only stored in this browser — it won't sync to other devices.</span>
+      <button id="btn-guest-warning-dismiss" class="guest-warning-banner__close" type="button" title="Hide this reminder" aria-label="Hide this reminder">✕</button>
+    </div>
+
     <div id="guest-import-banner" class="guest-import-banner" hidden>
       <span id="guest-import-banner-text">Guest notes were found on this browser.</span>
       <div class="guest-import-banner__actions">
