@@ -2129,7 +2129,7 @@
       },
       { label: "📁  Move to Folder", action: () => showMoveToFolderMenu(noteId, x, y) },
       { label: "📋  Copy Content", action: () => copyNoteContent(noteId) },
-      { label: "🏷️  Add Tag", action: () => openTagsModal() },
+      { label: "🏷️  Add Tag", action: () => openTagsModal(note.id) },
       ...(isTrash
         ? []
         : ["sep", { label: "🗑️  Delete", danger: true, action: () => deleteSingleNote(noteId) }]),
@@ -2184,11 +2184,21 @@
 
   // ── Tags modal ─────────────────────────────────────────────────────────────
 
-  function openTagsModal() {
-    const current = Array.from(editorTagsDisplay.querySelectorAll(".tag-pill"))
-      .map((el) => el.textContent.trim())
-      .join(", ");
-    $("tags-input").value = current;
+  // Note id the tags modal is currently editing. When opened from the editor
+  // "Tags" button it defaults to the active note; when opened from a note's
+  // context menu it is the right-clicked note.
+  let tagModalNoteId = null;
+
+  function openTagsModal(noteId) {
+    // Determine which note we are actually editing.
+    tagModalNoteId = noteId != null ? noteId : state.activeNoteId;
+    if (tagModalNoteId == null) return;
+
+    // Seed the input from the TARGET note's own tags, never from the open
+    // editor note (which may be a different note entirely).
+    const targetNote = state.notes.find((n) => n.id === tagModalNoteId);
+    const current = targetNote && targetNote.tags ? targetNote.tags : "";
+    $("tags-input").value = (current || "").split(",").filter(Boolean).join(", ");
     populateTagDropdown();
     $("tags-modal").hidden = false;
     $("tags-input").focus();
@@ -2239,14 +2249,32 @@
       .split(",")
       .map((t) => t.trim())
       .filter(Boolean);
-    renderEditorTags(tags.join(","));
+    const tagsStr = tags.join(",");
+
+    // Persist to the TARGET note, not the possibly-unrelated open editor note.
+    const targetId = tagModalNoteId != null ? tagModalNoteId : state.activeNoteId;
     $("tags-modal").hidden = true;
-    // Persist immediately
-    if (state.activeNoteId) {
-      await api("PUT", `/notes/${state.activeNoteId}`, {
-        tags: tags.join(","),
-      });
+    if (!targetId) return;
+
+    // Update local state + the note card immediately so the change is visible
+    // even if this note is not the one currently open in the editor.
+    const idx = state.notes.findIndex((n) => n.id === targetId);
+    if (idx !== -1) {
+      state.notes[idx].tags = tagsStr;
+      const card = noteList.querySelector(`[data-id="${targetId}"]`);
+      if (card) card.replaceWith(buildNoteCard(state.notes[idx]));
+    }
+
+    // If the target is the open editor note, keep the editor in sync too.
+    if (targetId === state.activeNoteId) {
+      renderEditorTags(tagsStr);
+    }
+
+    try {
+      await api("PUT", `/notes/${targetId}`, { tags: tagsStr });
       await loadTags(); // refresh sidebar tag list
+    } catch (err) {
+      console.error("Failed to save tags:", err);
     }
   }
 
