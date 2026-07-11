@@ -217,20 +217,21 @@ def initialize_db() -> None:
             UNIQUE(user_id, name, parent_id)
         );
 
-        CREATE TABLE IF NOT EXISTS notes (
-            id                INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id           INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            folder_id         INTEGER REFERENCES folders(id) ON DELETE SET NULL,
-            title             TEXT NOT NULL,
-            content           TEXT NOT NULL DEFAULT '',
-            is_favorite       INTEGER NOT NULL DEFAULT 0,
-            created_at        TEXT NOT NULL DEFAULT (datetime('now')),
-            updated_at        TEXT NOT NULL DEFAULT (datetime('now')),
-            sync_id           TEXT UNIQUE,
-            client_updated_at TEXT DEFAULT NULL,
-            server_rev        INTEGER NOT NULL DEFAULT 0,
-            editor_type       TEXT NOT NULL DEFAULT 'lexical'
-        );
+CREATE TABLE IF NOT EXISTS notes (
+             id                INTEGER PRIMARY KEY AUTOINCREMENT,
+             user_id           INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+             folder_id         INTEGER REFERENCES folders(id) ON DELETE SET NULL,
+             title             TEXT NOT NULL,
+             content           TEXT NOT NULL DEFAULT '',
+             is_favorite       INTEGER NOT NULL DEFAULT 0,
+             created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+             updated_at        TEXT NOT NULL DEFAULT (datetime('now')),
+             sync_id           TEXT UNIQUE,
+             client_updated_at TEXT DEFAULT NULL,
+             server_rev        INTEGER NOT NULL DEFAULT 0,
+             editor_type       TEXT NOT NULL DEFAULT 'lexical',
+             original_extension  TEXT DEFAULT NULL
+         );
 
         CREATE TABLE IF NOT EXISTS sync_meta (
             id              INTEGER PRIMARY KEY CHECK (id = 1),
@@ -389,13 +390,14 @@ def _initialize_postgres_db() -> None:
             content TEXT NOT NULL DEFAULT '',
             is_favorite INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            sync_id TEXT,
-            client_updated_at TEXT DEFAULT NULL,
-            server_rev BIGINT NOT NULL DEFAULT 0,
-            editor_type TEXT NOT NULL DEFAULT 'lexical',
-            UNIQUE(user_id, sync_id)
-        )
+updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+             sync_id TEXT,
+             client_updated_at TEXT DEFAULT NULL,
+             server_rev BIGINT NOT NULL DEFAULT 0,
+             editor_type TEXT NOT NULL DEFAULT 'lexical',
+             original_extension TEXT DEFAULT NULL,
+             UNIQUE(user_id, sync_id)
+         )
         """,
         """
         CREATE TABLE IF NOT EXISTS sync_meta (
@@ -659,6 +661,8 @@ def _initialize_postgres_db() -> None:
         conn.execute("ALTER TABLE notes ADD COLUMN editor_type TEXT NOT NULL DEFAULT 'lexical'")
     if "editor_type" not in trash_cols:
         conn.execute("ALTER TABLE trash ADD COLUMN editor_type TEXT NOT NULL DEFAULT 'lexical'")
+    if "original_extension" not in note_cols:
+        conn.execute("ALTER TABLE notes ADD COLUMN original_extension TEXT DEFAULT NULL")
 
     if "sync_id" in cols:
         conn.execute(
@@ -1316,7 +1320,7 @@ def apply_note_tombstone(user_id: int, sync_id: str) -> bool:
         if note:
             conn.execute(
                 """INSERT INTO trash (user_id, title, content, folder_name, is_favorite, tag_names, sync_id, created_at, updated_at)
-                   VALUES (?,?,?,?,?,?,?,?,?)""",
+            ) VALUES (?,?,?,?,?,?,?,?,?,?)""",
                 (
                     user_id,
                     note["title"],
@@ -1409,6 +1413,7 @@ def get_notes(user_id: int, folder_id: Optional[int] = None, tag_id: Optional[in
         f"""SELECT n.id, n.title, n.is_favorite, n.created_at, n.updated_at, n.folder_id,
                    n.sync_id, f.name AS folder_name, f.color AS folder_color,
                                      n.content AS content, COALESCE(n.editor_type, 'lexical') AS editor_type,
+                    n.original_extension AS original_extension,
                    COALESCE(
                      (SELECT GROUP_CONCAT(t.name, ',')
                       FROM tags t JOIN note_tags nt ON nt.tag_id=t.id
@@ -1481,17 +1486,19 @@ def create_note(user_id: int, title: str, content: str = "",
                 tag_names: Optional[list[str]] = None,
                 sync_id: Optional[str] = None,
                 client_updated_at: Optional[str] = None,
-                editor_type: str = 'lexical') -> int:
+                editor_type: str = 'lexical',
+                original_extension: Optional[str] = None) -> int:
     conn = get_connection()
     server_rev = allocate_server_rev(conn)
     note_sync_id = (sync_id or "").strip() or str(uuid.uuid4())
     safe_editor_type = 'lexical' if editor_type in ('tui', 'lexical') else 'lexical'
+    ext = (original_extension or "").strip() if original_extension else None
     conn.execute(
         """INSERT INTO notes (
-               user_id, folder_id, title, content, is_favorite, sync_id, client_updated_at, server_rev, editor_type
-           ) VALUES (?,?,?,?,?,?,?,?,?)""",
+                user_id, folder_id, title, content, is_favorite, sync_id, client_updated_at, server_rev, editor_type, original_extension
+            ) VALUES (?,?,?,?,?,?,?,?,?,?)""",
         (user_id, folder_id, title.strip(), content, int(is_favorite),
-         note_sync_id, client_updated_at, server_rev, safe_editor_type),
+          note_sync_id, client_updated_at, server_rev, safe_editor_type, ext),
     )
     conn.execute(
         "DELETE FROM note_tombstones WHERE user_id=? AND sync_id=?",
@@ -1513,7 +1520,8 @@ def update_note(user_id: int, note_id: int, title: Optional[str] = None,
                 content: Optional[str] = None, folder_id: Optional[int] = None,
                 is_favorite: Optional[bool] = None, tag_names: Optional[list[str]] = None,
                 client_updated_at: Optional[str] = None,
-                editor_type: Optional[str] = None) -> bool:
+                editor_type: Optional[str] = None,
+                 original_extension: Optional[str] = None) -> bool:
     conn = get_connection()
     try:
         row = conn.execute(
@@ -1541,6 +1549,8 @@ def update_note(user_id: int, note_id: int, title: Optional[str] = None,
             fields.append("client_updated_at=?"); params.append(client_updated_at)
         if editor_type is not None and editor_type in ('tui', 'lexical'):
             fields.append("editor_type=?"); params.append('lexical')
+        if original_extension is not None:
+             fields.append("original_extension=?"); params.append((original_extension or '').strip() if original_extension else None)
         params += [user_id, note_id]
         conn.execute(f"UPDATE notes SET {', '.join(fields)} WHERE user_id=? AND id=?", params)
         if row["sync_id"]:

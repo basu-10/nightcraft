@@ -359,6 +359,7 @@ def post_note():
     folder_id = _resolve_folder_id_for_user(data.get("folder_id"), g.user_id)
     editor_type_raw = (data.get("editor_type") or "lexical").strip().lower()
     editor_type = "lexical" if editor_type_raw in ("tui", "lexical") else "lexical"
+    original_extension = (data.get("original_extension") or "").strip() or None
     note_id = create_note(
         g.user_id,
         title=title,
@@ -367,6 +368,7 @@ def post_note():
         is_favorite=bool(data.get("is_favorite")),
         tag_names=tags or None,
         editor_type=editor_type,
+        original_extension=original_extension,
     )
     _sync_log.info("WEB note created  user_id=%s note_id=%s title=%r", g.user_id, note_id, title)
     return _ok({"id": note_id}, 201)
@@ -387,6 +389,9 @@ def put_note(note_id):
     if "editor_type" in data:
         raw_et = (data.get("editor_type") or "").strip().lower()
         editor_type = "lexical" if raw_et in ("tui", "lexical") else None
+    original_extension = None
+    if "original_extension" in data:
+        original_extension = (data.get("original_extension") or "").strip() or None
     ok = update_note(
         g.user_id, note_id,
         title=data.get("title"),
@@ -395,6 +400,7 @@ def put_note(note_id):
         is_favorite=data.get("is_favorite"),
         tag_names=tag_names,
         editor_type=editor_type,
+        original_extension=original_extension,
     )
     if not ok:
         return _err("Not found", 404)

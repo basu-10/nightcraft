@@ -356,6 +356,9 @@
     if (!IS_GUEST_MODE) {
       await maybeImportGuestDataIntoAccount();
     }
+    // Initialize drag and drop handler
+    initDragDropHandler();
+    renderEmptyStateHint();
   });
 
   // ── Guest mode warning (periodic flashing notification) ────────────────────
@@ -1052,6 +1055,7 @@
     if (btnEmptyNew) btnEmptyNew.hidden = isTrashView;
     if (!state.notes.length) {
       emptyState.hidden = false;
+      renderEmptyStateHint();
       renderLoadMoreButton();
       return;
     }
@@ -2530,6 +2534,47 @@
     updateViewTitle();
     syncFilterToUrl();
     renderLoadMoreButton();
+  }
+
+  // ── Drag and Drop Handler Integration ─────────────────────────────────────
+  function initDragDropHandler() {
+    if (!window.DragDropHandler) return;
+    
+    window.DragDropAPI = {
+      createNote: async function(noteData) {
+        return api("POST", "/notes", noteData);
+      },
+      refreshNotes: function() {
+        loadNotes({ reset: true });
+      },
+      getSection: function() {
+        return state.filter.section;
+      },
+      getFolderId: function() {
+        return state.filter.folderId;
+      }
+    };
+    
+    window.DragDropHandler.init({
+      getSection: () => state.filter.section,
+      getFolderId: () => state.filter.folderId
+    });
+  }
+  
+  // Add empty state hint for drag and drop support info
+  function renderEmptyStateHint() {
+    if (!emptyState) return;
+    const hint = document.createElement("p");
+    hint.className = "empty-state__hint u-text-xs u-mt-sm";
+    hint.textContent = "Tip: You can drag and drop .txt and other plaintext files here to import them as notes.";
+    hint.style.opacity = "0.7";
+    // Remove any existing hint first
+    const existingHint = emptyState.querySelector(".empty-state__hint");
+    if (existingHint) existingHint.remove();
+    // Only show hint for allowed sections (all notes or folder view)
+    if (state.filter.section !== "trash" && state.filter.section !== "favorites") {
+      emptyState.appendChild(hint);
+    }
   }
 
   function initSidebarSectionResizer() {
