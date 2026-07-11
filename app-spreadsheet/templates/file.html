@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TinyXL</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div id="app">
+        <div class="top-bar">
+            <div class="top-bar-left">
+                <button id="btn-home" class="nav-btn">Home</button>
+                <button id="btn-new" class="nav-btn">New</button>
+                <button id="btn-upload" class="nav-btn primary">Upload</button>
+                <div class="dropdown">
+                    <button class="nav-btn dropdown-toggle">Edit ▾</button>
+                    <div class="dropdown-menu">
+                        <button id="btn-undo" class="dropdown-item">Undo</button>
+                        <button id="btn-redo" class="dropdown-item">Redo</button>
+                        <div class="ctx-separator"></div>
+                        <button id="btn-save" class="dropdown-item">Save</button>
+                    </div>
+                </div>
+<div class="dropdown">
+                <button class="nav-btn dropdown-toggle">Sheet ▾</button>
+                <div class="dropdown-menu">
+                    <button id="btn-add-rows" class="dropdown-item">Add Rows</button>
+                    <button id="btn-add-cols" class="dropdown-item">Add Columns</button>
+                    <button id="btn-toggle-alt" class="dropdown-item">Alternate Colors</button>
+                    <button id="btn-adjust-all" class="dropdown-item">Adjust Row Heights</button>
+                    <div class="ctx-separator"></div>
+                    <button id="btn-file-properties" class="dropdown-item">File Properties</button>
+                    <div class="ctx-separator"></div>
+                    <button id="btn-export-txl" class="dropdown-item">Export .txl</button>
+                    <button id="btn-import-txl" class="dropdown-item">Import .txl</button>
+                    <input type="file" id="txl-import-input" accept=".txl" style="display:none;">
+                </div>
+            </div>
+            </div>
+            <div class="top-bar-right">
+                <span id="current-file" class="current-file">No file opened</span>
+            </div>
+        </div>
+
+        <!-- Sheet Tabs Bar -->
+        <div class="sheet-tabs" id="sheet-tabs"></div>
+
+        <!-- Linked Filter Tabs Bar -->
+        <div class="linked-tabs" id="linked-tabs"></div>
+
+        <!-- Cell Action Bar -->
+        <div class="cell-action-bar" id="cell-action-bar">
+            <div class="name-box" id="name-box">Select a cell</div>
+        </div>
+        <div class="table-container" id="table-container">
+            <table id="spreadsheet">
+                <thead id="table-head"></thead>
+                <tbody id="table-body"></tbody>
+            </table>
+        </div>
+
+        <!-- Upload Modal -->
+        <div id="modal-upload" class="modal">
+            <div class="modal-content">
+                <h3>Upload Spreadsheet</h3>
+                <input type="file" id="file-input" accept=".xlsx,.xls,.xlsb,.xlsm,.csv,.txl">
+                <div class="modal-actions">
+                    <button id="btn-upload-confirm" class="action-btn primary">Upload</button>
+                    <button id="btn-upload-cancel" class="action-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cell UI Modal -->
+        <div id="modal-cell-ui" class="modal">
+            <div class="modal-content cell-ui-content">
+                <h3>Cell UI</h3>
+
+                <div class="cell-ui-section">
+                    <div class="cell-ui-section-header">
+                        <span>Text Color</span>
+                        <div class="cell-ui-color-row">
+                            <input type="color" id="cell-ui-text-picker" value="#000000">
+                            <div class="cell-ui-swatches" id="cell-ui-text-swatches"></div>
+                        </div>
+                    </div>
+                    <div class="cell-ui-section-actions">
+                        <button class="action-btn cell-ui-clear" data-target="text">Clear Text Color</button>
+                    </div>
+                </div>
+
+                <div class="cell-ui-section">
+                    <div class="cell-ui-section-header">
+                        <span>Background Color</span>
+                        <div class="cell-ui-color-row">
+                            <input type="color" id="cell-ui-bg-picker" value="#ffff00">
+                            <div class="cell-ui-swatches" id="cell-ui-bg-swatches"></div>
+                        </div>
+                    </div>
+                    <div class="cell-ui-section-actions">
+                        <button class="action-btn cell-ui-clear" data-target="bg">Clear Background Color</button>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button id="btn-cell-ui-cancel" class="action-btn">Close</button>
+                    <button id="btn-cell-ui-apply" class="action-btn primary">Apply</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Cell Modal -->
+        <div id="modal-edit" class="modal">
+            <div class="modal-content">
+                <h3>Edit Cell</h3>
+                <textarea id="edit-cell-text" rows="6"></textarea>
+                <div class="modal-actions">
+                    <button id="btn-edit-save" class="action-btn primary">Save</button>
+                    <button id="btn-edit-cancel" class="action-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Rows/Cols Modal -->
+        <div id="modal-add" class="modal">
+            <div class="modal-content">
+                <h3 id="add-modal-title">Add Rows</h3>
+                <input type="number" id="add-count" min="1" max="1000" value="10">
+                <div class="modal-actions">
+                    <button id="btn-add-confirm" class="action-btn primary">Add</button>
+                    <button id="btn-add-cancel" class="action-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paste Conflict Modal -->
+        <div id="modal-paste-conflict" class="modal">
+            <div class="modal-content paste-conflict-content">
+                <div class="paste-conflict-header">
+                    <span class="paste-conflict-icon">&#9888;</span>
+                    <h3>Paste Conflict</h3>
+                </div>
+                <p class="paste-conflict-message" id="paste-conflict-message"></p>
+                <div class="paste-conflict-details" id="paste-conflict-details"></div>
+                <div class="modal-actions paste-conflict-actions">
+                    <button id="btn-paste-insert" class="action-btn primary">Insert Rows &amp; Columns</button>
+                    <button id="btn-paste-new-sheet" class="action-btn">Move Conflicts to New Sheet</button>
+                    <button id="btn-paste-cancel" class="action-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Modal -->
+        <div id="modal-filter" class="modal">
+            <div class="modal-content filter-modal-content">
+                <h3>Filter by Column <span id="filter-col-label">C1</span></h3>
+                <div class="filter-form">
+                    <div class="filter-field">
+                        <label>Operator</label>
+                        <select id="filter-operator">
+                            <option value="equals">Equals</option>
+                            <option value="not_equals">Not Equals</option>
+                            <option value="contains">Contains</option>
+                            <option value="starts_with">Starts With</option>
+                            <option value="ends_with">Ends With</option>
+                            <option value="greater_than">&gt;</option>
+                            <option value="less_than">&lt;</option>
+                            <option value="greater_equal">&gt;=</option>
+                            <option value="less_equal">&lt;=</option>
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <label>Value</label>
+                        <input type="text" id="filter-value" placeholder="Enter filter value">
+                    </div>
+                </div>
+                <div class="filter-header-info" id="filter-header-info">
+                    <span class="filter-header-badge" id="filter-header-badge">Header Row(s) Found</span>
+                    <span class="filter-header-note">Header rows are excluded from filtering by default</span>
+                    <label class="filter-header-toggle">
+                        <input type="checkbox" id="filter-preserve-headers">
+                        <span class="filter-toggle-label">Preserve headers in view</span>
+                    </label>
+                </div>
+                <div class="filter-preview" id="filter-preview">
+                    <div class="filter-preview-header">
+                        <span id="filter-match-count">0 rows match</span>
+                        <button id="btn-filter-preview" class="action-btn">Preview</button>
+                    </div>
+                    <div class="filter-preview-table-wrapper" id="filter-preview-table-wrapper">
+                        <table id="filter-preview-table"></table>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button id="btn-filter-ok" class="action-btn primary">OK</button>
+                    <button id="btn-filter-cancel" class="action-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- File Properties Modal -->
+        <div id="modal-file-properties" class="modal">
+            <div class="modal-content file-props-content">
+                <h3>File Properties</h3>
+                <div class="file-props-section">
+                    <table class="file-props-table">
+                        <tr><td class="props-label">File Name</td><td class="props-value" id="fp-name">-</td></tr>
+                        <tr><td class="props-label">File Size</td><td class="props-value" id="fp-size">-</td></tr>
+                        <tr><td class="props-label">File ID</td><td class="props-value props-mono" id="fp-id">-</td></tr>
+                        <tr><td class="props-label">Content Hash</td><td class="props-value props-mono" id="fp-hash">-</td></tr>
+                        <tr><td class="props-label">First Opened</td><td class="props-value" id="fp-first-seen">-</td></tr>
+                        <tr><td class="props-label">Last Opened</td><td class="props-value" id="fp-last-opened">-</td></tr>
+                        <tr><td class="props-label">Total Sheets</td><td class="props-value" id="fp-total-sheets">-</td></tr>
+                    </table>
+                </div>
+                <div class="file-props-section">
+                    <h4>Sheets</h4>
+                    <div class="file-props-sheets" id="fp-sheets"></div>
+                </div>
+                <div class="file-props-section" id="fp-linked-section" style="display:none;">
+                    <h4>Linked Filter Views</h4>
+                    <div class="file-props-linked" id="fp-linked"></div>
+                </div>
+                <div class="modal-actions">
+                    <button id="btn-file-props-close" class="action-btn primary">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sheet Tab Context Menu -->
+        <div id="sheet-ctx-menu" class="sheet-ctx-menu">
+            <div class="sheet-ctx-menu-header" style="padding:6px 16px;font-size:0.75em;font-weight:700;color:#4a5870;border-bottom:1px solid #d5dde8;">
+                Sheet: <span id="sheet-ctx-sheet-name"></span>
+            </div>
+            <button class="sheet-ctx-btn" data-action="sheet-duplicate">Duplicate Sheet</button>
+            <button class="sheet-ctx-btn" data-action="sheet-new">New Sheet</button>
+            <div class="sheet-ctx-separator"></div>
+            <button class="sheet-ctx-btn" data-action="sheet-move-left">Move Left</button>
+            <button class="sheet-ctx-btn" data-action="sheet-move-right">Move Right</button>
+            <div class="sheet-ctx-separator"></div>
+            <button class="sheet-ctx-btn danger" data-action="sheet-delete">Delete Sheet</button>
+        </div>
+
+        <!-- Context Menu -->
+        <div id="context-menu" class="context-menu">
+            <button class="ctx-btn" data-action="cut">Cut</button>
+            <button class="ctx-btn" data-action="copy">Copy</button>
+            <button class="ctx-btn" data-action="paste">Paste</button>
+            <div class="ctx-separator"></div>
+            <button class="ctx-btn" data-action="edit">Edit</button>
+            <button class="ctx-btn" data-action="clear">Clear</button>
+            <button class="ctx-btn" data-action="select-all">Select All</button>
+            <div class="ctx-separator"></div>
+            <button class="ctx-btn" data-action="cell-ui">Cell UI</button>
+            <div class="ctx-separator"></div>
+            <div class="ctx-submenu-wrapper">
+                <button class="ctx-btn ctx-has-submenu">Data ▸</button>
+                <div class="ctx-submenu" id="data-submenu">
+                    <div class="ctx-submenu-wrapper">
+                        <button class="ctx-btn ctx-has-submenu">Row Actions ▸</button>
+                        <div class="ctx-submenu" id="row-actions-submenu">
+                            <button class="ctx-btn" data-action="set-header">Set as Header</button>
+                            <button class="ctx-btn" data-action="remove-header" id="remove-header-btn" style="display:none;">Remove Header</button>
+                            <div class="ctx-separator"></div>
+                            <button class="ctx-btn" data-action="sticky-row">Set Row as Sticky</button>
+                            <button class="ctx-btn" data-action="clear-sticky-row">Clear Sticky Row</button>
+                            <div class="ctx-separator"></div>
+                            <button class="ctx-btn" data-action="remove-row">Remove Row</button>
+                            <button class="ctx-btn" data-action="adjust-row">Adjust Row Height</button>
+                            <div class="ctx-separator"></div>
+                            <button class="ctx-btn" data-action="add-rows-below">Add Rows Below</button>
+                            <button class="ctx-btn" data-action="add-rows-above">Add Rows Above</button>
+                        </div>
+                    </div>
+                    <div class="ctx-submenu-wrapper">
+                        <button class="ctx-btn ctx-has-submenu">Column Actions ▸</button>
+                        <div class="ctx-submenu" id="col-actions-submenu">
+                            <div class="ctx-submenu-title" id="sort-submenu-title">Sort by Column</div>
+                            <div id="sort-options"></div>
+                            <div class="ctx-separator"></div>
+                            <button class="ctx-btn" data-action="remove-col">Remove Column</button>
+                            <div class="ctx-separator"></div>
+                            <button class="ctx-btn" data-action="add-cols-left">Add Columns Left</button>
+                            <button class="ctx-btn" data-action="add-cols-right">Add Columns Right</button>
+                        </div>
+                    </div>
+                    <div class="ctx-separator"></div>
+                    <div class="ctx-submenu-wrapper">
+                        <button class="ctx-btn ctx-has-submenu">Table Actions ▸</button>
+                        <div class="ctx-submenu" id="table-actions-submenu">
+                            <button class="ctx-btn" data-action="filter-by-col">Filter by this Column</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ctx-separator"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

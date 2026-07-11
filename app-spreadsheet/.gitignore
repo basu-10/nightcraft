@@ -1,0 +1,5 @@
+__pycache__/
+venv/
+uploads/
+db/excel_reader_state.sqlite3
+*.txl

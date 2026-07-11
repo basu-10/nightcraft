@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TinyXL</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div id="app">
+        <div class="top-bar">
+            <div class="top-bar-left">
+                <button id="btn-home" class="nav-btn active">Home</button>
+                <button id="btn-new" class="nav-btn">New</button>
+                <button id="btn-upload" class="nav-btn primary">Upload</button>
+                <button id="btn-settings" class="nav-btn">Settings</button>
+                <button id="btn-about" class="nav-btn">About</button>
+            </div>
+        </div>
+
+        <!-- Home View -->
+        <div id="home-view" class="home-content">
+            <h1>Welcome to TinyXL</h1>
+            <p>Jump back into recent workbooks or upload a new spreadsheet.</p>
+            <div id="recent-files-home" class="recent-files"></div>
+        </div>
+
+        <!-- Settings View -->
+        <div id="settings-view" class="page" style="display:none;">
+            <div class="settings-content">
+                <h2>Settings</h2>
+                <p>Control startup behavior and how many recent files are shown.</p>
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="setting-show-home"> Show Home page on startup
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label>Maximum recent files:</label>
+                    <input type="number" id="setting-max-recent" min="3" max="30" value="12">
+                </div>
+                <button id="btn-save-settings" class="action-btn primary">Save Settings</button>
+            </div>
+        </div>
+
+        <!-- About View -->
+        <div id="about-view" class="page" style="display:none;">
+            <div class="about-content">
+                <h2>About TinyXL</h2>
+                <p class="about-subtitle">A focused, cross-platform spreadsheet reader/editor for quickly reviewing and manipulating large sheets — right in your browser.</p>
+
+                <div class="about-section">
+                    <h3>✨ Key Features</h3>
+                    <ul class="about-features">
+                        <li><strong>Zero-install viewer</strong> — Open any browser, no Excel required. Works identically on Linux, Windows, and macOS.</li>
+                        <li><strong>Full layout memory</strong> — Column widths, row heights, sticky rows, header rows, cell colors, and column types all survive page reloads via SQLite persistence.</li>
+                        <li><strong>Linked filter views</strong> — Create persistent named filtered views of any sheet. They appear as tabs alongside regular sheets for instant access.</li>
+                        <li><strong>50-level undo/redo</strong> — Full-state snapshots for data and layout changes. Never lose your work.</li>
+                        <li><strong>Inline editing</strong> — Double-click any cell to edit, with multi-line textarea support. Cut, copy, and paste across cells.</li>
+                        <li><strong>Smart paste conflict resolution</strong> — Three choices when pasting over data: insert rows &amp; columns, move conflicts to a new sheet, or cancel.</li>
+                        <li><strong>Header row awareness</strong> — Designate header rows that stay pinned during sorting and are excluded from filtering.</li>
+                        <li><strong>Smart column type detection</strong> — Auto-classifies columns as numeric or text; manually override with a single click.</li>
+                        <li><strong>Cell color customization</strong> — Pick text and background colors for individual cells or selections. Custom swatches saved in your browser.</li>
+                        <li><strong>Bulk row height adjustment</strong> — Algorithm computes optimal heights based on wrapped text content across the entire sheet.</li>
+                        <li><strong>Auto-save</strong> — Debounced persistence to SQLite at 400ms. Close the page without worry.</li>
+                    </ul>
+                </div>
+
+                <div class="about-section">
+                    <h3>📁 Supported Formats</h3>
+                    <div class="about-formats">
+                        <span class="format-badge">.xlsx</span>
+                        <span class="format-badge">.xlsm</span>
+                        <span class="format-badge">.xls</span>
+                        <span class="format-badge">.xlsb</span>
+                        <span class="format-badge">.csv</span>
+                        <span class="format-badge">.txl</span>
+                    </div>
+                    <p class="about-format-note">The <strong>.txl</strong> format packages all sheets, layout state, and linked filters into a single portable file for sharing.</p>
+                </div>
+
+                <div class="about-section">
+                    <h3>🔧 Technical Stack</h3>
+                    <ul class="about-tech">
+                        <li><strong>Backend:</strong> Python Flask + pandas + openpyxl</li>
+                        <li><strong>Database:</strong> SQLite for layout persistence, file registry, and recent files</li>
+                        <li><strong>Frontend:</strong> Vanilla JavaScript with full undo/redo, clipboard integration, and context menus</li>
+                        <li><strong>Dependencies:</strong> Only 5 Python packages — runs comfortably on low-resource machines</li>
+                    </ul>
+                </div>
+
+                <div class="about-section">
+                    <h3>📦 Export &amp; Share</h3>
+                    <p>Export any workbook as a <strong>.txl</strong> file — a single JSON package containing all sheet data, layout preferences, and linked filter views. Share it with colleagues or archive it for later. Import restores the full workspace exactly as you left it.</p>
+                </div>
+
+                <p class="credits">Built with Flask, pandas, and vanilla JavaScript.</p>
+            </div>
+        </div>
+
+        <!-- Upload Modal -->
+        <div id="modal-upload" class="modal">
+            <div class="modal-content">
+                <h3>Upload Spreadsheet</h3>
+                <input type="file" id="file-input" accept=".xlsx,.xls,.xlsb,.xlsm,.csv,.txl">
+                <div class="modal-actions">
+                    <button id="btn-upload-confirm" class="action-btn primary">Upload</button>
+                    <button id="btn-upload-cancel" class="action-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
