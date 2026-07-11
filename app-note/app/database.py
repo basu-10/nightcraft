@@ -100,6 +100,8 @@ def _sqlite_sql_to_postgres(sql: str) -> str:
             stripped = stripped[:-1].rstrip()
         rewritten = f"{stripped} ON CONFLICT DO NOTHING{suffix}"
     rewritten = _replace_qmark_params(rewritten)
+    # SQLite GROUP_CONCAT(expr, sep) -> PostgreSQL STRING_AGG(expr, sep)
+    rewritten = re.sub(r"\bGROUP_CONCAT\s*\(", "STRING_AGG(", rewritten, flags=re.IGNORECASE)
     rewritten = re.sub(
         r"(?i)\b([a-z_][\w\.]*)\s*=\s*(%s|'(?:''|[^'])*')\s+COLLATE\s+NOCASE\b",
         r"LOWER(\1) = LOWER(\2)",
