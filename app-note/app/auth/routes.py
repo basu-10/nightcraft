@@ -36,6 +36,7 @@ def register():
     username = (data.get("username") or "").strip()
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
+    timezone = (data.get("timezone") or "UTC").strip()
 
     if not username or not email or not password:
         return _json_or_redirect(is_json, "All fields are required.", 400, "auth.register")
@@ -57,16 +58,16 @@ def register():
     first_user = int(conn.execute("SELECT COUNT(*) AS c FROM users").fetchone()["c"]) == 0
 
     conn.execute(
-        "INSERT INTO users (username, email, password, is_admin) VALUES (?,?,?,?)",
-        (username, email, generate_password_hash(password), 1 if first_user else 0),
+        "INSERT INTO users (username, email, password, is_admin, timezone) VALUES (?,?,?,?,?)",
+        (username, email, generate_password_hash(password), 1 if first_user else 0, timezone),
     )
     conn.commit()
-    user = conn.execute("SELECT id, username FROM users WHERE username=?", (username,)).fetchone()
+    user = conn.execute("SELECT id, username, timezone FROM users WHERE username=?", (username,)).fetchone()
     conn.close()
 
     session["user_id"] = user["id"]
     if is_json:
-        return jsonify({"id": user["id"], "username": user["username"]}), 201
+        return jsonify({"id": user["id"], "username": user["username"], "timezone": user["timezone"]}), 201
     return redirect(_normalize_next_target(request.args.get("next"), url_for("main.app_view")))
 
 
@@ -93,7 +94,7 @@ def login():
 
     session["user_id"] = user["id"]
     if is_json:
-        return jsonify({"id": user["id"], "username": user["username"]})
+        return jsonify({"id": user["id"], "username": user["username"], "timezone": user.get("timezone", "UTC")})
     return redirect(_normalize_next_target(request.args.get("next"), url_for("main.app_view")))
 
 
@@ -153,3 +154,24 @@ def revoke_token():
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
+
+
+@auth_bp.route("/me/timezone", methods=["PUT"])
+def update_timezone():
+    if not g.user_id:
+        return jsonify({"error": "Not authenticated"}), 401
+    data = request.get_json(silent=True) or request.form
+    tz = (data.get("timezone") or "").strip()
+    if not tz:
+        return jsonify({"error": "Timezone is required."}), 400
+    try:
+        from zoneinfo import ZoneInfo
+        from datetime import datetime as _dt
+        _dt.now(ZoneInfo(tz))
+    except Exception:
+        return jsonify({"error": "Invalid timezone."}), 400
+    from ..database import update_user_timezone
+    ok = update_user_timezone(g.user_id, tz)
+    if not ok:
+        return jsonify({"error": "Failed to update timezone."}), 500
+    return jsonify({"timezone": tz})

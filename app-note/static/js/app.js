@@ -9,6 +9,7 @@
   "use strict";
 
   const IS_GUEST_MODE = Boolean(window.NOTESTACK_IS_GUEST);
+  const USER_TIMEZONE = window.NOTESTACK_USER_TIMEZONE || undefined;
   let guestStore = null;
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -1083,6 +1084,7 @@
       .slice(0, 160);
     const dateStr = fmtDate(
       (isTrashView ? note.deleted_at : note.updated_at) || note.created_at,
+      USER_TIMEZONE,
     );
     const folderName = note.folder_name || "";
 
@@ -2118,6 +2120,7 @@
       },
       { label: "📁  Move to Folder", action: () => showMoveToFolderMenu(noteId, x, y) },
       { label: "📋  Copy Content", action: () => copyNoteContent(noteId) },
+      { label: "🏷️  Add Tag", action: () => openTagsModal() },
       ...(isTrash
         ? []
         : ["sep", { label: "🗑️  Delete", danger: true, action: () => deleteSingleNote(noteId) }]),
@@ -2665,18 +2668,21 @@
     }
   }
 
-  function fmtDate(iso) {
+  function fmtDate(iso, timezone) {
     if (!iso) return "";
     try {
-      const d = new Date(
-        iso.replace(" ", "T") + (iso.includes("T") ? "" : "Z"),
-      );
+      let normalized = iso.replace(" ", "T");
+      normalized = normalized.replace(/([+\-]\d{2})$/, "$1:00");
+      if (!/[Zz]$/.test(normalized) && !/[\+\-]\d{2}:\d{2}$/.test(normalized)) {
+        normalized += "Z";
+      }
+      const d = new Date(normalized);
       const now = new Date();
       const diff = now - d;
       if (diff < 60000) return "just now";
       if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
       if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-      return d.toLocaleDateString(undefined, {
+      return d.toLocaleDateString(timezone || undefined, {
         month: "short",
         day: "numeric",
       });

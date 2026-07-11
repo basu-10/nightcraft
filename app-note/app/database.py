@@ -194,6 +194,7 @@ def initialize_db() -> None:
             password    TEXT NOT NULL,
             sso_subject TEXT UNIQUE,
             is_admin    INTEGER NOT NULL DEFAULT 0,
+            timezone    TEXT NOT NULL DEFAULT 'UTC',
             created_at  TEXT NOT NULL DEFAULT (datetime('now'))
         );
 
@@ -352,6 +353,7 @@ def _initialize_postgres_db() -> None:
             password TEXT NOT NULL,
             sso_subject TEXT,
             is_admin INTEGER NOT NULL DEFAULT 0,
+            timezone TEXT NOT NULL DEFAULT 'UTC',
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
         """,
@@ -533,6 +535,8 @@ def _initialize_postgres_db() -> None:
         cur.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_sso_subject_unique ON users(sso_subject) WHERE sso_subject IS NOT NULL"
         )
+    if "timezone" not in user_cols:
+        cur.execute("ALTER TABLE users ADD COLUMN timezone TEXT NOT NULL DEFAULT 'UTC'")
 
     # Ensure at least one admin exists (bootstrap earliest user)
     admin_count = int(cur.execute(
@@ -785,7 +789,7 @@ def _next_unique_color(conn: sqlite3.Connection, table: str, user_id: int) -> st
 def get_user_by_id(user_id: int) -> Optional[dict]:
     conn = get_connection()
     row = conn.execute(
-        "SELECT id, username, email, is_admin, created_at FROM users WHERE id=?",
+        "SELECT id, username, email, is_admin, timezone, created_at FROM users WHERE id=?",
         (user_id,),
     ).fetchone()
     conn.close()
@@ -861,7 +865,7 @@ def upsert_sso_user(claims: dict) -> Optional[dict]:
 
     conn.commit()
     row = conn.execute(
-        "SELECT id, username, email, is_admin, created_at FROM users WHERE id=?",
+        "SELECT id, username, email, is_admin, timezone, created_at FROM users WHERE id=?",
         (user_id,),
     ).fetchone()
     conn.close()
@@ -897,6 +901,7 @@ def get_admin_user_overview() -> list[dict]:
     conn = get_connection()
     rows = conn.execute(
         """SELECT u.id, u.username, u.email, COALESCE(u.is_admin, 0) AS is_admin,
+                  u.timezone,
                   u.created_at,
                   (SELECT COUNT(*) FROM notes n WHERE n.user_id=u.id) AS note_count,
                   (SELECT COUNT(*) FROM folders f WHERE f.user_id=u.id) AS folder_count,
@@ -929,6 +934,18 @@ def update_user_password_hash(target_user_id: int, password_hash: str) -> bool:
         conn.close()
         return False
     conn.execute("UPDATE users SET password=? WHERE id=?", (password_hash, target_user_id))
+    conn.commit()
+    conn.close()
+    return True
+
+
+def update_user_timezone(user_id: int, timezone: str) -> bool:
+    conn = get_connection()
+    row = conn.execute("SELECT id FROM users WHERE id=?", (user_id,)).fetchone()
+    if not row:
+        conn.close()
+        return False
+    conn.execute("UPDATE users SET timezone=? WHERE id=?", (timezone, user_id))
     conn.commit()
     conn.close()
     return True

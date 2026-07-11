@@ -30,6 +30,9 @@
       <input class="form-input" id="password" name="password"
              type="password" autocomplete="new-password" required minlength="8" />
 
+      <label class="form-label" for="timezone">Timezone</label>
+      <select class="form-input" id="timezone" name="timezone" required></select>
+
       <button class="btn btn--primary btn--full" type="submit">Create account</button>
     </form>
 
@@ -42,6 +45,43 @@
 
 {% block scripts %}
 <script>
+  const tzSelect = document.getElementById('timezone');
+  const detectedTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const timezones = [
+    detectedTz,
+    'Pacific/Apia',
+    'Pacific/Honolulu',
+    'America/Anchorage',
+    'America/Los_Angeles',
+    'America/Denver',
+    'America/Chicago',
+    'America/New_York',
+    'America/Sao_Paulo',
+    'Atlantic/Azores',
+    'Europe/London',
+    'Europe/Berlin',
+    'Europe/Moscow',
+    'Asia/Dubai',
+    'Asia/Kolkata',
+    'Asia/Dhaka',
+    'Asia/Bangkok',
+    'Asia/Shanghai',
+    'Asia/Tokyo',
+    'Australia/Sydney',
+    'Pacific/Auckland',
+  ];
+  const seen = new Set();
+  timezones.forEach(tz => {
+    if (!seen.has(tz)) {
+      seen.add(tz);
+      const opt = document.createElement('option');
+      opt.value = tz;
+      opt.textContent = tz.replace('_', ' ').replace('/', ' / ');
+      if (tz === detectedTz) opt.selected = true;
+      tzSelect.appendChild(opt);
+    }
+  });
+
   document.getElementById('reg-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const errEl = document.getElementById('js-error');
@@ -50,6 +90,7 @@
       username: document.getElementById('username').value.trim(),
       email:    document.getElementById('email').value.trim(),
       password: document.getElementById('password').value,
+      timezone: document.getElementById('timezone').value,
     };
     const res = await fetch('{{ url_for("auth.register") }}', {
       method: 'POST',

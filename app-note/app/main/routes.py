@@ -26,6 +26,7 @@ def _guest_user_view():
         "id": None,
         "username": "Guest",
         "email": "",
+        "timezone": "UTC",
     }
 
 

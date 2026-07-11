@@ -14,6 +14,14 @@
     <section class="settings-section">
       <h2 class="settings-section__title">Account</h2>
       <p>Signed in as <strong>{{ user.username }}</strong> ({{ user.email }})</p>
+      <div class="u-mt-md">
+        <label class="form-label" for="timezone-select">Timezone</label>
+        <select class="form-input" id="timezone-select">
+          <option value="{{ user.timezone }}">{{ user.timezone or 'UTC' }}</option>
+        </select>
+        <button id="save-tz-btn" class="btn btn--ghost btn--sm u-mt-sm">Save Timezone</button>
+        <span id="tz-status" class="form-hint" style="margin-left: 10px;"></span>
+      </div>
       {% if user.is_admin %}
         <div class="u-mt-sm">
           <a href="{{ url_for('main.admin_view') }}" class="btn btn--ghost btn--sm">Open Admin</a>
@@ -278,5 +286,50 @@
   });
 
   loadApiToken();
+
+  const tzSelect = document.getElementById('timezone-select');
+  const detectedTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const timezones = [
+    'Pacific/Apia', 'Pacific/Honolulu', 'America/Anchorage',
+    'America/Los_Angeles', 'America/Denver', 'America/Chicago', 'America/New_York',
+    'America/Sao_Paulo', 'Atlantic/Azores', 'Europe/London', 'Europe/Berlin',
+    'Europe/Moscow', 'Asia/Dubai', 'Asia/Kolkata', 'Asia/Dhaka', 'Asia/Bangkok',
+    'Asia/Shanghai', 'Asia/Tokyo', 'Australia/Sydney', 'Pacific/Auckland',
+  ];
+  const tzSeen = new Set();
+  const tzOptions = [tzSelect.querySelector('option').outerHTML];
+  timezones.forEach(tz => {
+    if (!tzSeen.has(tz)) { tzSeen.add(tz); tzOptions.push(`<option value="${tz}">${tz.replace(/_/g, ' ').replace(/\//g, ' / ')}</option>`); }
+  });
+  if (!tzSeen.has(detectedTz)) {
+    tzSeen.add(detectedTz);
+    tzOptions.push(`<option value="${detectedTz}" selected>${detectedTz.replace(/_/g, ' ').replace(/\//g, ' / ')}</option>`);
+  }
+  tzSelect.innerHTML = tzOptions.join('');
+  tzSelect.value = tzSelect.querySelector('option')?.value || detectedTz;
+
+  document.getElementById('save-tz-btn').addEventListener('click', async () => {
+    const tz = tzSelect.value;
+    const status = document.getElementById('tz-status');
+    status.style.display = 'inline';
+    status.textContent = 'Saving...';
+    status.style.color = 'var(--color-text-muted)';
+    try {
+      const res = await fetch(authRoot + '/me/timezone', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ timezone: tz }),
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed to save timezone');
+      status.textContent = '✓ Saved';
+      status.style.color = 'var(--color-success, #22c55e)';
+    } catch (err) {
+      status.textContent = '✗ ' + err.message;
+      status.style.color = 'var(--color-error, #ef4444)';
+    }
+    setTimeout(() => { status.style.display = 'none'; }, 3000);
+  });
 </script>
 {% endblock %}
