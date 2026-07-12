@@ -20,7 +20,9 @@ Organized{% endblock %} {% block body %}
       </div>
     </div>
     <nav class="landing-nav__links" aria-label="Landing sections">
-      <a class="landing-nav__link" href="#reviews">Reviews</a>
+      <a class="landing-nav__link" href="#features">Features</a>
+      <a class="landing-nav__link" href="#sync">Sync</a>
+      <a class="landing-nav__link" href="#shortcuts">Shortcuts</a>
     </nav>
     <div class="landing-nav__actions">
       <button
@@ -133,8 +135,8 @@ Organized{% endblock %} {% block body %}
           Everything you need to capture and structure notes
         </h2>
         <p class="landing-section__sub">
-          NoteStack is a focused note workspace — not a blank page with a hundred
-          buttons. The features below are all live in the web app today.
+          NoteStack is a focused note workspace. The features below are all live
+          in the web app today.
         </p>
       </div>
 
@@ -203,7 +205,7 @@ Organized{% endblock %} {% block body %}
             and filter by a specific day to surface what you worked on.
           </p>
           <ul class="landing-feature__list">
-            <li>Full-text search</li>
+            <li>Search note titles and text</li>
             <li>Sort &amp; favorite views</li>
             <li>Date-based filtering</li>
           </ul>
@@ -484,63 +486,51 @@ Organized{% endblock %} {% block body %}
       </div>
     </section>
 
-    <!-- ── TESTIMONIALS ──────────────────────────────────────────────── -->
-    <section id="reviews" class="landing-section landing-section--alt neu-raised-strong">
+    <!-- ── SELF-HOSTED ────────────────────────────────────────────────── -->
+    <section id="hosting" class="landing-section landing-section--alt neu-raised-strong">
       <div class="landing-section__head">
-        <p class="landing-kicker">Loved by note-takers</p>
-        <h2 class="landing-section__title">What people say about NoteStack</h2>
+        <p class="landing-kicker">Yours to run</p>
+        <h2 class="landing-section__title">A note app you host yourself</h2>
         <p class="landing-section__sub">
-          Writers, developers, and researchers use NoteStack to keep their
-          thinking organized — without the clutter.
+          NoteStack runs as part of the Nightcraft stack. Your notes are stored
+          in your instance's own database, and you sign in through the shared
+          Nightcraft session — the same login used across the other apps.
         </p>
       </div>
 
-      <div class="landing-testimonials">
-        <figure class="landing-testimonial neu-raised">
-          <span class="landing-testimonial__quote" aria-hidden="true">&ldquo;</span>
-          <blockquote class="landing-testimonial__text">
-            NoteStack replaced three apps for me. Nested folders plus tags means
-            I finally find old notes in seconds instead of digging forever.
-          </blockquote>
-          <figcaption class="landing-testimonial__author">
-            <span class="landing-testimonial__avatar">AR</span>
-            <span class="landing-testimonial__meta">
-              <span class="landing-testimonial__name">Ava Reyes</span>
-              <span class="landing-testimonial__role">Freelance Writer</span>
-            </span>
-          </figcaption>
-        </figure>
-
-        <figure class="landing-testimonial neu-raised">
-          <span class="landing-testimonial__quote" aria-hidden="true">&ldquo;</span>
-          <blockquote class="landing-testimonial__text">
-            The desktop + web sync is rock solid. I edit on my laptop, open the
-            same note on the web at work, and it's already there. Conflicts are
-            handled cleanly.
-          </blockquote>
-          <figcaption class="landing-testimonial__author">
-            <span class="landing-testimonial__avatar">DM</span>
-            <span class="landing-testimonial__meta">
-              <span class="landing-testimonial__name">Devon Mbeki</span>
-              <span class="landing-testimonial__role">Software Engineer</span>
-            </span>
-          </figcaption>
-        </figure>
-
-        <figure class="landing-testimonial neu-raised">
-          <span class="landing-testimonial__quote" aria-hidden="true">&ldquo;</span>
-          <blockquote class="landing-testimonial__text">
-            Guest mode is perfect for quick captures. No signup, just write — and
-            when I was ready I imported everything into my account in one go.
-          </blockquote>
-          <figcaption class="landing-testimonial__author">
-            <span class="landing-testimonial__avatar">SK</span>
-            <span class="landing-testimonial__meta">
-              <span class="landing-testimonial__name">Sana Kapoor</span>
-              <span class="landing-testimonial__role">PhD Researcher</span>
-            </span>
-          </figcaption>
-        </figure>
+      <div class="landing-mini-grid">
+        <div class="landing-mini">
+          <div class="landing-mini__icon">🗄️</div>
+          <h3>Your data stays with you</h3>
+          <p>
+            Notes live in your instance's database (PostgreSQL in production).
+            There is no separate third-party service in the loop.
+          </p>
+        </div>
+        <div class="landing-mini">
+          <div class="landing-mini__icon">🔑</div>
+          <h3>One shared login</h3>
+          <p>
+            Sign in once through the Nightcraft session and move between
+            NoteStack and the rest of the stack without signing in again.
+          </p>
+        </div>
+        <div class="landing-mini">
+          <div class="landing-mini__icon">🧩</div>
+          <h3>Token-based sync</h3>
+          <p>
+            Generate an API token in Settings to pair the desktop client and
+            sync notes through your own server.
+          </p>
+        </div>
+        <div class="landing-mini">
+          <div class="landing-mini__icon">🌐</div>
+          <h3>Open in the browser</h3>
+          <p>
+            Read, write, and organize notes from any browser. No install needed
+            to use the web app.
+          </p>
+        </div>
       </div>
     </section>
 
