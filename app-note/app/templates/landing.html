@@ -17,17 +17,9 @@ Organized{% endblock %} {% block body %}
       </button>
       <div class="brand-dropdown__menu" hidden role="menu">
         <a class="brand-dropdown__item" href="/" role="menuitem">Home</a>
-        <a class="brand-dropdown__item" href="#features" role="menuitem">Features</a>
-        <a class="brand-dropdown__item" href="#shortcuts" role="menuitem">Shortcuts</a>
-        <a class="brand-dropdown__item" href="#sync" role="menuitem">Sync</a>
-        <a class="brand-dropdown__item" href="#guest" role="menuitem">Guest Mode</a>
       </div>
     </div>
     <nav class="landing-nav__links" aria-label="Landing sections">
-      <a class="landing-nav__link" href="#features">Features</a>
-      <a class="landing-nav__link" href="#shortcuts">Shortcuts</a>
-      <a class="landing-nav__link" href="#sync">Sync</a>
-      <a class="landing-nav__link" href="#guest">Guest Mode</a>
       <a class="landing-nav__link" href="#reviews">Reviews</a>
     </nav>
     <div class="landing-nav__actions">
@@ -39,15 +31,9 @@ Organized{% endblock %} {% block body %}
       >
         Light
       </button>
-      {% if is_authenticated %}
-      <a class="btn btn--ghost btn--sm" href="{{ url_for('main.app_view') }}"
-        >Open App</a
-      >
-      {% else %}
       <a class="btn btn--ghost btn--sm" href="{{ url_for('auth.login') }}"
         >Sign in</a
       >
-      {% endif %}
     </div>
   </header>
 

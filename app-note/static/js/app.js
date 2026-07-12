@@ -1154,8 +1154,15 @@
     );
     const folderName = note.folder_name || "";
 
-    // Tag chips with color from state.tags
-    const tagHtml = tags
+    // Tag chips with color from state.tags, capped so the footer never
+    // grows unbounded. Mobile shows fewer chips than desktop.
+    const isMobileViewport = window.matchMedia(
+      "(max-width: 640px)",
+    ).matches;
+    const tagCap = isMobileViewport ? 2 : 4;
+    const visibleTags = tags.slice(0, tagCap);
+    const tagOverflow = tags.length - visibleTags.length;
+    const tagHtml = visibleTags
       .map((t) => {
         const tagData = state.tags.find(
           (st) => st.name.toLowerCase() === t.toLowerCase(),
@@ -1164,6 +1171,10 @@
         return `<span class="note-card__tag note-card__tag--clickable" data-tag-name="${esc(t)}" title="Filter by #${esc(t)}" style="${color ? `border-color:${color};color:${color}` : ""}">${esc(t)}</span>`;
       })
       .join("");
+    const tagOverflowHtml =
+      tagOverflow > 0
+        ? `<span class="note-card__tag note-card__tag--more" title="${tagOverflow} more tag${tagOverflow > 1 ? "s" : ""}">+${tagOverflow}</span>`
+        : "";
 
     // Footer
     const folderIdAttr =
@@ -1173,6 +1184,11 @@
     const folderHtml = folderName
       ? `<span class="note-card__folder note-card__folder--clickable"${folderIdAttr} data-folder-name="${esc(folderName)}" title="Filter by folder"><span class="note-card__folder-icon">📁</span>${esc(folderName)}</span><span class="note-card__sep">•</span>`
       : "";
+
+    // Collapse footer spacing when the card has no tags and no folder.
+    if (!tags.length && !folderName) {
+      div.classList.add("note-card--bare");
+    }
 
     div.innerHTML = `
       <div class="note-card__header">
@@ -1186,7 +1202,7 @@
       <div class="note-card__body">
         <div class="note-card__preview">${esc(preview)}</div>
       </div>
-      <div class="note-card__tags">${tagHtml}</div>
+      ${tagHtml || tagOverflowHtml ? `<div class="note-card__tags">${tagHtml}${tagOverflowHtml}</div>` : ""}
       <div class="note-card__footer">
         ${folderHtml}
         <span class="note-card__date"><span class="note-card__date-icon">📅</span>${dateStr}</span>
@@ -2609,6 +2625,9 @@
     btnSearchToggle?.addEventListener("click", toggleSearchBar);
     btnMobileMenu?.addEventListener("click", toggleSidebar);
     btnNewNote?.addEventListener("click", () => {
+      createNoteSafely();
+    });
+    btnEmptyNew?.addEventListener("click", () => {
       createNoteSafely();
     });
     $("btn-fab-caret")?.addEventListener("click", (e) => {

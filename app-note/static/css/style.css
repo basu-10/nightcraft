@@ -73,6 +73,15 @@
   /* Strong shadow: modals, overlays */
   --shadow-strong: 0 16px 40px rgba(0, 0, 0, 0.5);
 
+  /* Shared "lift" gradient layered over every button's base color so the
+     raised look stays identical across primary, ghost, danger, warning and
+     across both themes. White highlight on top, subtle shade at the bottom. */
+  --btn-lift-grad: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(0, 0, 0, 0.12)
+  );
+
   /* ── Spacing & Sizing ───────────────────────────────────────────────── */
   --sidebar-w: 240px;
   --topbar-h: 56px;
@@ -178,6 +187,14 @@
     inset 2px 2px 4px rgba(0, 0, 0, 0.12);
 
   --shadow-strong: 0 12px 32px rgba(0, 0, 0, 0.1);
+
+  /* Shared "lift" gradient (light theme): brighter top highlight, very subtle
+     bottom shade so the raised look matches the dark theme. */
+  --btn-lift-grad: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.55),
+    rgba(0, 0, 0, 0.05)
+  );
 }
 
 /* ── Reset & Base Styles ────────────────────────────────────────────────── */
@@ -1606,6 +1623,12 @@ a:active {
   margin-bottom: var(--space-2);
   min-height: 20px;
 }
+.note-card__tag--more {
+  border-style: dashed;
+  color: var(--text-muted);
+  cursor: default;
+  opacity: 0.8;
+}
 .note-card__tag {
   font-size: var(--type-xs);
   font-weight: 700;
@@ -1635,6 +1658,14 @@ a:active {
   align-items: center;
   gap: var(--space-1);
   margin-top: auto;
+  min-height: 0;
+}
+/* When the card has no tags and no folder, tighten the footer spacing. */
+.note-card--bare .note-card__footer {
+  margin-top: var(--space-1);
+}
+.note-card--bare .note-card__body {
+  margin-bottom: 0;
 }
 
 .note-card__folder {
@@ -2529,15 +2560,20 @@ html[data-theme="dark"] .ProseMirror .placeholder {
   white-space: nowrap;
   text-decoration: none;
   box-shadow: var(--shadow-raised-sm);
+  /* The lift gradient is layered over the variant's base color (--btn-base),
+     so every button — primary or ghost — shares the same raised look. */
+  --btn-base: transparent;
+  background-color: var(--btn-base);
+  background-image: var(--btn-lift-grad);
 }
 
 .btn--primary {
-  background: var(--accent);
+  --btn-base: var(--accent);
   color: var(--btn-text-on-accent);
   border-color: var(--accent);
 }
 .btn--primary:hover {
-  background: var(--accent-hov);
+  --btn-base: var(--accent-hov);
   border-color: var(--accent-hov);
   box-shadow: var(--shadow-raised-md);
 }
@@ -2547,13 +2583,13 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 }
 
 .btn--ghost {
-  background: var(--bg-btn-2nd);
+  --btn-base: var(--bg-btn-2nd);
   color: var(--text-secondary);
   border-color: color-mix(in srgb, var(--border-med) 70%, transparent);
 }
 .btn--ghost:hover {
   color: var(--text-primary);
-  background: var(--bg-card-hov);
+  --btn-base: var(--bg-card-hov);
   border-color: color-mix(in srgb, var(--border-med) 85%, transparent);
 }
 .btn--ghost:active {
@@ -2562,12 +2598,12 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 }
 
 .btn--danger {
-  background: var(--danger);
+  --btn-base: var(--danger);
   color: #fff;
   border-color: var(--danger);
 }
 .btn--danger:hover {
-  background: var(--danger-hov);
+  --btn-base: var(--danger-hov);
   border-color: var(--danger-hov);
   box-shadow: var(--shadow-raised-md);
 }
@@ -2577,12 +2613,12 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 }
 
 .btn--warning {
-  background: color-mix(in srgb, var(--star-on) 12%, var(--bg-card));
+  --btn-base: color-mix(in srgb, var(--star-on) 12%, var(--bg-card));
   color: var(--star-on);
   border-color: color-mix(in srgb, var(--star-on) 35%, var(--border));
 }
 .btn--warning:hover {
-  background: color-mix(in srgb, var(--star-on) 18%, var(--bg-card));
+  --btn-base: color-mix(in srgb, var(--star-on) 18%, var(--bg-card));
   border-color: color-mix(in srgb, var(--star-on) 45%, var(--border));
 }
 .btn--warning:active {
