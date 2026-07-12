@@ -54,6 +54,82 @@ def _auth(token):
     return {"Authorization": f"Bearer {token}"}
 
 
+# ─── Backend selection (regression for the production Postgres crash) ──────────
+#
+# The production site runs Postgres via the _PgCompatConnection wrapper, which
+# has no `executescript` method. A stale import of `_DB_BACKEND` previously sent
+# the schema init down the sqlite branch and crashed the worker. This test pins
+# the behaviour: when the runtime backend is postgres, initialize_edge_schema
+# must use `execute`, never `executescript`.
+
+def test_initialize_edge_schema_uses_postgres_branch(monkeypatch, tmp_path):
+    import app.database as database
+    import app.references as refs
+
+    calls = {"executescript": 0, "execute": 0}
+
+    class _FakeCursor:
+        def execute(self, sql, params=None):
+            calls["execute"] += 1
+            return self
+        def fetchone(self):
+            return None
+        def fetchall(self):
+            return []
+        def close(self):
+            pass
+        @property
+        def lastrowid(self):
+            return 1
+
+    class _FakeConn:
+        def cursor(self):
+            return _FakeCursor()
+        def execute(self, sql, params=None):
+            calls["execute"] += 1
+            return _FakeCursor()
+        def executescript(self, sql):
+            calls["executescript"] += 1
+        def commit(self):
+            pass
+        def close(self):
+            pass
+
+    monkeypatch.setattr(database, "_DB_BACKEND", "postgres")
+    monkeypatch.setattr(refs, "get_connection", lambda: _FakeConn())
+
+    refs.initialize_edge_schema()
+
+    assert calls["executescript"] == 0, "must not call executescript on postgres"
+    assert calls["execute"] > 0, "should run DDL via execute() on postgres"
+
+
+def test_initialize_edge_schema_uses_sqlite_branch(monkeypatch, tmp_path):
+    import app.database as database
+    import app.references as refs
+
+    calls = {"executescript": 0, "execute": 0}
+
+    class _FakeConn:
+        def executescript(self, sql):
+            calls["executescript"] += 1
+        def execute(self, sql, params=None):
+            calls["execute"] += 1
+        def commit(self):
+            pass
+        def close(self):
+            pass
+
+    monkeypatch.setattr(database, "_DB_BACKEND", "sqlite")
+    monkeypatch.setattr(refs, "get_connection", lambda: _FakeConn())
+
+    refs.initialize_edge_schema()
+
+    assert calls["executescript"] == 1, "sqlite path should use executescript"
+    assert calls["execute"] == 3, "three index statements expected for sqlite"
+
+
+
 # ─── Repository (service) ────────────────────────────────────────────────────
 
 def test_create_and_query_edges(monkeypatch, tmp_path):
