@@ -77,25 +77,24 @@
 
   // ── Tag Manager Modal ──────────────────────────────────────────────────────
 
+  // Monochrome brand palette: a restrained set of neutral grays so tags stay
+  // on-brand (monochrome + coral) instead of splattering the UI with rainbow hues.
   const TAG_COLOR_PALETTE = [
-    "#4F6EF7",
-    "#22C55E",
-    "#F59E0B",
-    "#EC4899",
-    "#06B6D4",
-    "#A855F7",
-    "#EF4444",
-    "#84CC16",
-    "#F97316",
-    "#14B8A6",
-    "#8B5CF6",
-    "#3B82F6",
-    "#10B981",
-    "#EAB308",
-    "#D946EF",
+    "#2E2E2E",
+    "#454545",
+    "#5C5C5C",
+    "#737373",
+    "#8A8A8A",
+    "#A1A1A1",
+    "#B8B8B8",
+    "#CFCFCF",
+    "#3A3A3A",
+    "#525252",
+    "#696969",
+    "#808080",
   ];
 
-  let _currentTagColor = "#6B7280";
+  let _currentTagColor = "#5C5C5C";
   let _folderDraftColor = "";
 
   function normalizeTagName(name) {
@@ -109,11 +108,19 @@
     for (const color of TAG_COLOR_PALETTE) {
       if (!usedColors.has(color.toUpperCase())) return color;
     }
-    const hue = (state.tags.length * 0.61803398875) % 1.0;
-    const sat = 0.62;
-    const val = 0.92;
-    const rgb = hsvToRgb(hue, sat, val);
-    return rgbToHex(rgb[0], rgb[1], rgb[2]);
+    // All palette colors already used: fall back to a neutral monochrome shade
+    // (never a saturated hue) so the UI stays on-brand.
+    const grays = [
+      "#2E2E2E",
+      "#454545",
+      "#5C5C5C",
+      "#737373",
+      "#8A8A8A",
+      "#A1A1A1",
+      "#B8B8B8",
+      "#CFCFCF",
+    ];
+    return grays[state.tags.length % grays.length];
   }
 
   function hsvToRgb(h, s, v) {
@@ -174,9 +181,9 @@
   function openTagCreateColorPicker() {
     const input = document.createElement("input");
     input.type = "color";
-    input.value = (_currentTagColor || "#6B7280").startsWith("#")
+    input.value = (_currentTagColor || "#5C5C5C").startsWith("#")
       ? _currentTagColor
-      : "#6B7280";
+      : "#5C5C5C";
     input.addEventListener("change", () => {
       _currentTagColor = input.value;
       _updateTagColorBtn();
@@ -206,10 +213,10 @@
       const colorBtn = document.createElement("button");
       colorBtn.type = "button";
       colorBtn.className = "btn";
-      colorBtn.style.cssText = `width: 40px; height: 40px; padding: 0; border-radius: 4px; background-color: ${tag.color || "#6B7280"}; border: 1px solid var(--border);`;
+      colorBtn.style.cssText = `width: 40px; height: 40px; padding: 0; border-radius: 4px; background-color: ${tag.color || "#5C5C5C"}; border: 1px solid var(--border);`;
       colorBtn.title = "Change color";
       colorBtn.addEventListener("click", () =>
-        openColorPicker(tag.id, tag.color || "#6B7280"),
+        openColorPicker(tag.id, tag.color || "#5C5C5C"),
       );
       const deleteBtn = document.createElement("button");
       deleteBtn.type = "button";
@@ -227,7 +234,7 @@
   function openColorPicker(tagId, currentColor) {
     const input = document.createElement("input");
     input.type = "color";
-    input.value = currentColor.startsWith("#") ? currentColor : "#6B7280";
+    input.value = currentColor.startsWith("#") ? currentColor : "#5C5C5C";
     input.addEventListener("change", async () => {
       const newColor = input.value;
       await api("PUT", `/tags/${tagId}`, { color: newColor });
@@ -1047,7 +1054,7 @@
       chip.type = "button";
       chip.className = "folder-nav__chip";
       chip.innerHTML = `
-        <span class="folder-nav__chip-dot" style="background:${child.color || "#6B7280"}"></span>
+        <span class="folder-nav__chip-dot" style="background:${child.color || "#5C5C5C"}"></span>
         <span class="folder-nav__chip-name"></span>`;
       const nameEl = chip.querySelector(".folder-nav__chip-name");
       if (nameEl) nameEl.textContent = child.name;
@@ -1155,8 +1162,15 @@
     );
     const folderName = note.folder_name || "";
 
-    // Tag chips with color from state.tags
-    const tagHtml = tags
+    // Tag chips with color from state.tags, capped so the footer never
+    // grows unbounded. Mobile shows fewer chips than desktop.
+    const isMobileViewport = window.matchMedia(
+      "(max-width: 640px)",
+    ).matches;
+    const tagCap = isMobileViewport ? 2 : 4;
+    const visibleTags = tags.slice(0, tagCap);
+    const tagOverflow = tags.length - visibleTags.length;
+    const tagHtml = visibleTags
       .map((t) => {
         const tagData = state.tags.find(
           (st) => st.name.toLowerCase() === t.toLowerCase(),
@@ -1165,6 +1179,10 @@
         return `<span class="note-card__tag note-card__tag--clickable" data-tag-name="${esc(t)}" title="Filter by #${esc(t)}" style="${color ? `border-color:${color};color:${color}` : ""}">${esc(t)}</span>`;
       })
       .join("");
+    const tagOverflowHtml =
+      tagOverflow > 0
+        ? `<span class="note-card__tag note-card__tag--more" title="${tagOverflow} more tag${tagOverflow > 1 ? "s" : ""}">+${tagOverflow}</span>`
+        : "";
 
     // Footer
     const folderIdAttr =
@@ -1174,6 +1192,11 @@
     const folderHtml = folderName
       ? `<span class="note-card__folder note-card__folder--clickable"${folderIdAttr} data-folder-name="${esc(folderName)}" title="Filter by folder"><span class="note-card__folder-icon">📁</span>${esc(folderName)}</span><span class="note-card__sep">•</span>`
       : "";
+
+    // Collapse footer spacing when the card has no tags and no folder.
+    if (!tags.length && !folderName) {
+      div.classList.add("note-card--bare");
+    }
 
     div.innerHTML = `
       <div class="note-card__header">
@@ -1187,7 +1210,7 @@
       <div class="note-card__body">
         <div class="note-card__preview">${esc(preview)}</div>
       </div>
-      <div class="note-card__tags">${tagHtml}</div>
+      ${tagHtml || tagOverflowHtml ? `<div class="note-card__tags">${tagHtml}${tagOverflowHtml}</div>` : ""}
       <div class="note-card__footer">
         ${folderHtml}
         <span class="note-card__date"><span class="note-card__date-icon">📅</span>${dateStr}</span>
@@ -1286,7 +1309,7 @@
         <button type="button" class="folder-chevron${hasChildren ? "" : " folder-chevron--empty"}" aria-label="Toggle folder">
           ${hasChildren ? (isExpanded ? "▾" : "▸") : ""}
         </button>
-        <span class="folder-dot" style="background:${f.color || "#4F6EF7"}"></span>
+        <span class="folder-dot" style="background:${f.color || "#5C5C5C"}"></span>
         <span class="folder-name">${esc(f.name)}</span>`;
 
       const chevron = li.querySelector(".folder-chevron");
@@ -1339,7 +1362,7 @@
     visible.forEach((t) => {
       const btn = document.createElement("button");
       btn.type = "button";
-      const color = t.color || "#4F6EF7";
+      const color = t.color || "#5C5C5C";
       btn.className = `header-tag-pill${active.has(t.id) ? " is-active" : ""}`;
       if (active.has(t.id)) {
         btn.style.cssText = `background:${color};border-color:${color};color:#fff;`;
@@ -1383,7 +1406,7 @@
       row.className = `tag-flyout__item${active.has(t.id) ? " is-active" : ""}`;
       row.innerHTML =
         '<span class="tag-flyout__dot" style="background:' +
-        (t.color || "#6B7280") +
+        (t.color || "#5C5C5C") +
         '"></span><span class="tag-flyout__name"></span><span class="tag-flyout__check">✓</span>';
       row.querySelector(".tag-flyout__name").textContent = t.name;
       row.addEventListener("click", () => {
@@ -1840,7 +1863,7 @@
   }
 
   function readableOn(hex) {
-    const c = (hex || "#6B7280").replace("#", "");
+    const c = (hex || "#5C5C5C").replace("#", "");
     if (c.length !== 6) return "#fff";
     const r = parseInt(c.slice(0, 2), 16);
     const g = parseInt(c.slice(2, 4), 16);
@@ -1856,7 +1879,7 @@
         const tagData = state.tags.find(
           (st) => st.name.toLowerCase() === t.toLowerCase(),
         );
-        const color = tagData?.color || "#6B7280";
+        const color = tagData?.color || "#5C5C5C";
         const text = readableOn(color);
         return `<span class="tag-pill" style="background:${color};border-color:${color};color:${text}" title="Tag: ${esc(t)}">${esc(t)}</span>`;
       })
@@ -2203,7 +2226,7 @@
     _folderDraftColor = (color || "").trim();
     const colorInput = $("folder-color-input");
     const preview = $("folder-color-preview");
-    if (colorInput) colorInput.value = _folderDraftColor || "#6B7280";
+    if (colorInput) colorInput.value = _folderDraftColor || "#5C5C5C";
     if (preview) preview.style.background = _folderDraftColor || "transparent";
   }
 
@@ -2797,6 +2820,9 @@
     btnSearchToggle?.addEventListener("click", toggleSearchBar);
     btnMobileMenu?.addEventListener("click", toggleSidebar);
     btnNewNote?.addEventListener("click", () => {
+      createNoteSafely();
+    });
+    btnEmptyNew?.addEventListener("click", () => {
       createNoteSafely();
     });
     $("btn-fab-caret")?.addEventListener("click", (e) => {

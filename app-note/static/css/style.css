@@ -33,6 +33,10 @@
   --accent-text: #0d0d0d;
   --btn-text-on-accent: #0d0d0d;
 
+  /* Brand: coral red (product color + hover) */
+  --brand: #ff6f61;
+  --brand-hov: #ff5a4d;
+
   /* Status colors: muted grayscale with subtle hues */
   --star-on: #d4a020;
   --star-off: #464646;
@@ -68,6 +72,15 @@
 
   /* Strong shadow: modals, overlays */
   --shadow-strong: 0 16px 40px rgba(0, 0, 0, 0.5);
+
+  /* Shared "lift" gradient layered over every button's base color so the
+     raised look stays identical across primary, ghost, danger, warning and
+     across both themes. White highlight on top, subtle shade at the bottom. */
+  --btn-lift-grad: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(0, 0, 0, 0.12)
+  );
 
   /* ── Spacing & Sizing ───────────────────────────────────────────────── */
   --sidebar-w: 240px;
@@ -138,6 +151,10 @@
   --accent-text: #1a1a1a;
   --btn-text-on-accent: #ffffff;
 
+  /* Brand: coral red (product color + hover) */
+  --brand: #ff6f61;
+  --brand-hov: #ff5a4d;
+
   /* Status colors: muted */
   --star-on: #b8860b;
   --star-off: #d0d0d0;
@@ -170,6 +187,14 @@
     inset 2px 2px 4px rgba(0, 0, 0, 0.12);
 
   --shadow-strong: 0 12px 32px rgba(0, 0, 0, 0.1);
+
+  /* Shared "lift" gradient (light theme): brighter top highlight, very subtle
+     bottom shade so the raised look matches the dark theme. */
+  --btn-lift-grad: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.55),
+    rgba(0, 0, 0, 0.05)
+  );
 }
 
 /* ── Reset & Base Styles ────────────────────────────────────────────────── */
@@ -517,7 +542,25 @@ a:active {
   font-weight: 600;
 }
 .sidebar__tree li.folder--child {
-  padding-left: calc(var(--space-3) + var(--depth, 1) * 14px);
+  position: relative;
+  padding-left: calc(var(--space-3) + var(--depth, 1) * 22px);
+}
+
+/* Subtle connector guide showing which parent a child belongs to */
+.sidebar__tree li.folder--child::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--space-3) + (var(--depth, 1) - 1) * 22px + 5px);
+  width: 1px;
+  background: color-mix(in srgb, var(--border, currentColor) 45%, transparent);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.sidebar__tree li.folder--child:hover::before,
+.sidebar__tree li.folder--child.active::before {
+  opacity: 0.25;
 }
 
 .sidebar__tree li.folder--parent .folder-name {
@@ -544,6 +587,7 @@ a:active {
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  margin-right: 4px;
   background: currentColor;
   opacity: 0.6;
 }
@@ -1444,44 +1488,39 @@ a:active {
   display: none;
 }
 
-/* Card: Main component for note display */
+/* Card: Main component for note display — flat Google Keep / sticky-note style */
 .note-card {
   background: var(--bg-card);
-  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
   border-left: 4px solid transparent;
   border-radius: var(--radius);
   padding: var(--space-3) var(--space-3) var(--space-2);
   cursor: pointer;
   transition:
     background 0.12s ease,
-    border-color 0.12s ease,
-    box-shadow 0.12s ease,
-    transform 0.12s ease;
+    border-color 0.12s ease;
   display: flex;
   flex-direction: column;
   gap: 0;
   min-height: 180px;
   position: relative;
-  box-shadow: var(--shadow-raised-sm);
+  box-shadow: none;
 }
 
 .note-card:hover {
   background: var(--bg-card-hov);
-  box-shadow: var(--shadow-raised-md);
-  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--border) 85%, transparent);
 }
 
 .note-card--active {
   border-left-color: var(--accent) !important;
   background: var(--accent-dim);
-  box-shadow: var(--shadow-inset);
 }
 
 /* Keyboard-selected card (Arrow Up/Down navigation) */
 .note-card--selected {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
-  box-shadow: var(--shadow-raised-md);
 }
 
 /* Header: title + star + menu */
@@ -1553,17 +1592,17 @@ a:active {
   display: none;
 }
 
-/* Body: preview frame with inset effect */
+/* Body: flat preview area (content sits directly on the card) */
 .note-card__body {
-  background: var(--bg-app);
-  border: 1px solid color-mix(in srgb, var(--border-med) 60%, transparent);
-  border-radius: var(--radius-sm);
-  padding: var(--space-2) var(--space-2);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
   flex: 1;
   min-height: 60px;
   overflow: hidden;
   margin-bottom: var(--space-2);
-  box-shadow: var(--shadow-inset);
+  box-shadow: none;
 }
 
 .note-card__preview {
@@ -1584,6 +1623,12 @@ a:active {
   margin-bottom: var(--space-2);
   min-height: 20px;
 }
+.note-card__tag--more {
+  border-style: dashed;
+  color: var(--text-muted);
+  cursor: default;
+  opacity: 0.8;
+}
 .note-card__tag {
   font-size: var(--type-xs);
   font-weight: 700;
@@ -1593,8 +1638,8 @@ a:active {
   border: 1px solid color-mix(in srgb, var(--border-tag) 70%, transparent);
   color: var(--text-tag);
   text-transform: uppercase;
-  background: var(--bg-input);
-  box-shadow: var(--shadow-inset);
+  background: transparent;
+  box-shadow: none;
 }
 .note-card__tag--clickable {
   cursor: pointer;
@@ -1613,6 +1658,14 @@ a:active {
   align-items: center;
   gap: var(--space-1);
   margin-top: auto;
+  min-height: 0;
+}
+/* When the card has no tags and no folder, tighten the footer spacing. */
+.note-card--bare .note-card__footer {
+  margin-top: var(--space-1);
+}
+.note-card--bare .note-card__body {
+  margin-bottom: 0;
 }
 
 .note-card__folder {
@@ -2656,15 +2709,20 @@ html[data-theme="dark"] .ProseMirror .placeholder {
   white-space: nowrap;
   text-decoration: none;
   box-shadow: var(--shadow-raised-sm);
+  /* The lift gradient is layered over the variant's base color (--btn-base),
+     so every button — primary or ghost — shares the same raised look. */
+  --btn-base: transparent;
+  background-color: var(--btn-base);
+  background-image: var(--btn-lift-grad);
 }
 
 .btn--primary {
-  background: var(--accent);
+  --btn-base: var(--accent);
   color: var(--btn-text-on-accent);
   border-color: var(--accent);
 }
 .btn--primary:hover {
-  background: var(--accent-hov);
+  --btn-base: var(--accent-hov);
   border-color: var(--accent-hov);
   box-shadow: var(--shadow-raised-md);
 }
@@ -2674,13 +2732,13 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 }
 
 .btn--ghost {
-  background: var(--bg-btn-2nd);
+  --btn-base: var(--bg-btn-2nd);
   color: var(--text-secondary);
   border-color: color-mix(in srgb, var(--border-med) 70%, transparent);
 }
 .btn--ghost:hover {
   color: var(--text-primary);
-  background: var(--bg-card-hov);
+  --btn-base: var(--bg-card-hov);
   border-color: color-mix(in srgb, var(--border-med) 85%, transparent);
 }
 .btn--ghost:active {
@@ -2689,12 +2747,12 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 }
 
 .btn--danger {
-  background: var(--danger);
+  --btn-base: var(--danger);
   color: #fff;
   border-color: var(--danger);
 }
 .btn--danger:hover {
-  background: var(--danger-hov);
+  --btn-base: var(--danger-hov);
   border-color: var(--danger-hov);
   box-shadow: var(--shadow-raised-md);
 }
@@ -2704,12 +2762,12 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 }
 
 .btn--warning {
-  background: color-mix(in srgb, var(--star-on) 12%, var(--bg-card));
+  --btn-base: color-mix(in srgb, var(--star-on) 12%, var(--bg-card));
   color: var(--star-on);
   border-color: color-mix(in srgb, var(--star-on) 35%, var(--border));
 }
 .btn--warning:hover {
-  background: color-mix(in srgb, var(--star-on) 18%, var(--bg-card));
+  --btn-base: color-mix(in srgb, var(--star-on) 18%, var(--bg-card));
   border-color: color-mix(in srgb, var(--star-on) 45%, var(--border));
 }
 .btn--warning:active {
@@ -2874,6 +2932,19 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 .auth-logo__icon {
   font-size: 20px;
 }
+/* Brand wordmark: Note = coral-red brand color, Stack = black/white by theme */
+.brand-word--note {
+  color: var(--brand);
+}
+.brand-word--stack {
+  color: var(--accent);
+}
+
+.auth-logo__name:hover .brand-word--stack,
+.brand-dropdown__trigger:hover .brand-word--stack {
+  color: var(--brand);
+}
+
 .auth-logo__name {
   font-family: var(--font-mono);
   font-size: 14px;
@@ -3683,7 +3754,7 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 }
 
 .landing-nav__link:hover {
-  color: var(--text-primary);
+  color: var(--brand);
 }
 
 /* ── Hero two-column layout ────────────────────────────────────────────── */
@@ -3725,9 +3796,9 @@ html[data-theme="dark"] .ProseMirror .placeholder {
   background: var(--border-med);
 }
 
-.hero-preview__dot:nth-child(1) { background: color-mix(in srgb, var(--danger) 70%, var(--border-med)); }
-.hero-preview__dot:nth-child(2) { background: color-mix(in srgb, var(--star-on) 70%, var(--border-med)); }
-.hero-preview__dot:nth-child(3) { background: color-mix(in srgb, var(--success) 70%, var(--border-med)); }
+.hero-preview__dot:nth-child(1) { background: color-mix(in srgb, var(--text-secondary) 70%, var(--border-med)); }
+.hero-preview__dot:nth-child(2) { background: color-mix(in srgb, var(--text-muted) 70%, var(--border-med)); }
+.hero-preview__dot:nth-child(3) { background: color-mix(in srgb, var(--text-muted) 40%, var(--border-med)); }
 
 .hero-preview__bar-label {
   margin-left: auto;
@@ -3764,9 +3835,10 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 }
 
 .hero-preview__row--active {
-  background: var(--accent-dim);
+  background: color-mix(in srgb, var(--brand) 14%, var(--accent-dim));
   color: var(--text-primary);
   font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--brand);
 }
 
 .hero-preview__folder {
@@ -3895,9 +3967,16 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 }
 
 .landing-feature__icon {
-  font-size: 26px;
+  font-size: 24px;
   line-height: 1;
   margin-bottom: 12px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--brand) 14%, var(--bg-card));
+  border: 1px solid color-mix(in srgb, var(--brand) 30%, transparent);
 }
 
 .landing-feature__title {
@@ -3963,9 +4042,10 @@ html[data-theme="dark"] .ProseMirror .placeholder {
   font-weight: 800;
   font-size: var(--type-md);
   margin-bottom: 10px;
-  color: var(--accent-text);
-  background: var(--accent);
-  box-shadow: var(--shadow-raised-sm);
+  color: var(--btn-text-on-accent);
+  background: var(--brand);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 16%, transparent),
+    var(--shadow-raised-sm);
 }
 
 .landing-step__title {
@@ -4084,8 +4164,8 @@ html[data-theme="dark"] .ProseMirror .placeholder {
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: var(--success);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 25%, transparent);
+  background: var(--brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 25%, transparent);
 }
 
 .landing-guest-card__text {
@@ -4120,8 +4200,15 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 }
 
 .landing-mini__icon {
-  font-size: 24px;
+  font-size: 22px;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
   margin-bottom: 10px;
+  background: color-mix(in srgb, var(--brand) 14%, var(--bg-card));
+  border: 1px solid color-mix(in srgb, var(--brand) 30%, transparent);
 }
 
 .landing-mini h3 {
@@ -4130,13 +4217,93 @@ html[data-theme="dark"] .ProseMirror .placeholder {
   margin-bottom: 6px;
 }
 
-.landing-mini p {
-  font-size: var(--type-sm);
-  line-height: 1.55;
-  color: var(--text-secondary);
-}
+ .landing-mini p {
+   font-size: var(--type-sm);
+   line-height: 1.55;
+   color: var(--text-secondary);
+ }
 
-/* ── Keyboard shortcuts section ────────────────────────────────────────── */
+ /* ── Testimonials ──────────────────────────────────────────────────────── */
+ .landing-testimonials {
+   display: grid;
+   grid-template-columns: repeat(3, minmax(0, 1fr));
+   gap: 14px;
+ }
+
+ .landing-testimonial {
+   position: relative;
+   background: color-mix(in srgb, var(--bg-card) 94%, transparent);
+   border: 1px solid color-mix(in srgb, var(--border-med) 60%, transparent);
+   border-radius: 20px;
+   padding: 26px 20px 20px;
+   margin: 0;
+   display: flex;
+   flex-direction: column;
+   overflow: hidden;
+ }
+
+ .landing-testimonial__quote {
+   font-family: var(--font-mono);
+   font-size: 44px;
+   line-height: 0.6;
+   color: var(--brand);
+   opacity: 0.85;
+   margin-bottom: 8px;
+ }
+
+ .landing-testimonial__text {
+   margin: 0 0 16px;
+   font-size: var(--type-md);
+   line-height: 1.6;
+   color: var(--text-primary);
+ }
+
+ .landing-testimonial__author {
+   display: flex;
+   align-items: center;
+   gap: 10px;
+   margin-top: auto;
+ }
+
+ .landing-testimonial__avatar {
+   flex: none;
+   width: 38px;
+   height: 38px;
+   border-radius: 50%;
+   display: grid;
+   place-items: center;
+   font-size: var(--type-sm);
+   font-weight: 700;
+   letter-spacing: 0.04em;
+   color: var(--text-primary);
+   background: color-mix(in srgb, var(--brand) 22%, var(--bg-modal));
+   border: 1px solid color-mix(in srgb, var(--brand) 35%, transparent);
+ }
+
+ .landing-testimonial__meta {
+   display: flex;
+   flex-direction: column;
+   line-height: 1.25;
+ }
+
+ .landing-testimonial__name {
+   font-size: var(--type-md);
+   font-weight: 600;
+   color: var(--text-primary);
+ }
+
+ .landing-testimonial__role {
+   font-size: var(--type-xs);
+   color: var(--text-muted);
+ }
+
+ @media (max-width: 860px) {
+   .landing-testimonials {
+     grid-template-columns: 1fr;
+   }
+ }
+
+ /* ── Keyboard shortcuts section ────────────────────────────────────────── */
 .landing-shortcuts {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
@@ -4249,6 +4416,8 @@ html[data-theme="dark"] .ProseMirror .placeholder {
   letter-spacing: 0.14em;
   color: var(--text-muted);
   margin-bottom: 8px;
+  padding-left: 10px;
+  border-left: 3px solid var(--brand);
 }
 
 .shortcuts-list {
@@ -4299,6 +4468,7 @@ html[data-theme="dark"] .ProseMirror .placeholder {
     color-mix(in srgb, var(--bg-modal) 97%, #000000 3%)
   );
   border: 1px solid color-mix(in srgb, var(--border-med) 60%, transparent);
+  box-shadow: inset 0 3px 0 0 var(--brand);
 }
 
 .landing-cta__title {
@@ -4344,7 +4514,7 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 }
 
 .landing-footer__links a:hover {
-  color: var(--text-primary);
+  color: var(--brand);
 }
 
 /* ── Mobile Responsive Design (≤ 980px) ────────────────────────────────── */
@@ -4961,20 +5131,18 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 .note-card--glow {
   animation: note-glow 2s ease-in-out;
   border-color: var(--success) !important;
+  outline: 2px solid color-mix(in srgb, var(--success) 60%, transparent);
+  outline-offset: 1px;
 }
 
 @keyframes note-glow {
   0%, 100% {
-    box-shadow:
-      var(--shadow-raised-sm),
-      0 0 0 2px color-mix(in srgb, var(--success) 60%, transparent),
-      0 0 12px color-mix(in srgb, var(--success) 40%, transparent);
+    outline: 2px solid color-mix(in srgb, var(--success) 60%, transparent);
+    outline-offset: 1px;
   }
   50% {
-    box-shadow:
-      var(--shadow-raised-sm),
-      0 0 0 4px color-mix(in srgb, var(--success) 80%, transparent),
-      0 0 24px color-mix(in srgb, var(--success) 60%, transparent);
+    outline: 4px solid color-mix(in srgb, var(--success) 80%, transparent);
+    outline-offset: 2px;
   }
 }
 
