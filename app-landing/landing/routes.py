@@ -265,7 +265,6 @@ def experimental_apps():
             ],
             "subheading_apps": [
                 {
-                {
                     "name": "FOSSil",
                     "tagline": "A free, open library that belongs to its readers.",
                     "description": "A peer-to-peer shelf where students and scholars publish and preserve their notes, essays, and ideas as public, portable writing.",
