@@ -16,8 +16,8 @@
         <p class="hero-text">I build practical tools for research, notes, media discovery, and automation with open systems, local-first architecture, and real-world usability.</p>
         <div class="hero-links" aria-label="Explore links">
             <a href="{{ url_for('main.dev_profile') }}">Dev Profile</a>
-            <a href="{{ url_for('main.about') }}">About</a>
-            <a href="{{ url_for('main.next_updates') }}">Next Updates</a>
+            <a href="{{ url_for('main.about') }}">About Nightcraft</a>
+            <a href="{{ url_for('main.next_updates') }}">Life Updates</a>
         </div>
     </div>
 
@@ -26,28 +26,28 @@
         <ul>
             <li>
                 <span aria-hidden="true">[+]</span>
-                <span>Practical over fashionable</span>
+                <span>Software should outlive trends</span>
             </li>
             <li>
                 <span aria-hidden="true">[o]</span>
-                <span>Open over restrictive</span>
+                <span>Own your data</span>
             </li>
             <li>
                 <span aria-hidden="true">[#]</span>
-                <span>Reliable over clever</span>
+                <span>Build for decades, not quarters</span>
             </li>
             <li>
                 <span aria-hidden="true">[*]</span>
-                <span>Useful over impressive</span>
+                <span>Stability is our best feature</span>
             </li>
         </ul>
     </aside>
 </section>
 
-<section class="registry" aria-label="Product registry">
+<section class="registry" aria-label="PORTFOLIO PRODUCTS">
     <div class="registry-head">
-        <p class="section-label">/ PRODUCT REGISTRY</p>
-        <a href="{{ cards[0].url }}">View all apps <span aria-hidden="true">-></span></a>
+        <p class="section-label">/ PORTFOLIO PRODUCTS</p>
+        <a href="{{ cards[0].url }}">Experimental apps <span aria-hidden="true">-></span></a>
     </div>
     <div class="registry-table">
         {% for card in cards %}
