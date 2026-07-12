@@ -18,14 +18,16 @@ def test_root_route_renders_product_cards_and_links():
     assert response.status_code == 200
     html = response.get_data(as_text=True)
     assert "DevRadio" in html
-    assert "NEERA" in html
-    assert "SeekSage" in html
+    assert "Butler" in html
     assert "NoteStack" in html
     assert "Sign In" in html
     assert "Sign Up" in html
     assert '/auth/login?next=%2F' in html
-    assert 'href="/seeksage/ui"' in html
     assert 'href="/notestack/app"' in html
+    assert 'href="/butler"' in html
+    assert 'href="/experimental"' in html
+    assert "SeekSage" not in html
+    assert "NEERA" not in html
 
 
 def test_root_route_admin_link_uses_platform_admin_path_for_admin_user():
@@ -93,8 +95,27 @@ def test_admin_route_renders_admin_cards_for_admin_user():
     assert "Hi, seedadmin welcome" in html
     assert "Open DevRadio Admin" in html
     assert "Open Neera Admin" in html
-    assert "Open SeekSage Admin" in html
     assert "Open NoteStack Admin" in html
+    assert "Open SeekSage Admin" not in html
+
+
+def test_experimental_route_renders_sections_and_apps():
+    client = _client()
+
+    response = client.get("/experimental")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Sometimes life is better with a little less complexity" in html
+    assert "For the love of the Tech, People, Nature and more" in html
+    assert "TinyXL" in html
+    assert "TexTrace" in html
+    assert "Lazy Games" in html
+    assert "ScrapBook" in html
+    assert "MioBook" in html
+    assert "Neera" in html
+    assert "(proof of concept only / local accounts only)" in html
+    assert "SeekSage" not in html
 
 
 def test_platform_admin_alias_route_still_works_for_local_usage():

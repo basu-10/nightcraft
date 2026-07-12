@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Experimental Apps | Nightcraft Studio{% endblock %}
+
+{% block description %}Experimental and proof-of-concept apps built at Nightcraft Studio.{% endblock %}
+
+{% block content %}
+<section class="experimental">
+    <div class="exp-head">
+        <p class="section-label">/ EXPERIMENTAL</p>
+        <a href="{{ home_url }}">Back to Studio <span aria-hidden="true">-></span></a>
+    </div>
+
+    {% for section in sections %}
+    <div class="exp-section">
+        <h2 class="exp-heading">{{ section.heading }}</h2>
+        <div class="registry-table">
+            {% for card in section.apps %}
+            <a class="registry-row" href="{{ card.url }}" style="--stagger: {{ loop.index0 }}">
+                <div class="product-main">
+                    <div class="product-icon">{{ card.name[0] }}</div>
+                    <div>
+                        <h3>{{ card.name }}</h3>
+                        <p>{{ card.tagline }}</p>
+                    </div>
+                </div>
+                <p class="product-description">{{ card.description }}</p>
+                <div class="product-meta">
+                    <p>
+                        <span class="status-dot{% if card.status == 'In Development' %} is-building{% elif card.status == 'Not Built' %} is-unbuilt{% endif %}"></span>
+                        {{ card.status }}
+                    </p>
+                    <small>{{ card.stack }}</small>
+                </div>
+                <span class="row-arrow" aria-hidden="true">-></span>
+            </a>
+            {% endfor %}
+        </div>
+
+        {% if section.subheading %}
+        <p class="exp-subheading">{{ section.subheading }}</p>
+        <div class="registry-table">
+            {% for card in section.subheading_apps %}
+            <a class="registry-row" href="{{ card.url }}" style="--stagger: {{ loop.index0 }}">
+                <div class="product-main">
+                    <div class="product-icon">{{ card.name[0] }}</div>
+                    <div>
+                        <h3>{{ card.name }}</h3>
+                        <p>{{ card.tagline }}</p>
+                    </div>
+                </div>
+                <p class="product-description">{{ card.description }}</p>
+                <div class="product-meta">
+                    <p>
+                        <span class="status-dot{% if card.status == 'In Development' %} is-building{% elif card.status == 'Not Built' %} is-unbuilt{% endif %}"></span>
+                        {{ card.status }}
+                    </p>
+                    <small>{{ card.stack }}</small>
+                </div>
+                <span class="row-arrow" aria-hidden="true">-></span>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</section>
+{% endblock %}

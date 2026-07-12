@@ -141,6 +141,14 @@ def home():
 
     cards = [
         {
+            "name": "NoteStack",
+            "tagline": "Offline-first notes that stay yours.",
+            "description": "Cross-platform notes with offline-first storage, end-to-end sync, and data portability.",
+            "url": f"{current_app.config['NOTESTACK_URL'].rstrip('/')}/app",
+            "status": "Active",
+            "stack": "Python, Flask, PostgreSQL",
+        },
+        {
             "name": "DevRadio",
             "tagline": "Automated radio for technical reading.",
             "description": "RSS ingestion, content scraping, queueing, and topic-based listening channels.",
@@ -149,28 +157,12 @@ def home():
             "stack": "Python, RSS, TTS, Queue",
         },
         {
-            "name": "SeekSage",
-            "tagline": "Research agents with real tools.",
-            "description": "React-based agent system with local/online model providers, search, wiki lookup, slide generation, and tool workflows.",
-            "url": f"{current_app.config['SEEKSAGE_URL'].rstrip('/')}/ui",
-            "status": "Active",
-            "stack": "Python, FastAPI, React",
-        },
-        {
-            "name": "Neera",
-            "tagline": "Cultural discovery for books, songs, art, people, and ideas.",
-            "description": "Lists, notes, posts, item pages, and discussions that connect culture across formats.",
-            "url": current_app.config["NEERA_URL"],
-            "status": "In Development",
-            "stack": "Next.js, Prisma, PostgreSQL",
-        },
-        {
-            "name": "NoteStack",
-            "tagline": "Offline-first notes that stay yours.",
-            "description": "Cross-platform notes with offline-first storage, end-to-end sync, and data portability.",
-            "url": f"{current_app.config['NOTESTACK_URL'].rstrip('/')}/app",
-            "status": "Active",
-            "stack": "Python, Flask, PostgreSQL",
+            "name": "Butler",
+            "tagline": "An AI assistant that does the heavy lifting from one studio.",
+            "description": "Search the web, run RAG over your docs, and build presentations all from a single studio.",
+            "url": current_app.config["BUTLER_URL"],
+            "status": "Not Built",
+            "stack": "Python, LLM, RAG",
         },
     ]
 
@@ -204,6 +196,108 @@ def home():
     )
 
 
+@main_bp.get("/experimental")
+def experimental_apps():
+    shared_user = _fetch_shared_auth_user()
+    home_path = "/"
+
+    experimental_sections = [
+        {
+            "heading": "Sometimes life is better with a little less complexity and pretty interfaces lol...",
+            "subheading": None,
+            "apps": [
+                {
+                    "name": "TinyXL",
+                    "tagline": "Tiny tools that do one thing well.",
+                    "description": "A small collection of lightweight utilities built for speed and simplicity.",
+                    "url": current_app.config["TINYXL_URL"],
+                    "status": "Active",
+                    "stack": "Python, Web",
+                },
+                {
+                    "name": "TexTrace",
+                    "tagline": "Locally running embedding model based search.",
+                    "description": "A local-first semantic search app powered by an on-device embedding model. We simply link out to the releases and README pages.",
+                    "url": current_app.config["TEXTTRACE_URL"],
+                    "status": "Released",
+                    "stack": "Python, Embeddings, Local",
+                },
+            ],
+        },
+        {
+            "heading": "For the love of the Tech, People, Nature and more...",
+            "subheading": "(proof of concept only / local accounts only)",
+            "apps": [
+                {
+                    "name": "Lazy Games",
+                    "tagline": "Small games to unwind, now open to everyone.",
+                    "description": "A collection of casual games that were tucked away in the admin section, now playable by all.",
+                    "url": current_app.config["GAME_URL"],
+                    "status": "Active",
+                    "stack": "JavaScript, Canvas",
+                },
+                {
+                    "name": "The Green Pledge",
+                    "tagline": "Small commitments for a healthier planet.",
+                    "description": "A gentle way to track everyday promises to nature and community.",
+                    "url": current_app.config["GREENPLEDGE_URL"],
+                    "status": "Not Built",
+                    "stack": "Planned",
+                },
+                {
+                    "name": "ScrapBook",
+                    "tagline": "Mind maps that grow with your ideas.",
+                    "description": "A mindmap app for visually organizing thoughts, notes, and the connections between them.",
+                    "url": current_app.config["SCRAPBOOK_URL"],
+                    "status": "In Development",
+                    "stack": "JavaScript, Canvas",
+                },
+                {
+                    "name": "MioBook",
+                    "tagline": "A Jupyter-notebook inspired text app.",
+                    "description": "An interactive document app that mixes prose and runnable blocks for quick experiments.",
+                    "url": current_app.config["MIOBOOK_URL"],
+                    "status": "In Development",
+                    "stack": "Python, Web",
+                },
+            ],
+            "subheading_apps": [
+                {
+                    "name": "Neera",
+                    "tagline": "Cultural discovery for books, songs, art, people, and ideas.",
+                    "description": "Lists, notes, posts, item pages, and discussions that connect culture across formats.",
+                    "url": current_app.config["NEERA_URL"],
+                    "status": "In Development",
+                    "stack": "Next.js, Prisma, PostgreSQL",
+                },
+            ],
+        },
+    ]
+
+    return render_template(
+        "experimental.html",
+        sections=experimental_sections,
+        shared_user=shared_user,
+        auth_url=build_auth_handoff_url(
+            current_app.config["AUTH_URL"],
+            home_path,
+            current_app.config["AUTH_RETURN_PARAM"],
+        ),
+        register_url=build_auth_handoff_url(
+            current_app.config["AUTH_URL"].replace("/login", "/register"),
+            home_path,
+            current_app.config["AUTH_RETURN_PARAM"],
+        ),
+        logout_url=build_auth_handoff_url(
+            current_app.config["LOGOUT_URL"],
+            home_path,
+            current_app.config["AUTH_RETURN_PARAM"],
+        ),
+        home_url=home_path,
+        admin_url=_central_admin_url(),
+    )
+
+
 @main_bp.get("/platform-admin")
 @main_bp.get("/admin")
 def admin_dashboard():
@@ -225,21 +319,9 @@ def admin_dashboard():
             "status": "Live",
         },
         {
-            "name": "SeekSage Admin",
-            "description": "Manage users, activity logs, and workspace-level operations.",
-            "url": _admin_target(current_app.config["SEEKSAGE_URL"]),
-            "status": "Live",
-        },
-        {
             "name": "NoteStack Admin",
             "description": "Manage note users, roles, and account operations.",
             "url": _admin_target(current_app.config["NOTESTACK_URL"]),
-            "status": "Live",
-        },
-        {
-            "name": "Game Hub",
-            "description": "Open game operations and service-level controls.",
-            "url": current_app.config["GAME_URL"],
             "status": "Live",
         },
     ]

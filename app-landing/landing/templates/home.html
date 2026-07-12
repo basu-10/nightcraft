@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}Asesh Basu Projects{% endblock %}
+{% block title %}Nightcraft Studio Projects{% endblock %}
 
-{% block description %}Landing portal for DevRadio, NEERA, SeekSage, and admin access.{% endblock %}
+{% block description %}Landing portal for DevRadio, NoteStack, Butler, and experimental apps.{% endblock %}
 
 {% block content %}
 <section class="hero-grid">
@@ -48,7 +48,7 @@
 <section class="registry" aria-label="PORTFOLIO PRODUCTS">
     <div class="registry-head">
         <p class="section-label">/ PORTFOLIO PRODUCTS</p>
-        <a href="{{ cards[0].url }}">Experimental apps <span aria-hidden="true">-></span></a>
+        <a href="{{ url_for('main.experimental_apps') }}">Experimental apps <span aria-hidden="true">-></span></a>
     </div>
     <div class="registry-table">
         {% for card in cards %}
