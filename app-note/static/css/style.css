@@ -4016,13 +4016,93 @@ html[data-theme="dark"] .ProseMirror .placeholder {
   margin-bottom: 6px;
 }
 
-.landing-mini p {
-  font-size: var(--type-sm);
-  line-height: 1.55;
-  color: var(--text-secondary);
-}
+ .landing-mini p {
+   font-size: var(--type-sm);
+   line-height: 1.55;
+   color: var(--text-secondary);
+ }
 
-/* ── Keyboard shortcuts section ────────────────────────────────────────── */
+ /* ── Testimonials ──────────────────────────────────────────────────────── */
+ .landing-testimonials {
+   display: grid;
+   grid-template-columns: repeat(3, minmax(0, 1fr));
+   gap: 14px;
+ }
+
+ .landing-testimonial {
+   position: relative;
+   background: color-mix(in srgb, var(--bg-card) 94%, transparent);
+   border: 1px solid color-mix(in srgb, var(--border-med) 60%, transparent);
+   border-radius: 20px;
+   padding: 26px 20px 20px;
+   margin: 0;
+   display: flex;
+   flex-direction: column;
+   overflow: hidden;
+ }
+
+ .landing-testimonial__quote {
+   font-family: var(--font-mono);
+   font-size: 44px;
+   line-height: 0.6;
+   color: var(--brand);
+   opacity: 0.85;
+   margin-bottom: 8px;
+ }
+
+ .landing-testimonial__text {
+   margin: 0 0 16px;
+   font-size: var(--type-md);
+   line-height: 1.6;
+   color: var(--text-primary);
+ }
+
+ .landing-testimonial__author {
+   display: flex;
+   align-items: center;
+   gap: 10px;
+   margin-top: auto;
+ }
+
+ .landing-testimonial__avatar {
+   flex: none;
+   width: 38px;
+   height: 38px;
+   border-radius: 50%;
+   display: grid;
+   place-items: center;
+   font-size: var(--type-sm);
+   font-weight: 700;
+   letter-spacing: 0.04em;
+   color: var(--text-primary);
+   background: color-mix(in srgb, var(--brand) 22%, var(--bg-modal));
+   border: 1px solid color-mix(in srgb, var(--brand) 35%, transparent);
+ }
+
+ .landing-testimonial__meta {
+   display: flex;
+   flex-direction: column;
+   line-height: 1.25;
+ }
+
+ .landing-testimonial__name {
+   font-size: var(--type-md);
+   font-weight: 600;
+   color: var(--text-primary);
+ }
+
+ .landing-testimonial__role {
+   font-size: var(--type-xs);
+   color: var(--text-muted);
+ }
+
+ @media (max-width: 860px) {
+   .landing-testimonials {
+     grid-template-columns: 1fr;
+   }
+ }
+
+ /* ── Keyboard shortcuts section ────────────────────────────────────────── */
 .landing-shortcuts {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
