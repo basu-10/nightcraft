@@ -4,6 +4,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import get_config
 from .database import initialize_db
+from .references import initialize_edge_schema
 from .sync_logging import get_sync_logger
 from .auth import get_auth_blueprint
 from .usage_tracking import init_usage_tracking
@@ -22,6 +23,7 @@ def create_app() -> Flask:
 
     with app.app_context():
         initialize_db()
+        initialize_edge_schema()
 
     # ── Blueprints ──────────────────────────────────────────────────────────
     from .api.routes import api_bp

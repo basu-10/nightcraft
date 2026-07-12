@@ -49,6 +49,14 @@ from ..database import (
     delete_all_user_data,
     get_user_id_for_api_token,
 )
+from ..references import (
+    create_edge,
+    delete_edge,
+    edge_exists,
+    get_outgoing_edges,
+    get_incoming_edges,
+    get_edge_counts_for_notes,
+)
 from ..sync_logging import get_sync_logger
 
 api_bp = Blueprint("api", __name__)
@@ -439,6 +447,60 @@ def del_note(note_id):
     if not ok:
         return _err("Not found", 404)
     return _ok()
+
+
+# ── Note edges (References) ──────────────────────────────────────────────────
+#
+# The storage layer models a reference as a directed edge between two notes.
+# The UI surfaces these as "References" (outgoing) and "Referenced By"
+# (incoming). All access to the note_edges table goes through the references
+# service — the rest of the app never queries it directly.
+
+@api_bp.route("/notes/<int:note_id>/edges", methods=["POST"])
+@require_auth
+def post_edge(note_id):
+    data = request.get_json(silent=True) or {}
+    target_note_id = data.get("target_note_id")
+    label = data.get("label") or ""
+    try:
+        edge = create_edge(g.user_id, note_id, target_note_id, label)
+    except ValueError as exc:
+        return _err(str(exc), 400)
+    return _ok({"edge": edge})
+
+
+@api_bp.route("/notes/<int:note_id>/edges/<int:edge_id>", methods=["DELETE"])
+@require_auth
+def del_edge(note_id, edge_id):
+    ok = delete_edge(g.user_id, edge_id)
+    if not ok:
+        return _err("Not found", 404)
+    return _ok()
+
+
+@api_bp.route("/notes/<int:note_id>/edges/outgoing", methods=["GET"])
+@require_auth
+def list_outgoing_edges(note_id):
+    label = (request.args.get("label") or "").strip() or None
+    edges = get_outgoing_edges(g.user_id, note_id, label=label)
+    return _ok({"edges": edges, "total": len(edges)})
+
+
+@api_bp.route("/notes/<int:note_id>/edges/incoming", methods=["GET"])
+@require_auth
+def list_incoming_edges(note_id):
+    label = (request.args.get("label") or "").strip() or None
+    edges = get_incoming_edges(g.user_id, note_id, label=label)
+    return _ok({"edges": edges, "total": len(edges)})
+
+
+@api_bp.route("/edges/counts", methods=["GET"])
+@require_auth
+def edge_counts():
+    raw_ids = (request.args.get("ids") or "").strip()
+    note_ids = [p for p in raw_ids.split(",") if p.strip().isdigit()]
+    counts = get_edge_counts_for_notes(g.user_id, [int(i) for i in note_ids])
+    return _ok({"counts": counts})
 
 
 # ── Sync ──────────────────────────────────────────────────────────────────────
