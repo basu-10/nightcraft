@@ -2356,85 +2356,15 @@
   }
 
   // ── Context menu ──────────────────────────────────────────────────────────
-
-  const ctxMenu = $("ctx-menu");
-  let _ctxCleanup = null;
-  let _ctxOnClose = null;
+  // Delegates to the standalone ui/context_menu.js module so the right-click
+  // menu and the FAB menu stay independent (different options + theming).
 
   function showContextMenu(x, y, items, onClose) {
-    hideContextMenu();
-    ctxMenu.innerHTML = "";
-    items.forEach((item) => {
-      if (item === "sep") {
-        const sep = document.createElement("div");
-        sep.className = "ctx-menu__sep";
-        ctxMenu.appendChild(sep);
-      } else {
-        const el = document.createElement("button");
-        el.type = "button";
-        el.className = `ctx-menu__item${item.danger ? " ctx-menu__item--danger" : ""}`;
-        el.textContent = item.label;
-        el.addEventListener("mousedown", (e) => {
-          // Keep global dismiss handlers from swallowing the item interaction.
-          e.preventDefault();
-          e.stopPropagation();
-        });
-        el.addEventListener("click", async (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          hideContextMenu();
-          try {
-            await item.action();
-          } catch (err) {
-            console.error("Context menu action failed:", err);
-          }
-        });
-        ctxMenu.appendChild(el);
-      }
-    });
-
-    // Position — keep inside viewport
-    ctxMenu.hidden = false;
-    const vw = window.innerWidth,
-      vh = window.innerHeight;
-    const mw = ctxMenu.offsetWidth || 180,
-      mh = ctxMenu.offsetHeight || 200;
-    ctxMenu.style.left = (x + mw > vw ? vw - mw - 8 : x) + "px";
-    ctxMenu.style.top = (y + mh > vh ? vh - mh - 8 : y) + "px";
-
-    const dismiss = (e) => {
-      if (!ctxMenu.contains(e.target)) hideContextMenu();
-    };
-    const onKeyDown = (e) => {
-      if (e.key === "Escape") hideContextMenu();
-    };
-    // Defer global dismiss listeners so the opening right-click event
-    // doesn't instantly close the menu while it is still bubbling.
-    setTimeout(() => {
-      if (ctxMenu.hidden) return;
-      document.addEventListener("mousedown", dismiss);
-      document.addEventListener("contextmenu", dismiss);
-      document.addEventListener("keydown", onKeyDown);
-    }, 0);
-    _ctxCleanup = () => {
-      document.removeEventListener("mousedown", dismiss);
-      document.removeEventListener("contextmenu", dismiss);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-    _ctxOnClose = onClose || null;
+    window.NotestackContextMenu.show(x, y, items, onClose);
   }
 
   function hideContextMenu() {
-    ctxMenu.hidden = true;
-    ctxMenu.innerHTML = "";
-    if (_ctxOnClose) {
-      _ctxOnClose();
-      _ctxOnClose = null;
-    }
-    if (_ctxCleanup) {
-      _ctxCleanup();
-      _ctxCleanup = null;
-    }
+    window.NotestackContextMenu.hide();
   }
 
   function toggleEditorFullscreen() {
@@ -2827,12 +2757,10 @@
     });
     $("btn-fab-caret")?.addEventListener("click", (e) => {
       e.stopPropagation();
-      const rect = e.currentTarget.getBoundingClientRect();
       const caret = e.currentTarget;
       if (caret) caret.setAttribute("aria-expanded", "true");
-      const menu = showContextMenu(
-        rect.right,
-        rect.bottom,
+      window.NotestackFabMenu.show(
+        caret,
         [
           { label: "📝  New Note", action: () => createNoteSafely() },
           {
@@ -2850,9 +2778,8 @@
             action: () => window.DragDropHandler && window.DragDropHandler.openFilePicker(),
           },
         ],
-        () => caret && caret.setAttribute("aria-expanded", "false"),
+        { onClose: () => caret && caret.setAttribute("aria-expanded", "false") },
       );
-      return menu;
     });
     sidebarBackdrop?.addEventListener("click", closeSidebar);
 

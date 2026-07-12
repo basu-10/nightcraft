@@ -3428,6 +3428,73 @@ html[data-theme="dark"] .ProseMirror .placeholder {
   cursor: default;
 }
 
+/* ── FAB popup menu (opens above the create FAB, brand/coral themed) ─────── */
+.fab-menu {
+  position: fixed;
+  z-index: 320;
+  min-width: 220px;
+  padding: 6px 0;
+  background: var(--brand);
+  border: 1px solid var(--brand-hov);
+  border-radius: var(--radius-md, 14px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.32);
+  user-select: none;
+  overflow: hidden;
+  animation: fab-menu-in 0.12s ease-out;
+}
+
+@keyframes fab-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.fab-menu__item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  padding: 11px 16px;
+  font-size: var(--type-base);
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.1s ease;
+}
+
+.fab-menu__item:hover,
+.fab-menu__item:focus-visible {
+  background: rgba(255, 255, 255, 0.16);
+  outline: none;
+}
+
+.fab-menu__item:active {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.fab-menu__item--danger {
+  color: #ffe2de;
+}
+
+.fab-menu__item--danger:hover {
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.fab-menu__sep {
+  height: 1px;
+  margin: 4px 0;
+  background: rgba(255, 255, 255, 0.22);
+}
+
 .settings-theme-toggle {
   margin-left: auto;
   width: 40px;
