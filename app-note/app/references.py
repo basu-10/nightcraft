@@ -29,7 +29,8 @@ should build on top of this service rather than touching the table.
 """
 from typing import Any, Optional
 
-from .database import get_connection, _get_last_insert_id, _DB_BACKEND
+from . import database
+from .database import get_connection, _get_last_insert_id
 
 
 # ─── Schema (idempotent, self-healing) ───────────────────────────────────────
@@ -90,8 +91,14 @@ def initialize_edge_schema() -> None:
 
     Idempotent and safe to call on every request. Running this on an existing
     installation leaves the schema unchanged (same end state).
+
+    The active backend is read from ``database._DB_BACKEND`` at call time
+    (never a value imported at module load) so it always reflects the runtime
+    configuration set by ``configure_database()`` — this is what keeps the
+    schema init correct on the PostgreSQL production deployment.
     """
-    if _DB_BACKEND == "postgres":
+    is_postgres = (database._DB_BACKEND or "sqlite").strip().lower() == "postgres"
+    if is_postgres:
         conn = get_connection()
         try:
             conn.execute(_POSTGRES_TABLE_DDL)
@@ -103,7 +110,14 @@ def initialize_edge_schema() -> None:
     else:
         conn = get_connection()
         try:
-            conn.executescript(_SQLITE_TABLE_DDL)
+            if hasattr(conn, "executescript"):
+                # Native sqlite3 connection.
+                conn.executescript(_SQLITE_TABLE_DDL)
+            else:
+                # Defensive fallback: run each statement individually so a
+                # non-sqlite wrapper without executescript still works.
+                for statement in _split_sql_statements(_SQLITE_TABLE_DDL):
+                    conn.execute(statement)
             for stmt in _EDGE_INDEX_DDL:
                 conn.execute(stmt)
             conn.commit()
@@ -112,6 +126,29 @@ def initialize_edge_schema() -> None:
 
     for migrate in _EDGE_MIGRATIONS:
         migrate()
+
+
+def _split_sql_statements(script: str) -> list:
+    """Split a SQL script into individual statements on top-level semicolons."""
+    statements: list = []
+    current: list = []
+    in_single = in_double = False
+    for ch in script:
+        if ch == "'" and not in_double:
+            in_single = not in_single
+        elif ch == '"' and not in_single:
+            in_double = not in_double
+        if ch == ";" and not in_single and not in_double:
+            stmt = "".join(current).strip()
+            if stmt:
+                statements.append(stmt)
+            current = []
+        else:
+            current.append(ch)
+    tail = "".join(current).strip()
+    if tail:
+        statements.append(tail)
+    return statements
 
 
 def _ensure_edge_schema() -> None:
