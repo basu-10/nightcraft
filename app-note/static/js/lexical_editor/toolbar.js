@@ -221,10 +221,8 @@ function buildToolbar(editor) {
 
     let activeColor = defaultColor;
     const presetColors = [
-      '#111111', '#2f2f2f', '#666666', '#999999', '#e8e8e8',
-      '#be123c', '#dc2626', '#ea580c', '#ca8a04', '#65a30d',
-      '#16a34a', '#0891b2', '#2563eb', '#4f46e5', '#7c3aed',
-      '#ffff00', '#fde047', '#facc15', '#f59e0b', '#fb7185',
+      '#111111', '#2f2f2f', '#555555', '#7a7a7a', '#a3a3a3', '#cccccc', '#e8e8e8',
+      '#ff6f61',
     ];
 
     function applyColor(color) {

@@ -3647,9 +3647,9 @@ html[data-theme="dark"] .ProseMirror .placeholder {
   background: var(--border-med);
 }
 
-.hero-preview__dot:nth-child(1) { background: color-mix(in srgb, var(--danger) 70%, var(--border-med)); }
-.hero-preview__dot:nth-child(2) { background: color-mix(in srgb, var(--star-on) 70%, var(--border-med)); }
-.hero-preview__dot:nth-child(3) { background: color-mix(in srgb, var(--success) 70%, var(--border-med)); }
+.hero-preview__dot:nth-child(1) { background: color-mix(in srgb, var(--text-secondary) 70%, var(--border-med)); }
+.hero-preview__dot:nth-child(2) { background: color-mix(in srgb, var(--text-muted) 70%, var(--border-med)); }
+.hero-preview__dot:nth-child(3) { background: color-mix(in srgb, var(--text-muted) 40%, var(--border-med)); }
 
 .hero-preview__bar-label {
   margin-left: auto;
