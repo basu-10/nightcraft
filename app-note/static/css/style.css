@@ -517,7 +517,25 @@ a:active {
   font-weight: 600;
 }
 .sidebar__tree li.folder--child {
-  padding-left: calc(var(--space-3) + var(--depth, 1) * 14px);
+  position: relative;
+  padding-left: calc(var(--space-3) + var(--depth, 1) * 22px);
+}
+
+/* Subtle connector guide showing which parent a child belongs to */
+.sidebar__tree li.folder--child::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--space-3) + (var(--depth, 1) - 1) * 22px + 5px);
+  width: 1px;
+  background: color-mix(in srgb, var(--border, currentColor) 45%, transparent);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.sidebar__tree li.folder--child:hover::before,
+.sidebar__tree li.folder--child.active::before {
+  opacity: 0.25;
 }
 
 .sidebar__tree li.folder--parent .folder-name {
@@ -544,6 +562,7 @@ a:active {
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  margin-right: 4px;
   background: currentColor;
   opacity: 0.6;
 }
