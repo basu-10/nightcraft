@@ -287,14 +287,14 @@
   const editorTagsDisplay = $("editor-tags-display");
   const saveIndicator = $("save-indicator");
   const btnSaveNote = $("btn-save-note");
-  const btnNewNote = $("btn-new-note");
+  const btnNewNote = $("btn-fab-new-note");
   const btnEmptyNew = $("btn-empty-new");
   const appLayout = $("app");
   const sidebarBackdrop = $("sidebar-backdrop");
   const btnSidebarToggle = $("btn-sidebar-toggle");
   const btnSidebarClose = $("btn-sidebar-close");
   const btnMobileMenu = $("btn-mobile-menu");
-  const btnMobileNewNote = $("btn-mobile-new-note");
+  const btnFabCaret = $("btn-fab-caret");
   const viewTitle = $("view-title");
   const headerTagPills = $("header-tag-pills");
   const headerTagGroup = $("header-tag-group");
@@ -975,9 +975,9 @@
     if (viewTitle) viewTitle.textContent = title;
     renderFolderNav();
     document.title = `${title} - NoteStack`;
-    // Hide the mobile new-note button on trash (can't create notes in trash)
-    const mobileNewWrap = $("mobile-new-wrap");
-    if (mobileNewWrap) mobileNewWrap.hidden = state.filter.section === "trash";
+    // Hide the floating create FAB on trash (can't create notes in trash)
+    const fab = $("create-fab");
+    if (fab) fab.hidden = state.filter.section === "trash";
   }
 
   // ── Date filter ────────────────────────────────────────────────────────────
@@ -1846,7 +1846,6 @@
   async function createNoteSafely() {
     if (btnNewNote) btnNewNote.disabled = true;
     if (btnEmptyNew) btnEmptyNew.disabled = true;
-    if (btnMobileNewNote) btnMobileNewNote.disabled = true;
     try {
       await createNote();
     } catch (err) {
@@ -1876,7 +1875,6 @@
     } finally {
       if (btnNewNote) btnNewNote.disabled = false;
       if (btnEmptyNew) btnEmptyNew.disabled = false;
-      if (btnMobileNewNote) btnMobileNewNote.disabled = false;
     }
   }
 
@@ -2091,8 +2089,9 @@
 
   const ctxMenu = $("ctx-menu");
   let _ctxCleanup = null;
+  let _ctxOnClose = null;
 
-  function showContextMenu(x, y, items) {
+  function showContextMenu(x, y, items, onClose) {
     hideContextMenu();
     ctxMenu.innerHTML = "";
     items.forEach((item) => {
@@ -2152,11 +2151,16 @@
       document.removeEventListener("contextmenu", dismiss);
       document.removeEventListener("keydown", onKeyDown);
     };
+    _ctxOnClose = onClose || null;
   }
 
   function hideContextMenu() {
     ctxMenu.hidden = true;
     ctxMenu.innerHTML = "";
+    if (_ctxOnClose) {
+      _ctxOnClose();
+      _ctxOnClose = null;
+    }
     if (_ctxCleanup) {
       _ctxCleanup();
       _ctxCleanup = null;
@@ -2529,91 +2533,6 @@
       });
     }
 
-    // New note
-    btnNewNote?.addEventListener("click", () => {
-      createNoteSafely();
-    });
-    btnEmptyNew?.addEventListener("click", () => {
-      createNoteSafely();
-    });
-
-    // ── Global keyboard shortcuts ────────────────────────────────────────────
-    document.addEventListener("keydown", (e) => {
-      const ctrl = e.ctrlKey || e.metaKey;
-
-      // New note — Ctrl+Alt+N.
-      // (Plain Ctrl+N is reserved by the browser for "new window" and cannot be
-      //  intercepted, so we use Ctrl+Alt+N which reliably reaches the page.)
-      if (ctrl && e.altKey && !e.shiftKey && e.code === "KeyN") {
-        e.preventDefault();
-        createNoteSafely();
-        return;
-      }
-
-      // New note from clipboard — Ctrl+Shift+N (with Ctrl+Alt+V fallback, since
-      // some browsers capture Ctrl+Shift+N for a private/incognito window).
-      if (
-        (ctrl && e.shiftKey && !e.altKey && e.code === "KeyN") ||
-        (ctrl && e.altKey && !e.shiftKey && e.code === "KeyV")
-      ) {
-        e.preventDefault();
-        createNoteFromClipboard();
-        return;
-      }
-
-      // Save — Ctrl+S.
-      if (ctrl && !e.altKey && !e.shiftKey && e.code === "KeyS") {
-        e.preventDefault();
-        saveCurrentNote(true);
-        return;
-      }
-
-      // Focus search — Ctrl+F.
-      if (ctrl && !e.altKey && !e.shiftKey && e.code === "KeyF") {
-        e.preventDefault();
-        setSearchVisible(true);
-        searchInput?.focus();
-        searchInput?.select();
-        return;
-      }
-
-      // Note-list navigation — Arrow Up/Down to move, Enter to open.
-      // Ignored while typing in a field or with the editor open.
-      if (
-        !ctrl &&
-        !e.altKey &&
-        !_isTypingContext() &&
-        !_isEditorOpen() &&
-        (e.key === "ArrowDown" || e.key === "ArrowUp")
-      ) {
-        e.preventDefault();
-        moveNoteSelection(e.key === "ArrowDown" ? 1 : -1);
-        return;
-      }
-      if (
-        e.key === "Enter" &&
-        !ctrl &&
-        !_isTypingContext() &&
-        !_isEditorOpen() &&
-        state.navIndex >= 0
-      ) {
-        e.preventDefault();
-        openSelectedNote();
-        return;
-      }
-
-      if (e.key === "Escape") {
-        // If the search box is focused, Escape just defocuses/hides it.
-        if (document.activeElement === searchInput) {
-          searchInput.blur();
-          setSearchVisible(false);
-          return;
-        }
-        closeSidebar();
-        closeEditor();
-      }
-    });
-
     // Sidebar nav
     document.querySelectorAll(".sidebar__item[data-filter]").forEach((el) => {
       el.addEventListener("click", () => setSectionFilter(el.dataset.filter));
@@ -2630,23 +2549,37 @@
     btnSidebarClose?.addEventListener("click", closeSidebar);
     btnSearchToggle?.addEventListener("click", toggleSearchBar);
     btnMobileMenu?.addEventListener("click", toggleSidebar);
-    btnMobileNewNote?.addEventListener("click", () => {
+    btnNewNote?.addEventListener("click", () => {
       createNoteSafely();
     });
-    $("btn-mobile-new-caret")?.addEventListener("click", (e) => {
+    $("btn-fab-caret")?.addEventListener("click", (e) => {
       e.stopPropagation();
       const rect = e.currentTarget.getBoundingClientRect();
-      showContextMenu(rect.left, rect.top, [
-        { label: "📝  New Note", action: () => createNoteSafely() },
-        {
-          label: "📁  New Folder",
-          action: () => openFolderModal(state.filter.folderId || null),
-        },
-        {
-          label: "📋  New Note from Clipboard",
-          action: () => createNoteFromClipboard(),
-        },
-      ]);
+      const caret = e.currentTarget;
+      if (caret) caret.setAttribute("aria-expanded", "true");
+      const menu = showContextMenu(
+        rect.right,
+        rect.bottom,
+        [
+          { label: "📝  New Note", action: () => createNoteSafely() },
+          {
+            label: "📋  New Note from Clipboard",
+            action: () => createNoteFromClipboard(),
+          },
+          "sep",
+          {
+            label: "📁  New Folder",
+            action: () => openFolderModal(state.filter.folderId || null),
+          },
+          "sep",
+          {
+            label: "📄  Upload Text File",
+            action: () => window.DragDropHandler && window.DragDropHandler.openFilePicker(),
+          },
+        ],
+        () => caret && caret.setAttribute("aria-expanded", "false"),
+      );
+      return menu;
     });
     sidebarBackdrop?.addEventListener("click", closeSidebar);
 

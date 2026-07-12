@@ -3106,6 +3106,88 @@ html[data-theme="dark"] .ProseMirror .placeholder {
   display: none;
 }
 
+/* ── Floating create FAB (Google Drive style: + creates note, caret opens menu) ── */
+.create-fab {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 300;
+  display: flex;
+  align-items: stretch;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--accent);
+  color: var(--btn-text-on-accent);
+  border: 1px solid var(--accent);
+  box-shadow: var(--shadow-raised-md);
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.create-fab[hidden] {
+  display: none;
+}
+
+.create-fab__main {
+  border: none;
+  background: transparent;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 var(--space-3);
+  min-height: 56px;
+  min-width: 56px;
+  transition: background 0.15s ease;
+}
+
+.create-fab__main .create-fab__icon {
+  font-size: 24px;
+}
+
+.create-fab__caret {
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.28);
+  background: transparent;
+  color: inherit;
+  width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.create-fab:hover {
+  background: var(--accent-hov);
+  border-color: var(--accent-hov);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.32);
+}
+
+.create-fab__main:hover,
+.create-fab__caret:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.create-fab__main:active,
+.create-fab__caret:active {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.create-fab__main:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .settings-theme-toggle {
   margin-left: auto;
   width: 40px;
@@ -4313,7 +4395,7 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 
   .mobile-bottom-nav {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--space-1);
     position: fixed;
     left: var(--space-2);
@@ -4326,6 +4408,12 @@ html[data-theme="dark"] .ProseMirror .placeholder {
     backdrop-filter: blur(12px);
     padding: var(--space-1);
     box-shadow: var(--shadow-raised-md);
+  }
+
+  /* Float the create FAB above the bottom navigation bar on phones */
+  .create-fab {
+    right: var(--space-3);
+    bottom: calc(80px + env(safe-area-inset-bottom));
   }
 
   .mobile-nav__item {
@@ -4376,75 +4464,6 @@ html[data-theme="dark"] .ProseMirror .placeholder {
     color: var(--btn-text-on-accent);
     transform: translateY(-2px);
     box-shadow: var(--shadow-raised-md);
-  }
-
-  /* Split new-note button (main + caret) */
-  .mobile-nav__split-btn {
-    display: flex;
-    flex-direction: row;
-    align-items: stretch;
-    background: var(--accent);
-    color: var(--btn-text-on-accent);
-    border-radius: 14px;
-    border: 1px solid var(--accent);
-    overflow: hidden;
-    padding: 0;
-    min-height: 56px;
-    box-shadow: var(--shadow-raised-sm);
-    cursor: pointer;
-    font-weight: 700;
-    transition:
-      background 0.15s ease,
-      box-shadow 0.15s ease,
-      transform 0.15s ease;
-  }
-
-  .mobile-nav__split-btn:hover,
-  .mobile-nav__split-btn:active {
-    background: var(--accent-hov);
-    border-color: var(--accent-hov);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-raised-md);
-  }
-
-  .mobile-nav__split-main {
-    flex: 1;
-    border: none;
-    background: transparent;
-    color: inherit;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-1);
-    font-size: var(--type-xs);
-    font-weight: 700;
-    cursor: pointer;
-    padding: var(--space-1) var(--space-1) var(--space-1) var(--space-2);
-    min-height: 56px;
-  }
-
-  .mobile-nav__split-caret {
-    border: none;
-    border-left: 1px solid rgba(255, 255, 255, 0.25);
-    background: transparent;
-    color: inherit;
-    width: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: var(--type-base);
-    padding: 0;
-    flex-shrink: 0;
-    transition: background 0.15s ease;
-
-.drag-overlay[hidden] { display: none; }
-  }
-
-  .mobile-nav__split-caret:hover,
-  .mobile-nav__split-caret:active {
-    background: rgba(255, 255, 255, 0.18);
   }
 
   .mobile-nav__icon {

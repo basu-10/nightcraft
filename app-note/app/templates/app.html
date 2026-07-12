@@ -14,9 +14,6 @@
   <aside id="sidebar" class="sidebar">
     <div class="sidebar__header">
       <button id="btn-sidebar-close" class="sidebar__close-btn" title="Close menu" aria-label="Close menu">✕</button>
-      <button id="btn-new-note" class="btn btn--primary btn--sm" title="New note (Ctrl+Alt+N)">
-        + New
-      </button>
     </div>
 
     <nav class="sidebar__nav">
@@ -213,13 +210,6 @@
       <span class="mobile-nav__icon">⭐</span>
       <span class="mobile-nav__label">Favorites</span>
     </button>
-    <div id="mobile-new-wrap" class="mobile-nav__item mobile-nav__split-btn" title="New note">
-      <button id="btn-mobile-new-note" class="mobile-nav__split-main" aria-label="New note">
-        <span class="mobile-nav__icon">＋</span>
-        <span class="mobile-nav__label">New</span>
-      </button>
-      <button id="btn-mobile-new-caret" class="mobile-nav__split-caret" aria-label="More options" title="More create options">▾</button>
-    </div>
     <button class="mobile-nav__item" data-mobile-filter="trash" title="Trash">
       <span class="mobile-nav__icon">🗑️</span>
       <span class="mobile-nav__label">Trash</span>
@@ -229,6 +219,14 @@
       <span class="mobile-nav__label">Menu</span>
     </button>
   </nav>
+
+  <!-- Floating create FAB (Google Drive style: + creates a note, caret opens the menu) -->
+  <div id="create-fab" class="create-fab" title="Create new">
+    <button id="btn-fab-new-note" class="create-fab__main" aria-label="New note">
+      <span class="create-fab__icon">＋</span>
+    </button>
+    <button id="btn-fab-caret" class="create-fab__caret" aria-label="More create options" aria-haspopup="true" aria-expanded="false" title="More create options">▾</button>
+  </div>
 
   <!-- Immersive backdrop shown behind the editor panel; click to close -->
   <div id="editor-backdrop" class="editor-backdrop" aria-hidden="true"></div>
