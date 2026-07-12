@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Create account &mdash; The Green Pledge{% endblock %}
+{% block content %}
+<section class="auth-card">
+  <h1>Create your account</h1>
+  <form method="post" action="{{ url_for('auth.register') }}">
+    <label>
+      Username
+      <input type="text" name="username" autocomplete="username" required>
+    </label>
+    <label>
+      Password
+      <input type="password" name="password" autocomplete="new-password" required>
+    </label>
+    <label>
+      Timezone
+      <input type="text" name="timezone_name" value="Asia/Kolkata">
+    </label>
+    <button type="submit" class="btn primary">Create account</button>
+  </form>
+  <p class="alt-link">Already a member? <a href="{{ url_for('auth.login') }}">Sign in</a>.</p>
+</section>
+{% endblock %}

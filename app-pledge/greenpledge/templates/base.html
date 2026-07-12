@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}The Green Pledge{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  </head>
+  <body class="{% block body_class %}{% endblock %}">
+    <div class="bg-layer"></div>
+    <header class="topbar">
+      <a class="brand" href="{{ url_for('landing.home') }}">&#127807; The Green Pledge</a>
+      <nav class="topnav">
+        <a href="{{ url_for('landing.home') }}">Home</a>
+        <a href="{{ url_for('landing.about') }}">About</a>
+      </nav>
+      <div class="auth-cta">
+        {% if app_user.is_authenticated %}
+          <form method="post" action="{{ url_for('auth.logout') }}" style="margin:0">
+            <button type="submit">Logout</button>
+          </form>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}">&#9751; Member Login</a>
+          {% if has_admin_login %}
+            <a href="{{ url_for('auth.admin_login') }}">&#9965; Admin Login</a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </header>
+
+    <main class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-wrap">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+      <span>&#127807; The Green Pledge &mdash; a Nightcraft product. Coming soon.</span>
+    </footer>
+  </body>
+</html>

@@ -33,6 +33,11 @@ NEERA_ENV_FILE="${NEERA_ENV_FILE:-/etc/nightcraft/app-neera.env}"
 SEEKSAGE_ENV_FILE="${SEEKSAGE_ENV_FILE:-/etc/nightcraft/app-seeksage.env}"
 NOTESTACK_ENV_FILE="${NOTESTACK_ENV_FILE:-/etc/nightcraft/app-note.env}"
 
+PLEDGE_DB_NAME="${PLEDGE_DB_NAME:-green_pledge_db}"
+PLEDGE_DB_USER="${PLEDGE_DB_USER:-green_pledge_app}"
+PLEDGE_DB_PASSWORD="${PLEDGE_DB_PASSWORD:-green_pledge_app_db_2026_prod_secret}"
+PLEDGE_ENV_FILE="${PLEDGE_ENV_FILE:-/etc/nightcraft/app-pledge.env}"
+
 USERS_SQL="${PROD_DEBIAN_DIR}/postgres/users-and-permissions.sql"
 DBS_SQL="${PROD_DEBIAN_DIR}/postgres/create-dbs.sql"
 
@@ -192,6 +197,12 @@ if [[ -z "${NOTESTACK_DB_USER}" || -z "${NOTESTACK_DB_NAME}" || -z "${NOTESTACK_
   fi
 fi
 
+if [[ -z "${PLEDGE_DB_USER}" || -z "${PLEDGE_DB_NAME}" || -z "${PLEDGE_DB_PASSWORD}" ]]; then
+  if pledge_url="$(_extract_database_url_from_env_file "${PLEDGE_ENV_FILE}" 2>/dev/null)"; then
+    _set_db_values_from_url "${pledge_url}" "PLEDGE" || true
+  fi
+fi
+
 NOTESTACK_DB_NAME="${NOTESTACK_DB_NAME:-notestack_db}"
 NOTESTACK_DB_USER="${NOTESTACK_DB_USER:-notestack_app}"
 NOTESTACK_DB_PASSWORD="${NOTESTACK_DB_PASSWORD:-notestack_app_db_2026_prod_secret}"
@@ -223,6 +234,8 @@ sudo -u postgres psql \
   -v seeksage_db_password="${SEEKSAGE_DB_PASSWORD}" \
   -v notestack_db_user="${NOTESTACK_DB_USER}" \
   -v notestack_db_password="${NOTESTACK_DB_PASSWORD}" \
+  -v green_pledge_db_user="${PLEDGE_DB_USER}" \
+  -v green_pledge_db_password="${PLEDGE_DB_PASSWORD}" \
   < "${USERS_SQL}"
 
 sudo -u postgres psql \
@@ -236,6 +249,8 @@ sudo -u postgres psql \
   -v seeksage_db_user="${SEEKSAGE_DB_USER}" \
   -v notestack_db_name="${NOTESTACK_DB_NAME}" \
   -v notestack_db_user="${NOTESTACK_DB_USER}" \
+  -v green_pledge_db_name="${PLEDGE_DB_NAME}" \
+  -v green_pledge_db_user="${PLEDGE_DB_USER}" \
   < "${DBS_SQL}"
 
 echo "PostgreSQL roles and databases are ready."

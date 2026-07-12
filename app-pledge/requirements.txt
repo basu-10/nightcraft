@@ -1,0 +1,10 @@
+Flask==3.1.1
+Flask-Login==0.6.3
+Flask-SQLAlchemy==3.1.1
+psycopg[binary]>=3.1.0
+python-dotenv==1.1.0
+requests==2.32.3
+authlib>=1.2.0
+PyJWT>=2.8.0
+tzdata==2025.2
+pytest==8.3.5

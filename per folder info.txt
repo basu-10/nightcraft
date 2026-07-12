@@ -7,3 +7,5 @@ app-researchAgent - migrated to shared auth and PostgreSQL-backed runtime config
 
 app-landing - no code files. will hold logic to showscase different apps and provide links to visit them.
 
+app-pledge - "The Green Pledge" (greenpledge package). Backend scaffold with auth adapter layer (local + SSO via service-auth) and a placeholder landing page. PostgreSQL-only, served under /pledge, systemd nightcraft-pledge.service (port 5300).
+

@@ -17,6 +17,7 @@ install -m 0644 "${PROD_DEBIAN_DIR}/systemd/nightcraft-landing.service" /etc/sys
 install -m 0644 "${PROD_DEBIAN_DIR}/systemd/nightcraft-admin.service" /etc/systemd/system/nightcraft-admin.service
 install -m 0644 "${PROD_DEBIAN_DIR}/systemd/nightcraft-game.service" /etc/systemd/system/nightcraft-game.service
 install -m 0644 "${PROD_DEBIAN_DIR}/systemd/nightcraft-note.service" /etc/systemd/system/nightcraft-note.service
+install -m 0644 "${PROD_DEBIAN_DIR}/systemd/nightcraft-pledge.service" /etc/systemd/system/nightcraft-pledge.service
 
 systemctl daemon-reload
 systemctl enable nightcraft-auth.service
@@ -27,5 +28,6 @@ systemctl enable nightcraft-landing.service
 systemctl enable nightcraft-admin.service
 systemctl enable nightcraft-game.service
 systemctl enable nightcraft-note.service
+systemctl enable nightcraft-pledge.service
 
 echo "Systemd units installed and enabled."

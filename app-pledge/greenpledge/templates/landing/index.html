@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}The Green Pledge &mdash; Coming Soon{% endblock %}
+{% block content %}
+<section class="pledge-hero">
+  <p class="eyebrow">A Nightcraft product</p>
+  <h1>The Green Pledge</h1>
+  <p class="lead">
+    A place to make and keep commitments to a greener life &mdash; together.
+    Track the pledges you take, see what others are doing, and build habits
+    that actually stick.
+  </p>
+
+  <div class="cta-row">
+    <a class="btn primary" href="{{ url_for('auth.register') }}">Join the waitlist</a>
+    <a class="btn ghost" href="{{ url_for('landing.about') }}">Learn more</a>
+  </div>
+
+  <p class="status-note">
+    We are putting the backend in place first. The product experience lands next.
+  </p>
+</section>
+
+{% if pledges %}
+<section class="pledge-grid">
+  <h2>Sample pledges already in the database</h2>
+  <ul>
+    {% for pledge in pledges %}
+    <li>
+      <span class="pledge-tag">{{ pledge.category }}</span>
+      <strong>{{ pledge.title }}</strong>
+      <p>{{ pledge.description }}</p>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

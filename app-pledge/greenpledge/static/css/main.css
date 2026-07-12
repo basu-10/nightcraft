@@ -1,0 +1,161 @@
+:root {
+  --green-900: #0b2818;
+  --green-700: #14532d;
+  --green-500: #16a34a;
+  --green-300: #6ee7a7;
+  --green-100: #d1fae5;
+  --ink: #0f172a;
+  --paper: #f5fbf7;
+  --muted: #5b6b62;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, var(--green-100), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, var(--green-100), transparent 55%),
+    var(--paper);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--green-100);
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--green-700);
+  text-decoration: none;
+}
+
+.topnav { display: flex; gap: 1rem; }
+.topnav a, .auth-cta a {
+  color: var(--green-700);
+  text-decoration: none;
+  font-weight: 500;
+}
+.topnav a:hover, .auth-cta a:hover { color: var(--green-500); }
+
+.auth-cta { margin-left: auto; display: flex; gap: 1rem; align-items: center; }
+
+.container {
+  width: min(880px, 92vw);
+  margin: 0 auto;
+  padding: 3rem 0 4rem;
+  flex: 1 0 auto;
+}
+
+.pledge-hero { text-align: center; padding: 2rem 0 1rem; }
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.8rem;
+  color: var(--green-500);
+  margin: 0 0 0.5rem;
+}
+.pledge-hero h1 {
+  font-size: clamp(2.4rem, 6vw, 3.6rem);
+  margin: 0 0 1rem;
+  color: var(--green-900);
+}
+.lead {
+  font-size: 1.15rem;
+  color: var(--muted);
+  max-width: 60ch;
+  margin: 0 auto 2rem;
+}
+.cta-row { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+.btn {
+  display: inline-block;
+  padding: 0.75rem 1.4rem;
+  border-radius: 999px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+.btn.primary { background: var(--green-500); color: white; }
+.btn.primary:hover { background: var(--green-700); }
+.btn.ghost { background: transparent; color: var(--green-700); border-color: var(--green-300); }
+.btn.ghost:hover { background: var(--green-100); }
+.status-note {
+  margin-top: 2rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.pledge-grid { margin-top: 3rem; }
+.pledge-grid h2 { color: var(--green-900); font-size: 1.3rem; }
+.pledge-grid ul { list-style: none; padding: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.pledge-grid li {
+  background: white;
+  border: 1px solid var(--green-100);
+  border-radius: 14px;
+  padding: 1rem;
+}
+.pledge-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--green-700);
+  background: var(--green-100);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  margin-bottom: 0.5rem;
+}
+.pledge-grid p { color: var(--muted); margin: 0.4rem 0 0; }
+
+.auth-card {
+  width: min(420px, 92vw);
+  margin: 2rem auto;
+  background: white;
+  border: 1px solid var(--green-100);
+  border-radius: 16px;
+  padding: 2rem;
+}
+.auth-card h1 { color: var(--green-900); margin-top: 0; }
+.auth-card label { display: block; margin: 1rem 0 0.4rem; font-weight: 500; }
+.auth-card input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--green-300);
+  border-radius: 10px;
+  font: inherit;
+}
+.auth-card .btn { width: 100%; margin-top: 1.4rem; }
+.alt-link { text-align: center; margin-top: 1rem; color: var(--muted); }
+.alt-link a { color: var(--green-700); }
+
+.prose { max-width: 64ch; }
+.prose h1 { color: var(--green-900); }
+
+.flash-wrap { margin-bottom: 1rem; }
+.flash { padding: 0.6rem 0.9rem; border-radius: 10px; margin-bottom: 0.5rem; }
+.flash.error { background: #fee2e2; color: #991b1b; }
+.flash.success { background: var(--green-100); color: var(--green-700); }
+
+.site-footer {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--green-100);
+}
