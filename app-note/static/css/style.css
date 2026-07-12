@@ -2572,6 +2572,26 @@ html[data-theme="dark"] .ProseMirror .placeholder {
   padding: 6px 12px;
   font-size: var(--type-sm);
 }
+
+/* Save is the primary footer action: slightly more padding + heavier weight
+   than the secondary "Tags" button, while keeping the shared rounded style. */
+.btn--save {
+  padding: 6px 18px;
+  font-weight: 800;
+  box-shadow:
+    var(--shadow-raised-sm),
+    0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.btn--save:disabled {
+  opacity: 0.55;
+  box-shadow: none;
+  cursor: default;
+}
+
+/* Subtle confirmation shown after a successful save. */
+.save-indicator.is-saved {
+  color: var(--accent);
+}
 .btn--full {
   width: 100%;
 }

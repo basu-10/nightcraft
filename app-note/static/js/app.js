@@ -366,6 +366,7 @@
     // Initialize drag and drop handler
     initDragDropHandler();
     renderEmptyStateHint();
+    refreshSaveState();
   });
 
   // ── Guest mode warning (periodic flashing notification) ────────────────────
@@ -1585,6 +1586,8 @@
     if (activeEd) activeEd.focus();
     state.editorDirty = false;
     saveIndicator.textContent = "";
+    saveIndicator.classList.remove("is-saved");
+    refreshSaveState();
 
     // Highlight active card
     selectNote(id);
@@ -1623,6 +1626,9 @@
     }
     state.activeNoteId = null;
     state.editorDirty = false;
+    saveIndicator.textContent = "";
+    saveIndicator.classList.remove("is-saved");
+    refreshSaveState();
     document
       .querySelectorAll(".note-card--active")
       .forEach((el) => el.classList.remove("note-card--active"));
@@ -1679,10 +1685,18 @@
 
   // ── Auto-save ──────────────────────────────────────────────────────────────
 
+  // Reflect whether the Save button should be usable. It is only enabled when
+  // there are unsaved changes and no save is currently in flight.
+  function refreshSaveState() {
+    if (!btnSaveNote) return;
+    btnSaveNote.disabled = state.isSaving || !state.editorDirty;
+  }
+
   function onEditorChange() {
     if (!state.activeNoteId) return;
     state.editorDirty = true;
     saveIndicator.textContent = "…editing";
+    refreshSaveState();
     clearTimeout(state.saveTimer);
     state.saveTimer = setTimeout(saveCurrentNote, state.autoSaveMs);
   }
@@ -1698,7 +1712,7 @@
     clearTimeout(state.saveTimer);
     const id = state.activeNoteId;
     state.isSaving = true;
-    if (btnSaveNote) btnSaveNote.disabled = true;
+    refreshSaveState();
     saveIndicator.textContent = "Saving…";
 
     const tagsStr = Array.from(editorTagsDisplay.querySelectorAll(".tag-pill"))
@@ -1715,8 +1729,10 @@
       });
       state.editorDirty = false;
       saveIndicator.textContent = "Saved";
+      saveIndicator.classList.add("is-saved");
       setTimeout(() => {
         saveIndicator.textContent = "";
+        saveIndicator.classList.remove("is-saved");
       }, 2000);
 
       const savedContent = activeEd ? activeEd.getContent() : "";
@@ -1754,7 +1770,7 @@
       saveIndicator.textContent = msg ? `⚠ ${msg}` : "⚠ Save failed";
     } finally {
       state.isSaving = false;
-      if (btnSaveNote) btnSaveNote.disabled = false;
+      refreshSaveState();
       if (state.pendingSave) {
         state.pendingSave = false;
         // Run exactly one queued save after the current request completes.
@@ -2710,6 +2726,7 @@
     noteTitle.addEventListener("input", () => {
       if (!state.activeNoteId) return;
       state.editorDirty = true;
+      refreshSaveState();
       clearTimeout(state.saveTimer);
       state.saveTimer = setTimeout(saveCurrentNote, state.autoSaveMs);
     });

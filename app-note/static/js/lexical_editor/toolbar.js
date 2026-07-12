@@ -377,29 +377,72 @@ function buildToolbar(editor) {
     });
   }
 
+  // ── Group 1: Text Formatting ────────────────────────────────────────────
   bar.appendChild(btn('bold', 'Bold (Ctrl+B)', ICONS.bold, () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold')));
   bar.appendChild(btn('italic', 'Italic (Ctrl+I)', ICONS.italic, () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic')));
   bar.appendChild(btn('underline', 'Underline (Ctrl+U)', ICONS.underline, () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'underline')));
   bar.appendChild(btn('strikethrough', 'Strikethrough', ICONS.strikethrough, () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'strikethrough')));
   bar.appendChild(sep());
 
+  // ── Group 2: Paragraph ─────────────────────────────────────────────────
   bar.appendChild(btn('h1', 'Heading 1', ICONS.h1, () => setBlock(() => $createHeadingNode('h1'))));
   bar.appendChild(btn('h2', 'Heading 2', ICONS.h2, () => setBlock(() => $createHeadingNode('h2'))));
   bar.appendChild(btn('h3', 'Heading 3', ICONS.h3, () => setBlock(() => $createHeadingNode('h3'))));
   bar.appendChild(btn('paragraph', 'Paragraph', ICONS.paragraph, () => setBlock(() => $createParagraphNode())));
   bar.appendChild(btn('quote', 'Blockquote', ICONS.quote, () => setBlock(() => $createQuoteNode())));
   bar.appendChild(sep());
-
   bar.appendChild(btn(null, 'Bullet list', ICONS.bulletList, () => editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined)));
   bar.appendChild(btn(null, 'Numbered list', ICONS.orderedList, () => editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined)));
   bar.appendChild(sep());
-
   bar.appendChild(btn('align-left', 'Align left', ICONS.alignLeft, () => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'left')));
   bar.appendChild(btn('align-center', 'Align center', ICONS.alignCenter, () => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center')));
   bar.appendChild(btn('align-right', 'Align right', ICONS.alignRight, () => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'right')));
   bar.appendChild(btn('align-justify', 'Justify', ICONS.alignJustify, () => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'justify')));
   bar.appendChild(sep());
 
+  // ── Group 3: Insert ────────────────────────────────────────────────────
+  bar.appendChild(tablePickerBtn());
+
+  const imagePicker = document.createElement('input');
+  imagePicker.type = 'file';
+  imagePicker.accept = 'image/*';
+  imagePicker.className = 'lexical-toolbar__file-input';
+  imagePicker.tabIndex = -1;
+
+  imagePicker.addEventListener('change', () => {
+    const file = imagePicker.files && imagePicker.files[0];
+    imagePicker.value = '';
+    if (!file) return;
+    if (!file.type || !file.type.startsWith('image/')) {
+      window.alert('Please choose an image file.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const src = typeof reader.result === 'string' ? reader.result : '';
+      if (!src) return;
+      const alt = (file.name || '').replace(/\.[^.]+$/, '');
+      restoreSelection();
+      insertImage(editor, src, alt || 'Image');
+      const root = editor.getRootElement();
+      if (root) root.focus();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  bar.appendChild(btn(null, 'Insert image', ICONS.image, () => {
+    imagePicker.click();
+  }));
+  bar.appendChild(imagePicker);
+  bar.appendChild(sep());
+
+  // ── Group 4: Editing ───────────────────────────────────────────────────
+  bar.appendChild(btn(null, 'Undo (Ctrl+Z)', ICONS.undo, () => editor.dispatchCommand(UNDO_COMMAND, undefined)));
+  bar.appendChild(btn(null, 'Redo (Ctrl+Shift+Z)', ICONS.redo, () => editor.dispatchCommand(REDO_COMMAND, undefined)));
+  bar.appendChild(sep());
+
+  // ── Group 5: Miscellaneous ─────────────────────────────────────────────
   bar.appendChild(dropdown('Font family', [
     ['', 'Font'],
     ['inherit', 'Default'],
@@ -438,44 +481,6 @@ function buildToolbar(editor) {
     '#ffff00',
     color => patchStyle({ 'background-color': color }),
   ));
-  bar.appendChild(sep());
-
-  bar.appendChild(tablePickerBtn());
-
-  const imagePicker = document.createElement('input');
-  imagePicker.type = 'file';
-  imagePicker.accept = 'image/*';
-  imagePicker.className = 'lexical-toolbar__file-input';
-  imagePicker.tabIndex = -1;
-
-  imagePicker.addEventListener('change', () => {
-    const file = imagePicker.files && imagePicker.files[0];
-    imagePicker.value = '';
-    if (!file) return;
-    if (!file.type || !file.type.startsWith('image/')) {
-      window.alert('Please choose an image file.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const src = typeof reader.result === 'string' ? reader.result : '';
-      if (!src) return;
-      const alt = (file.name || '').replace(/\.[^.]+$/, '');
-      restoreSelection();
-      insertImage(editor, src, alt || 'Image');
-      const root = editor.getRootElement();
-      if (root) root.focus();
-    };
-    reader.readAsDataURL(file);
-  });
-
-  bar.appendChild(btn(null, 'Insert image', ICONS.image, () => {
-    imagePicker.click();
-  }));
-  bar.appendChild(imagePicker);
-  bar.appendChild(sep());
-
   bar.appendChild(btn(null, 'Clear formatting', ICONS.clear, () => {
     editor.update(() => {
       const s = $getSelection();
@@ -492,10 +497,6 @@ function buildToolbar(editor) {
       }
     });
   }));
-  bar.appendChild(sep());
-
-  bar.appendChild(btn(null, 'Undo (Ctrl+Z)', ICONS.undo, () => editor.dispatchCommand(UNDO_COMMAND, undefined)));
-  bar.appendChild(btn(null, 'Redo (Ctrl+Shift+Z)', ICONS.redo, () => editor.dispatchCommand(REDO_COMMAND, undefined)));
 
   return bar;
 }
