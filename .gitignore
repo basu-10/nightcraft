@@ -84,11 +84,11 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Project-specific generated files
+# Project-specific generated for testing files
 resources/icons/*.png
 .releases/
 .to_upload/
-
+context.md
 
 # server orchestration
 server-scripts/
