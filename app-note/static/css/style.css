@@ -1916,6 +1916,25 @@ a:active {
   transform: translateX(100%);
 }
 
+/* Immersive backdrop: darkens + blurs the rest of the page while editing.
+   Sits below the editor panel (z-index 100) and above the app content. */
+.editor-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  background: color-mix(in srgb, var(--scrim) 55%, transparent);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.editor-backdrop--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .editor-panel--fullscreen {
   left: 0;
   right: 0;

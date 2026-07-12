@@ -281,6 +281,7 @@
   const btnSearchToggle = $("btn-search-toggle");
   const sortSelect = $("sort-select");
   const editorPanel = $("editor-panel");
+  const editorBackdrop = $("editor-backdrop");
   const noteTitle = $("note-title");
   const editorTagsDisplay = $("editor-tags-display");
   const saveIndicator = $("save-indicator");
@@ -1532,6 +1533,7 @@
     updateFavBtn(note.is_favorite);
 
     editorPanel.classList.remove("editor-panel--closed");
+    showEditorBackdrop();
     if (activeEd) activeEd.focus();
     state.editorDirty = false;
     saveIndicator.textContent = "";
@@ -1564,11 +1566,35 @@
   function closeEditor() {
     if (state.editorDirty) saveCurrentNote();
     editorPanel.classList.add("editor-panel--closed");
+    editorPanel.classList.remove("editor-panel--fullscreen");
+    hideEditorBackdrop();
+    const fsBtn = $("btn-fullscreen-editor");
+    if (fsBtn) {
+      fsBtn.textContent = "⤢";
+      fsBtn.title = "Fullscreen editor";
+    }
     state.activeNoteId = null;
     state.editorDirty = false;
     document
       .querySelectorAll(".note-card--active")
       .forEach((el) => el.classList.remove("note-card--active"));
+  }
+
+  // Show/hide the immersive backdrop that darkens and blurs the rest of the
+  // page while the editor is open. In fullscreen mode the editor covers the
+  // whole viewport, so the backdrop is not needed.
+  function showEditorBackdrop() {
+    if (!editorBackdrop) return;
+    if (editorPanel.classList.contains("editor-panel--fullscreen")) {
+      hideEditorBackdrop();
+      return;
+    }
+    editorBackdrop.classList.add("editor-backdrop--visible");
+  }
+
+  function hideEditorBackdrop() {
+    if (!editorBackdrop) return;
+    editorBackdrop.classList.remove("editor-backdrop--visible");
   }
 
   function readableOn(hex) {
@@ -2098,6 +2124,10 @@
       btn.textContent = isFullscreen ? "🗗" : "⤢";
       btn.title = isFullscreen ? "Exit fullscreen" : "Fullscreen editor";
     }
+    // Fullscreen editor covers the viewport, so the backdrop is only needed
+    // when the editor is a side panel.
+    if (isFullscreen) hideEditorBackdrop();
+    else showEditorBackdrop();
   }
 
   async   function showMoveToFolderMenu(noteId, x, y) {
@@ -2575,6 +2605,8 @@
 
     // Editor controls
     $("btn-close-editor").addEventListener("click", closeEditor);
+    // Click outside the editor (on the dimmed backdrop) closes it.
+    editorBackdrop?.addEventListener("click", closeEditor);
     $("btn-fullscreen-editor")?.addEventListener(
       "click",
       toggleEditorFullscreen,
