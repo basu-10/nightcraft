@@ -1,37 +1,99 @@
-{% extends "base.html" %}
-{% block title %}The Green Pledge &mdash; Coming Soon{% endblock %}
-{% block content %}
-<section class="pledge-hero">
-  <p class="eyebrow">A Nightcraft product</p>
-  <h1>The Green Pledge</h1>
-  <p class="lead">
-    A place to make and keep commitments to a greener life &mdash; together.
-    Track the pledges you take, see what others are doing, and build habits
-    that actually stick.
-  </p>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>The Green Pledge</title>
+    <meta name="description" content="See how your pledge could help the Earth breathe easier.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  </head>
+  <body class="experience">
+    <header class="exp-bar">
+      <a class="brand" href="{{ url_for('landing.home') }}">&#127807;&nbsp;The Green Pledge</a>
+      <a class="signin" href="{{ url_for('auth.login') }}">Sign in</a>
+    </header>
 
-  <div class="cta-row">
-    <a class="btn primary" href="{{ url_for('auth.register') }}">Join the waitlist</a>
-    <a class="btn ghost" href="{{ url_for('landing.about') }}">Learn more</a>
-  </div>
+    <main class="stage">
+      <!-- Community statistics: understated, above the Earth -->
+      <section class="community" id="community">
+        <p class="eyebrow">The community so far</p>
+        <div class="community-stats">
+          <div class="cstat">
+            <span class="cnum" data-target="{{ community.people }}">0</span>
+            <span class="clbl">people who have pledged</span>
+          </div>
+          <div class="cstat">
+            <span class="cnum" data-target="{{ community.co2_pledged }}">0</span>
+            <span class="clbl">kg of CO&#8322; pledged</span>
+          </div>
+          <div class="cstat">
+            <span class="cnum" data-target="{{ community.co2_completed }}">0</span>
+            <span class="clbl">kg of CO&#8322; completed</span>
+          </div>
+        </div>
+        <p class="community-note">A movement begins with one. Imagine what we can grow together.</p>
+      </section>
 
-  <p class="status-note">
-    We are putting the backend in place first. The product experience lands next.
-  </p>
-</section>
+      <!-- Earth hero -->
+      <section class="hero" id="hero">
+        <div class="earth-host" id="heroEarth" aria-hidden="true"></div>
+        <p class="caption" id="caption">See how your pledge could help the Earth breathe easier.</p>
+        <button class="play" id="playBtn" type="button" aria-label="Play the vision">
+          <span class="play-ring"></span>
+          <span class="play-tri"></span>
+        </button>
+      </section>
 
-{% if pledges %}
-<section class="pledge-grid">
-  <h2>Sample pledges already in the database</h2>
-  <ul>
-    {% for pledge in pledges %}
-    <li>
-      <span class="pledge-tag">{{ pledge.category }}</span>
-      <strong>{{ pledge.title }}</strong>
-      <p>{{ pledge.description }}</p>
-    </li>
-    {% endfor %}
-  </ul>
-</section>
-{% endif %}
-{% endblock %}
+      <!-- Interactive future section, revealed after the cinematic -->
+      <section class="future" id="future" hidden>
+        <h2 class="future-title">Imagine if more of us joined.</h2>
+
+        <div class="future-grid">
+          <div class="future-earth">
+            <div class="earth-host" id="futureEarth" aria-hidden="true"></div>
+          </div>
+
+          <div class="future-controls">
+            <label class="slider-label" for="slider">
+              <span class="slider-num" id="participantsNum">0</span>
+              <span class="slider-sub">people joining the pledge</span>
+            </label>
+            <input class="slider" id="slider" type="range" min="0" max="1000" value="350"
+                   aria-label="Number of people joining">
+            <p class="slider-hint">Drag to grow the movement.</p>
+
+            <ul class="impact">
+              <li>
+                <span class="inum" id="co2">0</span>
+                <span class="ilbl">estimated CO&#8322; saved each year</span>
+              </li>
+              <li>
+                <span class="inum" id="trees">0</span>
+                <span class="ilbl">trees grown equivalent</span>
+              </li>
+              <li>
+                <span class="inum" id="cars">0</span>
+                <span class="ilbl">cars taken off the road</span>
+              </li>
+              <li>
+                <span class="inum" id="homes">0</span>
+                <span class="ilbl">homes powered by clean energy</span>
+              </li>
+              <li>
+                <span class="inum" id="km">0</span>
+                <span class="ilbl">kilometres not driven</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <a class="cta" href="{{ url_for('auth.register') }}">Make your Green Pledge</a>
+      </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/pledge.js') }}"></script>
+  </body>
+</html>
