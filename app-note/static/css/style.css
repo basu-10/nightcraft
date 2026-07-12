@@ -33,6 +33,10 @@
   --accent-text: #0d0d0d;
   --btn-text-on-accent: #0d0d0d;
 
+  /* Brand: coral red (product color + hover) */
+  --brand: #ff6f61;
+  --brand-hov: #ff5a4d;
+
   /* Status colors: muted grayscale with subtle hues */
   --star-on: #d4a020;
   --star-off: #464646;
@@ -137,6 +141,10 @@
   --accent-dim: #e8e8e8;
   --accent-text: #1a1a1a;
   --btn-text-on-accent: #ffffff;
+
+  /* Brand: coral red (product color + hover) */
+  --brand: #ff6f61;
+  --brand-hov: #ff5a4d;
 
   /* Status colors: muted */
   --star-on: #b8860b;
@@ -2744,6 +2752,19 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 .auth-logo__icon {
   font-size: 20px;
 }
+/* Brand wordmark: Note = coral-red brand color, Stack = black/white by theme */
+.brand-word--note {
+  color: var(--brand);
+}
+.brand-word--stack {
+  color: var(--accent);
+}
+
+.auth-logo__name:hover .brand-word--stack,
+.brand-dropdown__trigger:hover .brand-word--stack {
+  color: var(--brand);
+}
+
 .auth-logo__name {
   font-family: var(--font-mono);
   font-size: 14px;
