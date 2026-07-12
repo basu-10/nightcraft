@@ -707,6 +707,199 @@ body.landing-shell {
     font-style: italic;
 }
 
+.fossil-shell {
+    max-width: 860px;
+}
+
+.fossil-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 0.4rem 0 1.4rem;
+    border-bottom: 1px solid #dfe2e8;
+}
+
+.fossil-brand {
+    font-family: "Archivo Black", sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    color: #1f2740;
+}
+
+.fossil-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+}
+
+.fossil-login {
+    display: inline-flex;
+    gap: 0.5rem;
+}
+
+.fossil-login input {
+    padding: 0.5rem 0.7rem;
+    border: 1px solid #d9dbe2;
+    border-radius: 8px;
+    font: inherit;
+}
+
+.fossil-signedin {
+    color: #40495f;
+    font-size: 0.95rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 0.9rem;
+    border-radius: 8px;
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.btn-solid {
+    background: #1f2740;
+    color: #fff;
+}
+
+.btn-outline {
+    background: #fff;
+    border-color: #c9cfdb;
+    color: #2a3147;
+}
+
+.fossil-hero {
+    padding: 2.2rem 0 1.6rem;
+}
+
+.fossil-hero h1 {
+    font-family: "Archivo Black", sans-serif;
+    font-size: clamp(2.6rem, 6vw, 4rem);
+    margin: 0.3rem 0 0.8rem;
+    color: #1f2740;
+}
+
+.fossil-hero .lede {
+    font-size: 1.12rem;
+    line-height: 1.6;
+    color: #333b4f;
+    max-width: 62ch;
+    margin: 0;
+}
+
+.fossil-note {
+    margin: 1rem 0 0;
+    color: #4b556b;
+    font-style: italic;
+}
+
+.fossil-compose {
+    margin: 1.4rem 0 2rem;
+    padding: 1.2rem 1.3rem;
+    border: 1px solid #d8dde7;
+    border-radius: 12px;
+    background: #fbfcff;
+}
+
+.fossil-compose h2 {
+    margin: 0 0 0.8rem;
+    font-size: 1.2rem;
+    color: #2a3147;
+}
+
+.fossil-form {
+    display: grid;
+    gap: 0.7rem;
+}
+
+.fossil-form input,
+.fossil-form textarea {
+    width: 100%;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid #d9dbe2;
+    border-radius: 8px;
+    font: inherit;
+    resize: vertical;
+}
+
+.fossil-form .btn {
+    justify-self: start;
+}
+
+.fossil-library {
+    display: grid;
+    gap: 1.1rem;
+    padding-bottom: 2rem;
+}
+
+.fossil-entry {
+    padding: 1.2rem 1.3rem;
+    border: 1px solid #d8dde7;
+    border-radius: 12px;
+    background: #fff;
+    animation: rise-in 0.45s ease both;
+}
+
+.fossil-entry-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+}
+
+.fossil-entry-head h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    color: #1f2740;
+}
+
+.fossil-date {
+    color: #79839a;
+    font-size: 0.88rem;
+    white-space: nowrap;
+}
+
+.fossil-author {
+    margin: 0.3rem 0 0.7rem;
+    color: #4b556b;
+    font-size: 0.95rem;
+}
+
+.fossil-excerpt {
+    margin: 0 0 0.9rem;
+    line-height: 1.6;
+    color: #333b4f;
+}
+
+.fossil-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.fossil-tag {
+    font-size: 0.82rem;
+    color: #3a4d78;
+    background: #e9efff;
+    border-radius: 999px;
+    padding: 0.18rem 0.6rem;
+}
+
+.fossil-footer {
+    border-top: 1px solid #dfe2e8;
+    padding: 1.2rem 0 2rem;
+    color: #6b748c;
+    font-size: 0.9rem;
+}
+
 @media (max-width: 1100px) {
     .hero-grid {
         grid-template-columns: 1fr;

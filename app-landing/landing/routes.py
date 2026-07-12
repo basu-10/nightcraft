@@ -4,7 +4,9 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from urllib import request as urllib_request
 from urllib.error import HTTPError, URLError
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from datetime import date
+
+from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 
 main_bp = Blueprint("main", __name__)
 
@@ -263,6 +265,15 @@ def experimental_apps():
             ],
             "subheading_apps": [
                 {
+                {
+                    "name": "FOSSil",
+                    "tagline": "A free, open library that belongs to its readers.",
+                    "description": "A peer-to-peer shelf where students and scholars publish and preserve their notes, essays, and ideas as public, portable writing.",
+                    "url": current_app.config["FOSSIL_URL"],
+                    "status": "In Development",
+                    "stack": "P2P, Web, Decentralized",
+                },
+                {
                     "name": "Neera",
                     "tagline": "Cultural discovery for books, songs, art, people, and ideas.",
                     "description": "Lists, notes, posts, item pages, and discussions that connect culture across formats.",
@@ -296,6 +307,90 @@ def experimental_apps():
         home_url=home_path,
         admin_url=_central_admin_url(),
     )
+
+
+_FOSSIL_POSTS = [
+    {
+        "id": 1,
+        "title": "On Keeping a Slow Notebook",
+        "author": "M. Okonkwo",
+        "date": "2026-03-18",
+        "tags": ["practice", "notes"],
+        "excerpt": "The point was never to capture everything. It was to give the mind a second place to think, slower than the first.",
+    },
+    {
+        "id": 2,
+        "title": "A Short Defense of Unfinished Essays",
+        "author": "L. Vesely",
+        "date": "2026-02-27",
+        "tags": ["writing", "craft"],
+        "excerpt": "An essay that ends with a question is not a failure. It is an invitation left open on a public shelf.",
+    },
+    {
+        "id": 3,
+        "title": "What My Students Taught Me About Citation",
+        "author": "R. Banerjee",
+        "date": "2026-01-09",
+        "tags": ["teaching", "scholarship"],
+        "excerpt": "Credit is a form of continuity. When we link a thought back to its source, we let ideas travel without losing their lineage.",
+    },
+    {
+        "id": 4,
+        "title": "Notes From a Train: Fragments on Attention",
+        "author": "S. Adeyemi",
+        "date": "2025-12-02",
+        "tags": ["attention", "daily"],
+        "excerpt": "The window became a page. The landscape scrolled, and for once I did not try to keep any of it except what stayed.",
+    },
+]
+
+
+@main_bp.get("/fossil")
+def fossil_library():
+    fossil_user = session.get("fossil_user")
+    return render_template(
+        "fossil.html",
+        posts=_FOSSIL_POSTS,
+        user=fossil_user,
+        fossil_url=current_app.config["FOSSIL_URL"],
+    )
+
+
+@main_bp.post("/fossil/login")
+def fossil_login():
+    username = (request.form.get("username") or "").strip()
+    if username:
+        session["fossil_user"] = username
+    return redirect(current_app.config["FOSSIL_URL"])
+
+
+@main_bp.post("/fossil/logout")
+def fossil_logout():
+    session.pop("fossil_user", None)
+    return redirect(current_app.config["FOSSIL_URL"])
+
+
+@main_bp.post("/fossil/post")
+def fossil_post():
+    if not session.get("fossil_user"):
+        return redirect(current_app.config["FOSSIL_URL"])
+
+    title = (request.form.get("title") or "").strip()
+    body = (request.form.get("body") or "").strip()
+    if title and body:
+        next_id = (max((post["id"] for post in _FOSSIL_POSTS), default=0)) + 1
+        _FOSSIL_POSTS.insert(
+            0,
+            {
+                "id": next_id,
+                "title": title,
+                "author": session["fossil_user"],
+                "date": date.today().isoformat(),
+                "tags": ["draft"],
+                "excerpt": body[:180],
+            },
+        )
+    return redirect(current_app.config["FOSSIL_URL"])
 
 
 @main_bp.get("/platform-admin")

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FOSSil — A Free, Open Library</title>
+    <meta name="description" content="A peer-to-peer, public library where students and scholars keep and share their writing.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body class="landing-shell fossil-page">
+    <main class="landing-page fossil-shell">
+        <header class="fossil-topbar">
+            <a class="fossil-brand" href="{{ fossil_url }}">FOSSil</a>
+            <nav class="fossil-actions" aria-label="Account">
+                {% if user %}
+                <span class="fossil-signedin">Signed in as <strong>{{ user }}</strong></span>
+                <form method="post" action="{{ url_for('main.fossil_logout') }}">
+                    <button class="btn btn-outline" type="submit">Sign Out</button>
+                </form>
+                {% else %}
+                <form method="post" action="{{ url_for('main.fossil_login') }}" class="fossil-login">
+                    <input type="text" name="username" placeholder="scholar name" value="guest" aria-label="Scholar name">
+                    <button class="btn btn-solid" type="submit">Sign In</button>
+                </form>
+                {% endif %}
+                <a class="btn btn-outline" href="{{ url_for('main.home') }}">Studio</a>
+            </nav>
+        </header>
+
+        <section class="fossil-hero">
+            <p class="eyebrow">/ DECENTRALIZED PUBLIC LIBRARY</p>
+            <h1>FOSSil</h1>
+            <p class="lede">A free, open shelf that belongs to the people who write on it. Notes, essays, and half-formed thoughts are kept in the open and passed peer to peer, so a student's work can outlive any single server.</p>
+            <p class="fossil-note">Everything here is public. Your words travel; the library stays.</p>
+        </section>
+
+        {% if user %}
+        <section class="fossil-compose" aria-label="Share a thought">
+            <h2>Add to the library</h2>
+            <form method="post" action="{{ url_for('main.fossil_post') }}" class="fossil-form">
+                <input type="text" name="title" placeholder="Title of your entry" required>
+                <textarea name="body" placeholder="Write what you came to share..." rows="4" required></textarea>
+                <button class="btn btn-solid" type="submit">Publish to the shelf</button>
+            </form>
+        </section>
+        {% endif %}
+
+        <section class="fossil-library" aria-label="Published writing">
+            {% for post in posts %}
+            <article class="fossil-entry">
+                <div class="fossil-entry-head">
+                    <h2>{{ post.title }}</h2>
+                    <time class="fossil-date" datetime="{{ post.date }}">{{ post.date }}</time>
+                </div>
+                <p class="fossil-author">by {{ post.author }}</p>
+                <p class="fossil-excerpt">{{ post.excerpt }}</p>
+                <div class="fossil-tags">
+                    {% for tag in post.tags %}
+                    <span class="fossil-tag">#{{ tag }}</span>
+                    {% endfor %}
+                </div>
+            </article>
+            {% endfor %}
+        </section>
+
+        <footer class="fossil-footer">
+            <p>FOSSil is a proof-of-concept demo. Sign in with any name — there is no real account, and posts are kept only for this session.</p>
+        </footer>
+    </main>
+</body>
+</html>

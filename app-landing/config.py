@@ -49,6 +49,7 @@ class Config:
     GREENPLEDGE_URL: str = os.environ.get("LANDING_GREENPLEDGE_URL", "/green-pledge")
     SCRAPBOOK_URL: str = os.environ.get("LANDING_SCRAPBOOK_URL", "/scrapbook")
     MIOBOOK_URL: str = os.environ.get("LANDING_MIOBOOK_URL", "/miobook")
+    FOSSIL_URL: str = os.environ.get("LANDING_FOSSIL_URL", "/fossil")
 
 
 class DevelopmentConfig(Config):
