@@ -289,6 +289,18 @@ def _admin_context(shared_user, is_admin):
     }
 
 
+@main_bp.get("/users")
+def legacy_users_redirect():
+    """Redirect legacy bare /users links to the admin hub location."""
+    return redirect(_central_admin_url() + "/users", code=301)
+
+
+@main_bp.get("/logs")
+def legacy_logs_redirect():
+    """Redirect legacy bare /logs links to the admin hub location."""
+    return redirect(_central_admin_url() + "/logs", code=301)
+
+
 @main_bp.get("/platform-admin/users")
 def admin_users():
     shared_user = _fetch_shared_auth_user()
