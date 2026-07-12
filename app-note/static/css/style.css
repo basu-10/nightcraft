@@ -2518,6 +2518,155 @@ a:active {
   font-weight: 600;
 }
 
+/* ── Note references (graph edges) panel ──────────────────────────────────── */
+.note-references {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: 38vh;
+  border-top: 1px solid color-mix(in srgb, var(--border-med) 75%, transparent);
+  background: color-mix(in srgb, var(--bg-elevated, var(--bg-modal)) 100%, transparent);
+}
+.note-references[hidden] {
+  display: none;
+}
+.note-references__bar {
+  display: flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  flex-shrink: 0;
+}
+.note-references__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--type-sm);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+.note-references__caret {
+  font-size: 10px;
+}
+.note-references__count {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.note-references__content {
+  overflow-y: auto;
+  padding: 0 var(--space-3) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.note-references__content[hidden] {
+  display: none;
+}
+.ref-group__title {
+  font-size: var(--type-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.ref-group__dir {
+  color: var(--text-muted);
+}
+.ref-list {
+  list-style: none;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.ref-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+.ref-item__open {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+}
+.ref-item__dir {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.ref-item__title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ref-item__label {
+  color: var(--text-muted);
+  font-size: var(--type-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ref-item__remove {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+.ref-item__remove:hover {
+  color: var(--danger);
+}
+.ref-empty {
+  color: var(--text-muted);
+  font-size: var(--type-sm);
+  font-style: italic;
+  padding: var(--space-1) 0;
+}
+.ref-add {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.ref-add .form-input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Note-card reference indicator (🔗 N) */
+.note-card__refs {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--text-muted);
+  font-size: var(--type-xs);
+  flex-shrink: 0;
+}
+.note-card__refs[hidden] {
+  display: none;
+}
+
 html[data-theme="dark"] .ProseMirror {
   color: var(--text-primary) !important;
   background: var(--bg-modal) !important;

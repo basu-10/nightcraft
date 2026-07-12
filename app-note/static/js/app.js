@@ -1088,6 +1088,7 @@
       noteList.appendChild(card);
     });
     renderLoadMoreButton();
+    refreshEdgeCounts();
   }
 
   // ── Keyboard note-list navigation ──────────────────────────────────────────
@@ -1213,6 +1214,9 @@
       <div class="note-card__footer">
         ${folderHtml}
         <span class="note-card__date"><span class="note-card__date-icon">📅</span>${dateStr}</span>
+        <span class="note-card__refs" data-ref-count hidden>
+          <span class="note-card__refs-icon">🔗</span><span class="note-card__refs-num">0</span>
+        </span>
       </div>`;
     div.addEventListener("click", (e) => {
       const tagPill = e.target.closest(
@@ -1614,6 +1618,9 @@
 
     // Highlight active card
     selectNote(id);
+
+    // Load the note's graph edges (references). No-op in guest mode.
+    await loadReferences(id);
   }
 
   /** Ensure the Lexical editor mount is visible. */
@@ -1672,6 +1679,187 @@
   function hideEditorBackdrop() {
     if (!editorBackdrop) return;
     editorBackdrop.classList.remove("editor-backdrop--visible");
+  }
+
+  // ── References (note graph edges) ──────────────────────────────────────────
+  //
+  // The editor exposes notes' directed edges as "References" (outgoing) and
+  // "Referenced By" (incoming). All data goes through the /api edges endpoints;
+  // this module never talks to the note_edges table directly.
+
+  function _referencesPanel() {
+    return $("note-references");
+  }
+
+  function toggleReferencesPanel() {
+    const content = $("note-references__content");
+    const caret = document.querySelector(".note-references__caret");
+    const btn = $("btn-references-toggle");
+    if (!content || !btn) return;
+    const collapsed = content.hasAttribute("hidden");
+    if (collapsed) {
+      content.removeAttribute("hidden");
+      btn.setAttribute("aria-expanded", "true");
+      if (caret) caret.textContent = "▾";
+    } else {
+      content.setAttribute("hidden", "");
+      btn.setAttribute("aria-expanded", "false");
+      if (caret) caret.textContent = "▸";
+    }
+  }
+
+  function _renderRefItem(edge, direction) {
+    const li = document.createElement("li");
+    li.className = "ref-item";
+    li.dataset.edgeId = edge.id;
+
+    const open = document.createElement("button");
+    open.type = "button";
+    open.className = "ref-item__open";
+    open.dataset.noteId = edge.partner_id;
+    open.title = "Open note";
+    open.innerHTML =
+      `<span class="ref-item__dir">${direction === "out" ? "→" : "←"}</span>` +
+      `<span class="ref-item__title">${esc(edge.partner_title || "Untitled")}</span>` +
+      (edge.label
+        ? `<span class="ref-item__label">${esc(edge.label)}</span>`
+        : "");
+    open.addEventListener("click", () => {
+      if (edge.partner_id) openNote(edge.partner_id);
+    });
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "ref-item__remove";
+    remove.title = "Remove reference";
+    remove.textContent = "✕";
+    remove.addEventListener("click", () => removeReference(edge.id));
+
+    li.appendChild(open);
+    li.appendChild(remove);
+    return li;
+  }
+
+  function renderReferenceLists(outgoing, incoming) {
+    const outList = $("ref-outgoing-list");
+    const inList = $("ref-incoming-list");
+    const totalEl = $("ref-total-count");
+
+    if (outList) {
+      outList.innerHTML = "";
+      if (!outgoing.length) {
+        outList.innerHTML = '<li class="ref-empty">No references yet.</li>';
+      } else {
+        outgoing.forEach((e) => outList.appendChild(_renderRefItem(e, "out")));
+      }
+    }
+    if (inList) {
+      inList.innerHTML = "";
+      if (!incoming.length) {
+        inList.innerHTML = '<li class="ref-empty">Not referenced by any note.</li>';
+      } else {
+        incoming.forEach((e) => inList.appendChild(_renderRefItem(e, "in")));
+      }
+    }
+    if (totalEl) {
+      const total = outgoing.length + incoming.length;
+      totalEl.textContent = total ? `(${total})` : "";
+    }
+    populateReferenceTargetSelect();
+  }
+
+  function populateReferenceTargetSelect() {
+    const select = $("ref-target-select");
+    if (!select) return;
+    const current = state.activeNoteId;
+    const opts = ['<option value="">Link to a note…</option>'];
+    (state.notes || [])
+      .filter((n) => n.id !== current)
+      .forEach((n) => {
+        opts.push(
+          `<option value="${n.id}">${esc(n.title || "Untitled")}</option>`,
+        );
+      });
+    select.innerHTML = opts.join("");
+  }
+
+  async function loadReferences(noteId) {
+    const panel = _referencesPanel();
+    if (window.NOTESTACK_IS_GUEST) {
+      if (panel) panel.hidden = true;
+      return;
+    }
+    if (panel) panel.hidden = false;
+    try {
+      const [outRes, inRes] = await Promise.all([
+        api("GET", `/notes/${noteId}/edges/outgoing`),
+        api("GET", `/notes/${noteId}/edges/incoming`),
+      ]);
+      const outgoing = (outRes && outRes.edges) || [];
+      const incoming = (inRes && inRes.edges) || [];
+      renderReferenceLists(outgoing, incoming);
+    } catch (err) {
+      renderReferenceLists([], []);
+    }
+  }
+
+  async function onAddReference() {
+    if (!state.activeNoteId) return;
+    const select = $("ref-target-select");
+    const labelInput = $("ref-label-input");
+    const targetId = select ? Number.parseInt(select.value, 10) : NaN;
+    if (!Number.isInteger(targetId) || targetId <= 0) return;
+    const label = labelInput ? labelInput.value.trim() : "";
+    try {
+      await api("POST", `/notes/${state.activeNoteId}/edges`, {
+        target_note_id: targetId,
+        label,
+      });
+      if (labelInput) labelInput.value = "";
+      await loadReferences(state.activeNoteId);
+      await refreshEdgeCounts();
+    } catch (err) {
+      // Surface validation errors (e.g. self-reference) without breaking state.
+      console.warn("Failed to add reference", err);
+    }
+  }
+
+  async function removeReference(edgeId) {
+    if (!state.activeNoteId) return;
+    try {
+      await api("DELETE", `/notes/${state.activeNoteId}/edges/${edgeId}`);
+      await loadReferences(state.activeNoteId);
+      await refreshEdgeCounts();
+    } catch (err) {
+      console.warn("Failed to remove reference", err);
+    }
+  }
+
+  // Compact per-card reference indicator (🔗 N). Fetched in batch for the notes
+  // currently rendered so we don't add an endpoint call per card.
+  async function refreshEdgeCounts() {
+    if (window.NOTESTACK_IS_GUEST) return;
+    const ids = (state.notes || []).map((n) => n.id);
+    if (!ids.length) return;
+    try {
+      const res = await api("GET", `/edges/counts?ids=${ids.join(",")}`);
+      const counts = (res && res.counts) || {};
+      state.notes.forEach((n) => {
+        const card = noteList.querySelector(`[data-id="${n.id}"]`);
+        if (!card) return;
+        const badge = card.querySelector("[data-ref-count]");
+        if (!badge) return;
+        const count = Number(counts[n.id] || 0);
+        if (count > 0) {
+          badge.querySelector(".note-card__refs-num").textContent = String(count);
+          badge.hidden = false;
+        } else {
+          badge.hidden = true;
+        }
+      });
+    } catch (err) {
+      // Non-fatal: the indicator is cosmetic.
+    }
   }
 
   function readableOn(hex) {
@@ -2763,6 +2951,19 @@
     $("btn-edit-tags").addEventListener("click", () =>
       openTagsModal(state.activeNoteId),
     );
+
+    // References (note graph edges). Hidden for guest mode — references are a
+    // server-backed primitive and guest data lives only in this browser.
+    if (!window.NOTESTACK_IS_GUEST) {
+      $("btn-references-toggle")?.addEventListener("click", toggleReferencesPanel);
+      $("btn-ref-add")?.addEventListener("click", onAddReference);
+      $("ref-label-input")?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") onAddReference();
+      });
+      $("ref-target-select")?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") onAddReference();
+      });
+    }
     $("btn-tags-cancel").addEventListener("click", () => {
       $("tags-modal").hidden = true;
     });

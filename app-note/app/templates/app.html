@@ -245,6 +245,36 @@
       </div>
     </div>
     <div id="lexical-editor-mount" class="editor-panel__body"></div>
+
+    <!-- References (note graph edges). Surfaced as "References" / "Referenced By". -->
+    <div id="note-references" class="note-references" hidden>
+      <div class="note-references__bar">
+        <button id="btn-references-toggle" class="note-references__toggle" type="button" aria-expanded="true">
+          <span class="note-references__caret">▾</span>
+          <span>References</span>
+          <span id="ref-total-count" class="note-references__count"></span>
+        </button>
+      </div>
+      <div id="note-references__content" class="note-references__content">
+        <section class="ref-group">
+          <h4 class="ref-group__title">References <span class="ref-group__dir">→</span></h4>
+          <ul id="ref-outgoing-list" class="ref-list"></ul>
+          <div class="ref-add">
+            <select id="ref-target-select" class="form-input" aria-label="Link to note">
+              <option value="">Link to a note…</option>
+            </select>
+            <input id="ref-label-input" class="form-input" type="text"
+                   placeholder="label (optional)" maxlength="120" autocomplete="off" />
+            <button id="btn-ref-add" class="btn btn--sm btn--primary" type="button">Link</button>
+          </div>
+        </section>
+        <section class="ref-group">
+          <h4 class="ref-group__title">Referenced By <span class="ref-group__dir">←</span></h4>
+          <ul id="ref-incoming-list" class="ref-list"></ul>
+        </section>
+      </div>
+    </div>
+
     <div class="editor-panel__footer">
       <span id="editor-tags-display" class="editor-tags"></span>
       <button id="btn-edit-tags" class="btn btn--sm btn--ghost">Tags</button>
