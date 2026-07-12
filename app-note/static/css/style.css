@@ -3356,9 +3356,9 @@ html[data-theme="dark"] .ProseMirror .placeholder {
   align-items: stretch;
   border-radius: 999px;
   overflow: hidden;
-  background: var(--accent);
-  color: var(--btn-text-on-accent);
-  border: 1px solid var(--accent);
+  background: var(--brand);
+  color: #ffffff;
+  border: 1px solid var(--brand);
   box-shadow: var(--shadow-raised-md);
   transition:
     background 0.15s ease,
@@ -3408,8 +3408,8 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 }
 
 .create-fab:hover {
-  background: var(--accent-hov);
-  border-color: var(--accent-hov);
+  background: var(--brand-hov);
+  border-color: var(--brand-hov);
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.32);
 }
 
