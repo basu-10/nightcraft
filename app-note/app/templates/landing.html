@@ -18,12 +18,14 @@ Organized{% endblock %} {% block body %}
       <div class="brand-dropdown__menu" hidden role="menu">
         <a class="brand-dropdown__item" href="/" role="menuitem">Home</a>
         <a class="brand-dropdown__item" href="#features" role="menuitem">Features</a>
+        <a class="brand-dropdown__item" href="#shortcuts" role="menuitem">Shortcuts</a>
         <a class="brand-dropdown__item" href="#sync" role="menuitem">Sync</a>
         <a class="brand-dropdown__item" href="#guest" role="menuitem">Guest Mode</a>
       </div>
     </div>
     <nav class="landing-nav__links" aria-label="Landing sections">
       <a class="landing-nav__link" href="#features">Features</a>
+      <a class="landing-nav__link" href="#shortcuts">Shortcuts</a>
       <a class="landing-nav__link" href="#sync">Sync</a>
       <a class="landing-nav__link" href="#guest">Guest Mode</a>
     </nav>
@@ -335,10 +337,10 @@ Organized{% endblock %} {% block body %}
           <div class="landing-mini__icon">⌨️</div>
           <h3>Keyboard-first</h3>
           <p>
-            <kbd class="landing-kbd">Ctrl</kbd>+<kbd class="landing-kbd">N</kbd>
+            <kbd class="landing-kbd">Ctrl</kbd>+<kbd class="landing-kbd">Alt</kbd>+<kbd class="landing-kbd">N</kbd>
             for a new note,
-            <kbd class="landing-kbd">Ctrl</kbd>+<kbd class="landing-kbd">S</kbd>
-            to save. Fly through your notes without the mouse.
+            <kbd class="landing-kbd">Ctrl</kbd>+<kbd class="landing-kbd">F</kbd>
+            to search, arrows to move. See the full map below.
           </p>
         </div>
         <div class="landing-mini">
@@ -364,6 +366,133 @@ Organized{% endblock %} {% block body %}
             Generate API tokens, review the sync log, and wipe all NoteStack data
             from one place.
           </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── KEYBOARD SHORTCUTS ─────────────────────────────────────────── -->
+    <section id="shortcuts" class="landing-section landing-section--alt neu-raised-strong">
+      <div class="landing-section__head">
+        <p class="landing-kicker">Keyboard-first</p>
+        <h2 class="landing-section__title">Fly through your notes without the mouse</h2>
+        <p class="landing-section__sub">
+          Create, search, move between notes, and format your writing without
+          ever reaching for the mouse. Here's the full map.
+        </p>
+      </div>
+
+      <div class="landing-shortcuts">
+        <!-- Live-styled app preview built from the design tokens -->
+        <div class="hero-preview neu-raised-strong shortcuts-preview" aria-hidden="true">
+          <div class="hero-preview__bar">
+            <span class="hero-preview__dot"></span>
+            <span class="hero-preview__dot"></span>
+            <span class="hero-preview__dot"></span>
+            <span class="hero-preview__bar-label">⌨ Shortcuts</span>
+          </div>
+          <div class="shortcuts-preview__body">
+            <div class="shortcuts-preview__notes">
+              <div class="shortcuts-preview__search">
+                <span>🔎 Search</span>
+                <span class="shortcuts-preview__keys">
+                  <kbd class="landing-kbd">Ctrl</kbd><kbd class="landing-kbd">F</kbd>
+                </span>
+              </div>
+              <div class="hero-preview__note hero-preview__note--selected">
+                <div class="hero-preview__note-title">Meeting notes</div>
+                <div class="hero-preview__note-line"></div>
+                <div class="hero-preview__note-line hero-preview__note-line--short"></div>
+              </div>
+              <div class="hero-preview__note">
+                <div class="hero-preview__note-title">Reading list</div>
+                <div class="hero-preview__note-line"></div>
+              </div>
+            </div>
+            <div class="shortcuts-preview__editor">
+              <div class="shortcuts-preview__toolbar">
+                <span class="shortcuts-preview__tool"><b>B</b></span>
+                <span class="shortcuts-preview__tool"><i>I</i></span>
+                <span class="shortcuts-preview__tool"><u>U</u></span>
+                <span class="shortcuts-preview__tool">H1</span>
+                <span class="shortcuts-preview__tool">&lt;/&gt;</span>
+              </div>
+              <div class="hero-preview__note-title">Meeting notes</div>
+              <div class="hero-preview__note-line"></div>
+              <div class="hero-preview__note-line"></div>
+              <div class="hero-preview__note-line hero-preview__note-line--short"></div>
+            </div>
+          </div>
+          <div class="shortcuts-preview__hint">
+            <kbd class="landing-kbd">↑</kbd><kbd class="landing-kbd">↓</kbd>
+            move · <kbd class="landing-kbd">Enter</kbd> open
+          </div>
+        </div>
+
+        <!-- Grouped shortcut reference -->
+        <div class="shortcuts-lists">
+          <div class="shortcuts-group">
+            <h3 class="shortcuts-group__title">App</h3>
+            <ul class="shortcuts-list">
+              <li>
+                <span class="shortcuts-list__desc">New note</span>
+                <span class="shortcuts-list__keys"><kbd class="landing-kbd">Ctrl</kbd>+<kbd class="landing-kbd">Alt</kbd>+<kbd class="landing-kbd">N</kbd></span>
+              </li>
+              <li>
+                <span class="shortcuts-list__desc">New note from clipboard</span>
+                <span class="shortcuts-list__keys"><kbd class="landing-kbd">Ctrl</kbd>+<kbd class="landing-kbd">Shift</kbd>+<kbd class="landing-kbd">N</kbd></span>
+              </li>
+              <li>
+                <span class="shortcuts-list__desc">Save note</span>
+                <span class="shortcuts-list__keys"><kbd class="landing-kbd">Ctrl</kbd>+<kbd class="landing-kbd">S</kbd></span>
+              </li>
+              <li>
+                <span class="shortcuts-list__desc">Focus search</span>
+                <span class="shortcuts-list__keys"><kbd class="landing-kbd">Ctrl</kbd>+<kbd class="landing-kbd">F</kbd></span>
+              </li>
+              <li>
+                <span class="shortcuts-list__desc">Move between notes</span>
+                <span class="shortcuts-list__keys"><kbd class="landing-kbd">↑</kbd> <kbd class="landing-kbd">↓</kbd></span>
+              </li>
+              <li>
+                <span class="shortcuts-list__desc">Open selected note</span>
+                <span class="shortcuts-list__keys"><kbd class="landing-kbd">Enter</kbd></span>
+              </li>
+              <li>
+                <span class="shortcuts-list__desc">Close editor / dismiss</span>
+                <span class="shortcuts-list__keys"><kbd class="landing-kbd">Esc</kbd></span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="shortcuts-group">
+            <h3 class="shortcuts-group__title">Editor</h3>
+            <ul class="shortcuts-list">
+              <li>
+                <span class="shortcuts-list__desc">Bold · Italic · Underline</span>
+                <span class="shortcuts-list__keys"><kbd class="landing-kbd">Ctrl</kbd>+<kbd class="landing-kbd">B</kbd> / <kbd class="landing-kbd">I</kbd> / <kbd class="landing-kbd">U</kbd></span>
+              </li>
+              <li>
+                <span class="shortcuts-list__desc">Inline code</span>
+                <span class="shortcuts-list__keys"><kbd class="landing-kbd">Ctrl</kbd>+<kbd class="landing-kbd">E</kbd></span>
+              </li>
+              <li>
+                <span class="shortcuts-list__desc">Heading 1 · 2 · 3</span>
+                <span class="shortcuts-list__keys"><kbd class="landing-kbd">Ctrl</kbd>+<kbd class="landing-kbd">Alt</kbd>+<kbd class="landing-kbd">1</kbd> / <kbd class="landing-kbd">2</kbd> / <kbd class="landing-kbd">3</kbd></span>
+              </li>
+              <li>
+                <span class="shortcuts-list__desc">Undo · Redo</span>
+                <span class="shortcuts-list__keys"><kbd class="landing-kbd">Ctrl</kbd>+<kbd class="landing-kbd">Z</kbd> / <kbd class="landing-kbd">Y</kbd></span>
+              </li>
+              <li>
+                <span class="shortcuts-list__desc">Copy · Cut · Paste</span>
+                <span class="shortcuts-list__keys"><kbd class="landing-kbd">Ctrl</kbd>+<kbd class="landing-kbd">C</kbd> / <kbd class="landing-kbd">X</kbd> / <kbd class="landing-kbd">V</kbd></span>
+              </li>
+              <li>
+                <span class="shortcuts-list__desc">Paste as plain text</span>
+                <span class="shortcuts-list__keys"><kbd class="landing-kbd">Ctrl</kbd>+<kbd class="landing-kbd">Shift</kbd>+<kbd class="landing-kbd">V</kbd></span>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </section>

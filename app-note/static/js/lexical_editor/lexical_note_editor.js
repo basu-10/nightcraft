@@ -1,8 +1,15 @@
 import {
   createEditor,
   $getRoot,
+  $getSelection,
+  $isRangeSelection,
   $createTextNode,
   $createParagraphNode,
+  $createHeadingNode,
+  $setBlocksType,
+  FORMAT_TEXT_COMMAND,
+  UNDO_COMMAND,
+  REDO_COMMAND,
   registerRichText,
   HeadingNode,
   QuoteNode,
@@ -95,6 +102,7 @@ class LexicalNoteEditor {
 
     attachContextMenu(this._editor, this._rootEl);
     this._attachPasteListener();
+    this._attachKeyboardShortcuts();
 
     this._editor.registerUpdateListener(({ editorState }) => {
       if (this._ignoreChange) return;
@@ -203,6 +211,67 @@ class LexicalNoteEditor {
           reader.readAsDataURL(blob);
           return;
         }
+      }
+    });
+  }
+
+  _attachKeyboardShortcuts() {
+    if (!this._rootEl || !this._editor) return;
+    const editor = this._editor;
+
+    this._rootEl.addEventListener('keydown', (e) => {
+      const ctrl = e.ctrlKey || e.metaKey;
+      if (!ctrl) return;
+
+      // Undo / Redo — Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y.
+      if (!e.altKey && e.code === 'KeyZ') {
+        e.preventDefault();
+        editor.dispatchCommand(e.shiftKey ? REDO_COMMAND : UNDO_COMMAND, undefined);
+        return;
+      }
+      if (!e.altKey && !e.shiftKey && e.code === 'KeyY') {
+        e.preventDefault();
+        editor.dispatchCommand(REDO_COMMAND, undefined);
+        return;
+      }
+
+      // Inline code — Ctrl+E.
+      if (!e.altKey && !e.shiftKey && e.code === 'KeyE') {
+        e.preventDefault();
+        editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'code');
+        return;
+      }
+
+      // Headings — Ctrl+Alt+1 / 2 / 3.
+      if (
+        e.altKey &&
+        !e.shiftKey &&
+        (e.code === 'Digit1' || e.code === 'Digit2' || e.code === 'Digit3')
+      ) {
+        e.preventDefault();
+        const tag = 'h' + e.code.slice(-1);
+        editor.update(() => {
+          const s = $getSelection();
+          if ($isRangeSelection(s)) $setBlocksType(s, () => $createHeadingNode(tag));
+        });
+        return;
+      }
+
+      // Paste as plain text — Ctrl+Shift+V.
+      if (e.shiftKey && !e.altKey && e.code === 'KeyV') {
+        e.preventDefault();
+        if (!navigator.clipboard || !navigator.clipboard.readText) return;
+        navigator.clipboard
+          .readText()
+          .then((text) => {
+            if (!text) return;
+            editor.update(() => {
+              const s = $getSelection();
+              if ($isRangeSelection(s)) s.insertRawText(text);
+            });
+          })
+          .catch((err) => console.warn('[Lexical] Plain-text paste failed:', err));
+        return;
       }
     });
   }

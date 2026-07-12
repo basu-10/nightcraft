@@ -36,6 +36,7 @@
       pendingReset: false,
     },
     view: "grid", // 'grid' | 'rows'
+    navIndex: -1, // keyboard-selected note card index (arrow-key navigation)
     editorDirty: false,
     isSaving: false,
     pendingSave: false,
@@ -1064,6 +1065,7 @@
   function renderNoteList() {
     noteList.className = `note-list${state.view === "rows" ? " note-list--rows" : ""}`;
     noteList.innerHTML = "";
+    state.navIndex = -1;
     const isTrashView = state.filter.section === "trash";
     if (btnEmptyNew) btnEmptyNew.hidden = isTrashView;
     if (!state.notes.length) {
@@ -1078,6 +1080,52 @@
       noteList.appendChild(card);
     });
     renderLoadMoreButton();
+  }
+
+  // ── Keyboard note-list navigation ──────────────────────────────────────────
+  // True when focus is in a text field / the editor, so global single-key
+  // shortcuts (arrows, Enter) should be ignored.
+  function _isTypingContext() {
+    const el = document.activeElement;
+    if (!el) return false;
+    const tag = (el.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea" || tag === "select") return true;
+    if (el.isContentEditable) return true;
+    return false;
+  }
+
+  // True when the editor panel is currently open.
+  function _isEditorOpen() {
+    return !editorPanel.classList.contains("editor-panel--closed");
+  }
+
+  function setNoteSelection(idx) {
+    const cards = noteList.querySelectorAll(".note-card");
+    if (!cards.length) {
+      state.navIndex = -1;
+      return;
+    }
+    const clamped = Math.max(0, Math.min(cards.length - 1, idx));
+    state.navIndex = clamped;
+    cards.forEach((el, i) =>
+      el.classList.toggle("note-card--selected", i === clamped),
+    );
+    cards[clamped].scrollIntoView({ block: "nearest" });
+  }
+
+  function moveNoteSelection(delta) {
+    const cards = noteList.querySelectorAll(".note-card");
+    if (!cards.length) return;
+    let idx = state.navIndex;
+    if (idx < 0) idx = delta > 0 ? 0 : cards.length - 1;
+    else idx = idx + delta;
+    setNoteSelection(idx);
+  }
+
+  function openSelectedNote() {
+    if (state.navIndex < 0) return;
+    const note = state.notes[state.navIndex];
+    if (note) openNote(note.id);
   }
 
   function buildNoteCard(note) {
@@ -2489,17 +2537,78 @@
       createNoteSafely();
     });
 
-    // Keyboard shortcut Ctrl+N
+    // ── Global keyboard shortcuts ────────────────────────────────────────────
     document.addEventListener("keydown", (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "n") {
+      const ctrl = e.ctrlKey || e.metaKey;
+
+      // New note — Ctrl+Alt+N.
+      // (Plain Ctrl+N is reserved by the browser for "new window" and cannot be
+      //  intercepted, so we use Ctrl+Alt+N which reliably reaches the page.)
+      if (ctrl && e.altKey && !e.shiftKey && e.code === "KeyN") {
         e.preventDefault();
         createNoteSafely();
+        return;
       }
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+
+      // New note from clipboard — Ctrl+Shift+N (with Ctrl+Alt+V fallback, since
+      // some browsers capture Ctrl+Shift+N for a private/incognito window).
+      if (
+        (ctrl && e.shiftKey && !e.altKey && e.code === "KeyN") ||
+        (ctrl && e.altKey && !e.shiftKey && e.code === "KeyV")
+      ) {
+        e.preventDefault();
+        createNoteFromClipboard();
+        return;
+      }
+
+      // Save — Ctrl+S.
+      if (ctrl && !e.altKey && !e.shiftKey && e.code === "KeyS") {
         e.preventDefault();
         saveCurrentNote(true);
+        return;
       }
+
+      // Focus search — Ctrl+F.
+      if (ctrl && !e.altKey && !e.shiftKey && e.code === "KeyF") {
+        e.preventDefault();
+        setSearchVisible(true);
+        searchInput?.focus();
+        searchInput?.select();
+        return;
+      }
+
+      // Note-list navigation — Arrow Up/Down to move, Enter to open.
+      // Ignored while typing in a field or with the editor open.
+      if (
+        !ctrl &&
+        !e.altKey &&
+        !_isTypingContext() &&
+        !_isEditorOpen() &&
+        (e.key === "ArrowDown" || e.key === "ArrowUp")
+      ) {
+        e.preventDefault();
+        moveNoteSelection(e.key === "ArrowDown" ? 1 : -1);
+        return;
+      }
+      if (
+        e.key === "Enter" &&
+        !ctrl &&
+        !_isTypingContext() &&
+        !_isEditorOpen() &&
+        state.navIndex >= 0
+      ) {
+        e.preventDefault();
+        openSelectedNote();
+        return;
+      }
+
       if (e.key === "Escape") {
+        // If the search box is focused, Escape just defocuses/hides it.
+        if (document.activeElement === searchInput) {
+          searchInput.blur();
+          setSearchVisible(false);
+          return;
+        }
         closeSidebar();
         closeEditor();
       }

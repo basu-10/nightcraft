@@ -1477,6 +1477,13 @@ a:active {
   box-shadow: var(--shadow-inset);
 }
 
+/* Keyboard-selected card (Arrow Up/Down navigation) */
+.note-card--selected {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  box-shadow: var(--shadow-raised-md);
+}
+
 /* Header: title + star + menu */
 .note-card__header {
   display: flex;
@@ -3878,6 +3885,158 @@ html[data-theme="dark"] .ProseMirror .placeholder {
   color: var(--text-secondary);
 }
 
+/* ── Keyboard shortcuts section ────────────────────────────────────────── */
+.landing-shortcuts {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: clamp(20px, 4vw, 40px);
+  align-items: center;
+}
+
+.shortcuts-preview {
+  position: relative;
+}
+
+.shortcuts-preview__body {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr);
+  min-height: 240px;
+}
+
+.shortcuts-preview__notes {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-right: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  background: color-mix(in srgb, var(--bg-sidebar) 55%, transparent);
+}
+
+.shortcuts-preview__search {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 10px;
+  font-size: var(--type-sm);
+  color: var(--text-secondary);
+  background: var(--bg-input);
+  border: 1px solid color-mix(in srgb, var(--border-med) 60%, transparent);
+}
+
+.shortcuts-preview__keys {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.shortcuts-preview__editor {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: color-mix(in srgb, var(--bg-card) 92%, transparent);
+}
+
+.shortcuts-preview__toolbar {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.shortcuts-preview__tool {
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  background: var(--bg-btn-2nd);
+  border: 1px solid color-mix(in srgb, var(--border-med) 55%, transparent);
+}
+
+.hero-preview__note--selected {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  background: var(--accent-dim);
+}
+
+.shortcuts-preview__hint {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: var(--type-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--bg-modal) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-med) 55%, transparent);
+  backdrop-filter: blur(5px);
+  box-shadow: var(--shadow-raised-sm);
+}
+
+.shortcuts-lists {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.shortcuts-group__title {
+  font-family: var(--font-mono);
+  font-size: var(--type-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.shortcuts-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.shortcuts-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.shortcuts-list li:nth-child(odd) {
+  background: color-mix(in srgb, var(--bg-card) 55%, transparent);
+}
+
+.shortcuts-list__desc {
+  font-size: var(--type-base);
+  color: var(--text-secondary);
+}
+
+.shortcuts-list__keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: var(--type-xs);
+  color: var(--text-muted);
+  text-align: right;
+}
+
 /* ── Final CTA ─────────────────────────────────────────────────────────── */
 .landing-cta {
   text-align: center;
@@ -4453,6 +4612,14 @@ html[data-theme="dark"] .ProseMirror .placeholder {
 
   .landing-split {
     grid-template-columns: 1fr;
+  }
+
+  .landing-shortcuts {
+    grid-template-columns: 1fr;
+  }
+
+  .shortcuts-preview {
+    order: -1;
   }
 
   .landing-footer {
