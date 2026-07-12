@@ -42,6 +42,7 @@ def _reset_postgres_state(database):
             tag_tombstones,
             folder_tombstones,
             sync_idempotency,
+            note_edges,
             notes,
             tags,
             folders,

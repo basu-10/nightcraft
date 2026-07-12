@@ -4,10 +4,25 @@
 Migrate NoteStack (`app-note`) from SQLite-first storage to PostgreSQL while preserving API behavior, sync semantics, and SSO/session flows.
 
 ## Current status
-- Phase 1 started.
-- Backend configuration plumbing is added (`NOTESTACK_DB_BACKEND`, `DATABASE_URL`).
-- PostgreSQL schema bootstrap path is added in `app/database.py`.
-- SQLite remains default runtime backend to avoid production regressions during phased migration.
+- Phase 1 complete: backend config (`NOTESTACK_DB_BACKEND`, `DATABASE_URL`) and
+  PostgreSQL schema bootstrap live in `app/database.py`; `note_edges` schema is
+  handled in `app/references.py`.
+- Phase 2 complete: all SQLite-only constructs in runtime paths are covered by the
+  SQL compatibility layer in `app/database.py` (`datetime('now')`, `last_insert_rowid()`,
+  `INSERT OR IGNORE`, `COLLATE NOCASE`, `GROUP_CONCAT`); backend-specific tests exist.
+- Phase 3 complete:
+  - PostgreSQL role/db are provisioned for notestack via
+    `platform-infra/prod-debian/postgres/{create-dbs,users-and-permissions}.sql`
+    and `scripts/setup-postgres.sh` (wired through `nightcraft-server-bootstrap.sh`).
+  - `platform-infra/prod-debian/env-examples/note.env.example` templates
+    `/etc/nightcraft/app-note.env` (installed by `scripts/install-env.sh`), sets
+    `NOTESTACK_DB_BACKEND=postgres`, and lets `deploy-note.sh` derive `DATABASE_URL`.
+  - `deploy-note.sh` requires `NOTESTACK_DB_BACKEND=postgres` and derives/writes
+    `DATABASE_URL` into `/etc/nightcraft/app-note.env`.
+  - Sync logging is hardened (`app/sync_logging.py` ignores dir/file failures;
+    `app/main/routes.py` `/sync-log` returns an empty body on read errors).
+  - One-time data migration script: `app-note/scripts/migrate_sqlite_to_postgres.py`.
+- Phase 4 (cutover) and Phase 5 (cleanup) are operational/server steps.
 
 ## Phase 1: Foundation (in progress)
 - Add PostgreSQL driver dependency (`psycopg[binary]`).
@@ -26,11 +41,14 @@ Migrate NoteStack (`app-note`) from SQLite-first storage to PostgreSQL while pre
 - Add backend-specific integration tests for core CRUD and sync endpoints.
 
 ## Phase 3: Production cutover preparation
-- Add PostgreSQL role/db provisioning for NoteStack in infra scripts.
-- Add `DATABASE_URL` to `/etc/nightcraft/app-note.env` templates.
-- Harden production deploy: `deploy-note.sh` requires `NOTESTACK_DB_BACKEND=postgres`, derives the default PostgreSQL URL when `DATABASE_URL` is absent, and writes the resolved URL back to `/etc/nightcraft/app-note.env`.
-- Harden sync logging: write sync logs under `LOCALAPPDATA/ABasu_apps/NoteStack/sync.log`, ignore directory/file creation failures, and return an empty `/sync-log` response on read failures instead of 502.
-- Provide one-time data migration script from SQLite file to PostgreSQL.
+- Add PostgreSQL role/db provisioning for NoteStack in infra scripts. (DONE)
+- Add `DATABASE_URL` to `/etc/nightcraft/app-note.env` templates. (DONE:
+  `platform-infra/prod-debian/env-examples/note.env.example`, consumed by
+  `install-env.sh`; `deploy-note.sh` derives `DATABASE_URL` when absent.)
+- Harden production deploy: `deploy-note.sh` requires `NOTESTACK_DB_BACKEND=postgres`, derives the default PostgreSQL URL when `DATABASE_URL` is absent, and writes the resolved URL back to `/etc/nightcraft/app-note.env`. (DONE)
+- Harden sync logging: write sync logs under `LOCALAPPDATA/ABasu_apps/NoteStack/sync.log`, ignore directory/file creation failures, and return an empty `/sync-log` response on read failures instead of 502. (DONE)
+- Provide one-time data migration script from SQLite file to PostgreSQL. (DONE:
+  `app-note/scripts/migrate_sqlite_to_postgres.py`.)
 - Validate read/write parity against snapshot fixtures.
 
 ## Phase 4: Cutover

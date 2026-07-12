@@ -2,7 +2,7 @@ service-auth - oidc server that validates users to other apps
 app-radio - properly integrated with service-auth.
 
 app-artsy - ongoing
-app-note - dump from old project repo with its own sign in system and legacy SQLite internals (pending migration).
+app-note - migrated to PostgreSQL (NOTESTACK_DB_BACKEND=postgres). Legacy SQLite internals retained as a fallback; one-time SQLite->PostgreSQL migration script at app-note/scripts/migrate_sqlite_to_postgres.py.
 app-researchAgent - migrated to shared auth and PostgreSQL-backed runtime config.
 
 app-landing - no code files. will hold logic to showscase different apps and provide links to visit them.
