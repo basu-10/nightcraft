@@ -1798,15 +1798,58 @@
     noteTitle.select();
   }
 
+  function readClipboardViaFallback() {
+    return new Promise((resolve, reject) => {
+      const overlay = document.getElementById("clipboard-fallback-modal");
+      const textarea = document.getElementById("clipboard-fallback-text");
+      const btnCreate = document.getElementById("btn-clipboard-fallback-create");
+      const btnCancel = document.getElementById("btn-clipboard-fallback-cancel");
+      if (!overlay || !textarea || !btnCreate || !btnCancel) {
+        reject(new Error("Clipboard fallback UI not found"));
+        return;
+      }
+      textarea.value = "";
+      overlay.hidden = false;
+      textarea.focus();
+      const cleanup = () => {
+        overlay.hidden = true;
+        btnCreate.removeEventListener("click", onCreate);
+        btnCancel.removeEventListener("click", onCancel);
+      };
+      const onCreate = () => {
+        cleanup();
+        resolve(textarea.value);
+      };
+      const onCancel = () => {
+        cleanup();
+        reject(new Error("Cancelled"));
+      };
+      btnCreate.addEventListener("click", onCreate);
+      btnCancel.addEventListener("click", onCancel);
+    });
+  }
+
   async function createNoteFromClipboard() {
     let clipContent = "";
-    try {
-      clipContent = await navigator.clipboard.readText();
-    } catch {
-      alert(
-        "Clipboard access unavailable. Make sure the page is served over HTTPS and you have granted clipboard permission.",
-      );
-      return;
+    const canUseClipboardAPI =
+      navigator.clipboard &&
+      typeof navigator.clipboard.readText === "function";
+    if (canUseClipboardAPI) {
+      try {
+        clipContent = await navigator.clipboard.readText();
+      } catch {
+        try {
+          clipContent = await readClipboardViaFallback();
+        } catch {
+          return;
+        }
+      }
+    } else {
+      try {
+        clipContent = await readClipboardViaFallback();
+      } catch {
+        return;
+      }
     }
     const body = {
       title: "New note",

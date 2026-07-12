@@ -358,6 +358,24 @@
   </div>
 </div>
 
+<!-- Clipboard fallback modal (used when the page is not served over HTTPS) -->
+<div id="clipboard-fallback-modal" class="modal-overlay" hidden>
+  <div class="modal">
+    <h2 class="modal__title">Paste from clipboard</h2>
+    <p class="form-hint">
+      Clipboard access needs HTTPS. Press <kbd>Ctrl</kbd>+<kbd>V</kbd> (or <kbd>Cmd</kbd>+<kbd>V</kbd>)
+      in the box below to paste your content.
+    </p>
+    <label class="form-label">Content
+      <textarea id="clipboard-fallback-text" class="form-input" rows="8" style="resize: vertical;"></textarea>
+    </label>
+    <div class="modal__actions">
+      <button class="btn btn--ghost" id="btn-clipboard-fallback-cancel">Cancel</button>
+      <button class="btn btn--primary" id="btn-clipboard-fallback-create">Create note</button>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
