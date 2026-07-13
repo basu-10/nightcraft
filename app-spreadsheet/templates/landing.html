@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>tinyXL — Spreadsheet Workspace</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        :root {
+            --txl-teal: #1f7a6d;
+            --txl-dark: #16324a;
+            --txl-slate: #4a5870;
+            --txl-muted: #6b7a93;
+            --txl-border: #d5dde8;
+            --txl-bg: #f8fafc;
+            --txl-hero-bg: linear-gradient(135deg, #f0f4f8 0%, #e8eef8 100%);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: var(--txl-dark);
+            background: #fff;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Navigation */
+        .landing-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 40px;
+            border-bottom: 1px solid var(--txl-border);
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(8px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-left { display: flex; align-items: center; gap: 32px; }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--txl-dark);
+        }
+
+        .logo-icon {
+            width: 32px; height: 32px;
+            background: var(--txl-dark);
+            color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 16px; border-radius: 6px;
+            font-family: 'SF Mono', 'Consolas', monospace;
+        }
+
+        .logo-text { font-weight: 700; font-size: 18px; letter-spacing: -0.02em; }
+        .logo-sub { font-size: 11px; color: var(--txl-muted); font-weight: 500; letter-spacing: 0.02em; text-transform: lowercase; }
+
+        .nav-links { display: flex; gap: 28px; list-style: none; }
+        .nav-links a {
+            text-decoration: none; color: var(--txl-slate);
+            font-size: 14px; font-weight: 500; transition: color 0.15s;
+        }
+        .nav-links a:hover { color: var(--txl-dark); }
+        .nav-links a.active { color: var(--txl-dark); font-weight: 600; }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 9px 18px; border-radius: 8px;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            border: none; text-decoration: none; transition: all 0.15s; font-family: inherit;
+        }
+        .btn-primary { background: var(--txl-dark); color: #fff; }
+        .btn-primary:hover { background: #0f2438; }
+        .btn-secondary { background: #fff; color: var(--txl-dark); border: 1px solid var(--txl-border); }
+        .btn-secondary:hover { background: var(--txl-bg); border-color: #b0bec5; }
+        .btn-large { padding: 12px 24px; font-size: 15px; }
+
+        /* Hero */
+        .hero { background: var(--txl-hero-bg); padding: 64px 40px 0; overflow: hidden; }
+        .hero-inner {
+            max-width: 1200px; margin: 0 auto;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+        }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 6px 14px; background: rgba(31, 122, 109, 0.08);
+            border: 1px solid rgba(31, 122, 109, 0.2);
+            border-radius: 20px; font-size: 13px; color: var(--txl-teal); font-weight: 600;
+            margin-bottom: 24px;
+        }
+        .hero-badge svg { width: 14px; height: 14px; }
+        .hero-title {
+            font-size: 52px; font-weight: 700; line-height: 1.1;
+            letter-spacing: -0.03em; color: var(--txl-dark); margin-bottom: 20px;
+        }
+        .hero-title em { font-style: italic; color: var(--txl-teal); }
+        .hero-desc { font-size: 16px; color: var(--txl-slate); line-height: 1.7; margin-bottom: 32px; max-width: 480px; }
+        .hero-actions { display: flex; gap: 12px; margin-bottom: 32px; }
+        .hero-os { display: flex; align-items: center; gap: 20px; font-size: 13px; color: var(--txl-muted); }
+        .hero-os-item { display: flex; align-items: center; gap: 6px; }
+        .hero-os-item svg { width: 16px; height: 16px; opacity: 0.7; }
+
+        .hero-visual { position: relative; }
+        .hero-mockup {
+            background: #fff; border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(22, 50, 74, 0.12), 0 0 0 1px rgba(22, 50, 74, 0.06);
+            overflow: hidden;
+            transform: perspective(800px) rotateY(-6deg) rotateX(2deg);
+            transition: transform 0.4s ease;
+        }
+        .hero-mockup:hover { transform: perspective(800px) rotateY(-2deg) rotateX(1deg); }
+        .mockup-header {
+            background: #f8fafc; border-bottom: 1px solid var(--txl-border);
+            padding: 10px 14px; display: flex; align-items: center; gap: 8px;
+        }
+        .mockup-dot { width: 10px; height: 10px; border-radius: 50%; background: #d5dde8; }
+        .mockup-dot.red { background: #ff5f57; }
+        .mockup-dot.yellow { background: #ffbd2e; }
+        .mockup-dot.green { background: #28c840; }
+        .mockup-title { margin-left: 8px; font-size: 12px; color: var(--txl-muted); font-weight: 500; }
+        .mockup-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        .mockup-table th {
+            background: #f0f4f8; padding: 8px 12px; text-align: left; font-weight: 600;
+            color: var(--txl-slate); border-bottom: 1px solid var(--txl-border);
+            font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em;
+        }
+        .mockup-table td {
+            padding: 7px 12px; border-bottom: 1px solid #f0f2f5; color: var(--txl-dark);
+            font-family: 'SF Mono', 'Consolas', monospace; font-size: 11px;
+        }
+        .mockup-table tr:nth-child(even) td { background: #fafbfc; }
+        .mockup-table tr.highlight td { background: #e6f2ff; }
+
+        /* Sections */
+        .section { padding: 80px 40px; }
+        .section-inner { max-width: 1200px; margin: 0 auto; }
+        .section-label {
+            font-size: 12px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.08em; color: var(--txl-teal); margin-bottom: 12px;
+        }
+        .section-title {
+            font-size: 36px; font-weight: 700; letter-spacing: -0.02em;
+            color: var(--txl-dark); margin-bottom: 16px; line-height: 1.2;
+        }
+        .section-desc { font-size: 16px; color: var(--txl-slate); max-width: 600px; line-height: 1.7; }
+
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 48px; }
+        .feature-card {
+            padding: 28px; border: 1px solid var(--txl-border); border-radius: 12px;
+            background: #fff; transition: all 0.2s;
+        }
+        .feature-card:hover { border-color: #b0bec5; box-shadow: 0 4px 12px rgba(22, 50, 74, 0.06); }
+        .feature-icon {
+            width: 40px; height: 40px; border-radius: 8px;
+            background: rgba(31, 122, 109, 0.08); display: flex; align-items: center; justify-content: center;
+            margin-bottom: 16px; color: var(--txl-teal);
+        }
+        .feature-icon svg { width: 20px; height: 20px; }
+        .feature-card h3 { font-size: 15px; font-weight: 700; color: var(--txl-dark); margin-bottom: 8px; }
+        .feature-card p { font-size: 13.5px; color: var(--txl-slate); line-height: 1.6; }
+
+        .split-section { display: grid; grid-template-columns: 1fr 2fr; gap: 60px; align-items: start; }
+        .split-section .section-title { font-size: 32px; }
+        .divider { width: 48px; height: 3px; background: var(--txl-border); margin: 20px 0; }
+
+        .oss-section { background: var(--txl-bg); border-top: 1px solid var(--txl-border); border-bottom: 1px solid var(--txl-border); }
+        .oss-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+        .oss-formats { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+        .format-tag {
+            padding: 6px 14px; background: #fff; border: 1px solid var(--txl-border); border-radius: 6px;
+            font-size: 13px; font-weight: 600; color: var(--txl-slate); font-family: 'SF Mono', 'Consolas', monospace;
+        }
+        .oss-card { background: #fff; border: 1px solid var(--txl-border); border-radius: 12px; padding: 28px; }
+        .oss-card-icon {
+            width: 48px; height: 48px; background: #f0f4f8; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+            font-family: 'SF Mono', 'Consolas', monospace; font-size: 11px; font-weight: 700;
+            color: var(--txl-muted); border: 1px dashed var(--txl-border);
+        }
+        .oss-card h4 { font-size: 14px; font-weight: 700; color: var(--txl-dark); margin-bottom: 8px; }
+        .oss-card p { font-size: 13px; color: var(--txl-slate); line-height: 1.6; }
+
+        .tech-stack { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+        .tech-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 14px; background: #fff; border: 1px solid var(--txl-border);
+            border-radius: 6px; font-size: 13px; color: var(--txl-slate); font-weight: 500;
+        }
+        .tech-badge svg { width: 14px; height: 14px; opacity: 0.7; }
+
+        .landing-footer {
+            padding: 32px 40px; border-top: 1px solid var(--txl-border);
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 13px; color: var(--txl-muted);
+        }
+        .footer-links { display: flex; gap: 24px; }
+        .footer-links a { color: var(--txl-muted); text-decoration: none; transition: color 0.15s; }
+        .footer-links a:hover { color: var(--txl-dark); }
+
+        @media (max-width: 900px) {
+            .hero-inner { grid-template-columns: 1fr; }
+            .hero-visual { display: none; }
+            .features-grid { grid-template-columns: repeat(2, 1fr); }
+            .split-section { grid-template-columns: 1fr; }
+            .oss-grid { grid-template-columns: 1fr; }
+            .landing-nav { padding: 16px 20px; }
+            .nav-links { display: none; }
+            .section { padding: 48px 20px; }
+            .hero { padding: 40px 20px 0; }
+            .hero-title { font-size: 36px; }
+        }
+        @media (max-width: 600px) {
+            .features-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="landing-nav">
+        <div class="nav-left">
+            <a href="{{ request.script_root }}/" class="logo">
+                <div class="logo-icon">T</div>
+                <div>
+                    <div class="logo-text">tinyXL</div>
+                    <div class="logo-sub">spreadsheet workspace</div>
+                </div>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ request.script_root }}/" class="active">Home</a></li>
+                <li><a href="{{ request.script_root }}/app/">New</a></li>
+                <li><a href="{{ request.script_root }}/app/">Upload</a></li>
+                <li><a href="{{ request.script_root }}/app/">Settings</a></li>
+                <li><a href="{{ request.script_root }}/app/">About</a></li>
+            </ul>
+        </div>
+        <a href="{{ request.script_root }}/app/" class="btn btn-primary">Open a File</a>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-inner">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    Cross-platform. In your browser. Always ready.
+                </div>
+                <h1 class="hero-title">The fastest way to <em>inspect</em> spreadsheets.</h1>
+                <p class="hero-desc">Open large Excel or CSV files instantly. Keep your layout, filters, and views exactly how you left them. No Excel required.</p>
+                <div class="hero-actions">
+                    <a href="{{ request.script_root }}/app/" class="btn btn-primary btn-large">Open a File</a>
+                    <a href="{{ request.script_root }}/app/" class="btn btn-secondary btn-large">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                        Try Sample File
+                    </a>
+                </div>
+                <div class="hero-os">
+                    <div class="hero-os-item">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 0c-.16 0-.32.01-.48.02-4.23.34-3.1 4.81-3.17 6.3-.08 1.09-.3 1.95-1.05 3.02-.88 1.05-2.13 2.75-2.72 4.52-.28.83-.41 1.68-.29 2.52.24 1.68 1.23 3.25 2.6 4.17 1.35.91 3.04 1.14 4.58.61.87-.3 1.68-.81 2.36-1.47.49-.47.93-.98 1.32-1.53.11-.15.21-.3.31-.46.03-.05.06-.1.08-.15.02-.04.04-.09.06-.13.01-.03.02-.06.03-.09.01-.02.01-.04.01-.06v-.01c.01-.03.01-.06.01-.1 0-.03-.01-.06-.02-.1-.01-.03-.02-.07-.03-.1-.01-.04-.03-.08-.04-.12-.01-.03-.03-.06-.05-.09-.02-.04-.04-.07-.06-.1-.02-.03-.05-.06-.08-.09-.03-.03-.05-.05-.08-.07-.03-.02-.06-.04-.1-.05-.03-.02-.07-.03-.11-.04-.04-.01-.08-.01-.12-.01z"/></svg>
+                        Linux
+                    </div>
+                    <div class="hero-os-item">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.45L9.75 2.1v9.45H0m10.95-9.6L24 0v11.4H10.95M0 12.6h9.75v9.45L0 20.7M10.95 12.6H24V24l-12.9-1.8"/></svg>
+                        Windows
+                    </div>
+                    <div class="hero-os-item">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.29-.03 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.21-1.96 1.07-3.11-1.05.05-2.31.71-3.06 1.56-.68.78-1.28 2.05-1.12 3.04 1.19.09 2.36-.62 3.11-1.49"/></svg>
+                        macOS
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="hero-mockup">
+                    <div class="mockup-header">
+                        <div class="mockup-dot red"></div>
+                        <div class="mockup-dot yellow"></div>
+                        <div class="mockup-dot green"></div>
+                        <span class="mockup-title">Sales_Data.xlsx — tinyXL</span>
+                    </div>
+                    <div class="mockup-body">
+                        <table class="mockup-table">
+                            <thead>
+                                <tr><th>Order ID</th><th>Customer</th><th>Region</th><th>Order Date</th><th>Category</th><th>Amount</th><th>Status</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>10045</td><td>Acme Corp</td><td>North</td><td>2024-05-12</td><td>Electronics</td><td>12,560.00</td><td>Completed</td></tr>
+                                <tr><td>10046</td><td>Globex Inc</td><td>West</td><td>2024-05-13</td><td>Furniture</td><td>8,230.50</td><td>Completed</td></tr>
+                                <tr><td>10047</td><td>Soylent Co</td><td>North</td><td>2024-05-13</td><td>Electronics</td><td>15,130.20</td><td>Completed</td></tr>
+                                <tr class="highlight"><td>10048</td><td>Umbrella Corp</td><td>North</td><td>2024-05-14</td><td>Electronics</td><td>22,980.40</td><td>Completed</td></tr>
+                                <tr><td>10049</td><td>Hooli</td><td>North</td><td>2024-05-15</td><td>Furniture</td><td>7,190.00</td><td>Completed</td></tr>
+                                <tr><td>10050</td><td>Stark Industries</td><td>East</td><td>2024-05-16</td><td>Office</td><td>11,300.10</td><td>Completed</td></tr>
+                                <tr><td>10051</td><td>Wayne Enterprises</td><td>North</td><td>2024-05-16</td><td>Electronics</td><td>31,450.00</td><td>Shipped</td></tr>
+                                <tr><td>10052</td><td>Oscorp</td><td>West</td><td>2024-05-17</td><td>Office</td><td>5,200.00</td><td>Processing</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-inner">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></div>
+                    <h3>Full Layout Memory</h3>
+                    <p>Column widths, row heights, colors, sticky rows &amp; header rows — saved automatically.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></div>
+                    <h3>Linked Filter Views</h3>
+                    <p>Create named filtered views of any sheet. They appear as tabs for instant access.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></div>
+                    <h3>50-Level Undo/Redo</h3>
+                    <p>Full-state snapshots for both data and layout changes. Never lose your work.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></div>
+                    <h3>Auto-Save</h3>
+                    <p>Debounced persistence every 400ms. Close the page without worry.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" style="background:#fafbfc;">
+        <div class="section-inner">
+            <div class="split-section">
+                <div>
+                    <div class="section-label">Built for clarity and control</div>
+                    <h2 class="section-title">Everything you need,<br>nothing you don't.</h2>
+                    <div class="divider"></div>
+                </div>
+                <div class="features-grid" style="margin-top:0;">
+                    <div class="feature-card">
+                        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+                        <h3>Inline Editing</h3>
+                        <p>Double-click any cell to edit. Multi-line textarea support. Cut, copy, and paste across cells.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></div>
+                        <h3>Smart Paste</h3>
+                        <p>When pasting over data, choose to insert rows &amp; columns, move conflicts to a new sheet, or cancel.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+                        <h3>Header Row Awareness</h3>
+                        <p>Designate header rows that stay pinned during sorting and are excluded from filtering.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
+                        <h3>Smart Column Types</h3>
+                        <p>Auto-detects numeric or text columns. Override manually with a single click.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/><path d="M12 22v-6"/></svg></div>
+                        <h3>Cell Colors</h3>
+                        <p>Customize text and background colors. Your custom swatches are saved automatically.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+                        <h3>Bulk Row Height</h3>
+                        <p>Algorithm calculates optimal row heights based on wrapped text content across the entire sheet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section oss-section">
+        <div class="section-inner">
+            <div class="oss-grid">
+                <div>
+                    <div class="section-label">Open. Save. Share.</div>
+                    <h2 class="section-title">Work with your files, your way.</h2>
+                    <p class="section-desc">Open a wide range of formats and export your entire workspace as a portable .txl file — complete with all sheets, layouts, and views.</p>
+                    <a href="{{ request.script_root }}/app/" class="btn btn-secondary" style="margin-top:20px;">
+                        Learn more about .txl
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </a>
+                </div>
+                <div>
+                    <div class="section-label" style="margin-bottom:16px;">Supported Formats</div>
+                    <div class="oss-formats">
+                        <span class="format-tag">.xlsx</span><span class="format-tag">.xlsm</span><span class="format-tag">.xls</span>
+                        <span class="format-tag">.xlsb</span><span class="format-tag">.csv</span><span class="format-tag">.txl</span>
+                    </div>
+                    <div class="oss-card" style="margin-top:24px;">
+                        <div class="oss-card-icon">.txl</div>
+                        <h4>TXL — Workspace Archive</h4>
+                        <p>A single JSON package that contains all sheets, layout preferences, and linked filter views. Share it, archive it, or restore it anytime.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-inner">
+            <div class="split-section">
+                <div>
+                    <div class="mockup-header" style="border:1px solid var(--txl-border); border-radius:8px 8px 0 0; background:#f8fafc; padding:10px 14px; margin-bottom:-1px; position:relative; z-index:2;">
+                        <div class="mockup-dot red"></div><div class="mockup-dot yellow"></div><div class="mockup-dot green"></div>
+                        <span class="mockup-title" style="margin-left:8px;">tinyXL</span>
+                    </div>
+                    <div style="border:1px solid var(--txl-border); border-top:none; border-radius:0 0 8px 8px; padding:20px; background:#fff;">
+                        <div style="display:flex; gap:8px; margin-bottom:12px;">
+                            <div style="width:120px; height:8px; background:#f0f4f8; border-radius:4px;"></div>
+                            <div style="width:80px; height:8px; background:#f0f4f8; border-radius:4px;"></div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            <div style="height:6px; background:#f8fafc; border-radius:3px; width:100%;"></div>
+                            <div style="height:6px; background:#f8fafc; border-radius:3px; width:90%;"></div>
+                            <div style="height:6px; background:#f8fafc; border-radius:3px; width:95%;"></div>
+                            <div style="height:6px; background:#f8fafc; border-radius:3px; width:80%;"></div>
+                        </div>
+                        <div style="margin-top:16px; display:flex; gap:8px;">
+                            <div style="padding:4px 10px; background:#e6f2ff; border-radius:4px; font-size:10px; color:var(--txl-teal); font-weight:600;">Sheet1</div>
+                            <div style="padding:4px 10px; background:#f0f4f8; border-radius:4px; font-size:10px; color:var(--txl-muted);">Sheet2</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="section-label">Built with simplicity and performance in mind</div>
+                    <h2 class="section-title">Fast, lightweight, and runs everywhere.</h2>
+                    <p class="section-desc" style="margin-bottom:24px;">TinyXL is built with Flask, pandas, and vanilla JavaScript. It's lightweight, fast, and runs comfortably even on low-resource machines.</p>
+                    <div class="tech-stack">
+                        <span class="tech-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/></svg>Python Flask</span>
+                        <span class="tech-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>pandas</span>
+                        <span class="tech-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>openpyxl</span>
+                        <span class="tech-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>SQLite</span>
+                        <span class="tech-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>Vanilla JS</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="landing-footer">
+        <div>© 2024 tinyXL. All rights reserved.</div>
+        <div class="footer-links">
+            <a href="{{ request.script_root }}/app/">Open App</a>
+            <a href="{{ request.script_root }}/app/">About</a>
+        </div>
+    </footer>
+</body>
+</html>

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Optional
 
 import pandas as pd
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, redirect, render_template, request, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
@@ -508,7 +508,17 @@ def get_txl_file_id_for_path(file_path: Path) -> str:
 
 # Routes
 @app.route("/")
-def index():
+def landing():
+    return render_template("landing.html")
+
+
+@app.route("/app")
+def app_redirect():
+    return redirect(url_for("index_app"))
+
+
+@app.route("/app/")
+def index_app():
     return render_template("home.html")
 
 

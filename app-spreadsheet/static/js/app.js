@@ -348,7 +348,7 @@ function navigateToFile(filePath, fileId) {
 }
 
 function navigateToHome() {
-    window.location.href = BASE + '/';
+    window.location.href = BASE + '/app/';
 }
 
 // ==================== HOME PAGE ====================
