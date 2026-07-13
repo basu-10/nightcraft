@@ -214,7 +214,7 @@ def room_events(room_id):
                     yield sse_event("round_ready", **payload)
                 elif my_move and not opponent_moved:
                     yield sse_event("waiting_opponent", **payload)
-                elif not my_move and current_round:
+                elif not my_move:
                     yield sse_event("your_turn", **payload)
                 else:
                     yield sse_event("waiting_round", **payload)

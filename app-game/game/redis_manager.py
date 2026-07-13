@@ -64,6 +64,7 @@ def try_match(game: str) -> Optional[dict]:
         rc.lpush(queue, p1)
         return None
     room_id = str(uuid.uuid4())
+    game_mod = get_game_module(game)
     room = {
         "room_id": room_id,
         "p1": p1,
@@ -72,7 +73,7 @@ def try_match(game: str) -> Optional[dict]:
         "state": "playing",
         "round": 0,
         "scores": json.dumps({p1: 0, p2: 0}),
-        "current_round": json.dumps({}),
+        "current_round": json.dumps(game_mod.init_round()),
         "moves": json.dumps({}),
         "last_activity": str(_now()),
     }
@@ -173,7 +174,7 @@ def submit_move(room_id: str, user_id: str, move_data: dict) -> dict:
         update = {
             "scores": json.dumps(scores),
             "round": str(new_round),
-            "current_round": json.dumps({}),
+            "current_round": json.dumps(game_mod.init_round()),
             "moves": json.dumps({}),
             "results": json.dumps(results),
             "last_activity": str(_now()),

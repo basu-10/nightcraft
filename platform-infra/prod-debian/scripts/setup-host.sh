@@ -25,6 +25,7 @@ apt-get install -y \
   postgresql \
   postgresql-contrib \
   libpq-dev \
+  redis-server \
   rsync \
   curl \
   jq \
@@ -49,5 +50,6 @@ fi
 
 systemctl enable nginx
 systemctl enable postgresql
+systemctl enable redis-server
 
 echo "Host setup complete."

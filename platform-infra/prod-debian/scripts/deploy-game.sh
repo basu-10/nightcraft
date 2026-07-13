@@ -14,6 +14,7 @@ setup_venv_and_deps "${GAME_VENV_DIR}" "${GAME_SRC_DIR}"
 
 # Keep runtime files outside the source checkout.
 ensure_dir "${GAME_SHARED_DIR}"
+ensure_dir "${GAME_SHARED_DIR}/uploads"
 chown_tree "${GAME_SHARED_DIR}"
 chown_tree "${GAME_VENV_DIR}"
 

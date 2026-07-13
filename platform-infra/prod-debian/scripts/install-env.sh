@@ -84,7 +84,8 @@ copy_env "${ENV_TARGET_DIR}/app-admin.env" 1 \
   "${ENV_SRC_DIR}/app-admin.env" \
   "${ENV_SRC_DIR}/admin.env.example"
 copy_env "${ENV_TARGET_DIR}/app-game.env" 0 \
-  "${ENV_SRC_DIR}/app-game.env"
+  "${ENV_SRC_DIR}/app-game.env" \
+  "${ENV_SRC_DIR}/app-game.env.example"
 copy_env "${ENV_TARGET_DIR}/app-note.env" 1 \
   "${ENV_SRC_DIR}/app-note.env" \
   "${ENV_SRC_DIR}/note.env.example"

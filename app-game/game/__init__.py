@@ -13,4 +13,9 @@ def create_app() -> Flask:
     from .auth import auth_bp
     app.register_blueprint(auth_bp)
 
+    from .emulator import emulator_bp, init_db
+    app.register_blueprint(emulator_bp)
+    with app.app_context():
+        init_db()
+
     return app

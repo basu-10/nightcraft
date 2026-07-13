@@ -26,11 +26,13 @@
 - `rock_paper_scissors` – classic RPS outcome matrix.
 Both expose `init_round`, `validate_move`, and `evaluate_round` functions that the room manager calls.
 
-### Required Deployment Changes
-- Install Redis (apt install redis‑server) and enable it.
-- Add `nightcraft-game.service` systemd unit (2 workers, bind 127.0.0.1:5800).
-- Update `nightcraft.conf` with `upstream app_game_upstream { server 127.0.0.1:5800; }` and the `/game/` location with `proxy_buffering off;` and a long `proxy_read_timeout`.
-- Extend `deploy-all.sh` to copy the game folder, install its Python requirements (adds `redis`), and restart the new service.
+### Required Deployment Changes (PROVISIONED)
+- ✅ Install Redis (`apt install redis-server`) and enable it — handled by `setup-host.sh` and `start-all.sh`.
+- ✅ Add `nightcraft-game.service` systemd unit (2 workers, bind 127.0.0.1:5800) with `After=/Wants=redis-server.service` so the game waits for Redis.
+- ✅ `app-game.env` (`/etc/nightcraft/app-game.env`, template in `env-examples/app-game.env`) sets `REDIS_URL` + SSO vars.
+- ⚠️ Update `nightcraft.conf` with `upstream app_game_upstream { server 127.0.0.1:5800; }` and the `/game/` location with `proxy_buffering off;` and a long `proxy_read_timeout` (needed for PvP SSE streams).
+- ⚠️ **ROM uploads**: the same `/game/` location must raise `client_max_body_size` (e.g. `client_max_body_size 64m;`), otherwise the 64 MB EmulatorJS ROM uploads are rejected with HTTP 413 (nginx default is 1 MB). This is a live-config change not covered by this repo.
+- Extend `deploy-all.sh` to copy the game folder, install its Python requirements (adds `redis`), and restart the new service — done.
 
 ### Runtime Footprint (Cheap VPS)
 - Redis idle memory ~1‑3 MB, plus a few MB for room hashes.
@@ -105,4 +107,20 @@ http://31.70.85.89/          → Landing page (game hub card)
 | Waiting for opponent | [42] [73] (both enabled) + "Pick a number" | [42] [73] (both disabled) + "Waiting for opponent's move…" |
 | Both picked | Both disabled + result text + "Next Round" | Both disabled + same result + "Next Round" |
 | Game Over | "You Win! 3–1" + Play Again / Back | "You Lose! 1–3" + Play Again / Back |
+
+### My Games — EmulatorJS (in-browser ROM player)
+
+Users upload ROMs they own; the emulator (EmulatorJS, loaded from CDN) runs entirely client-side (WASM), so the server only stores files and serves them through an auth-gated route.
+
+- **Routes** (`game/emulator.py`, blueprint `emulator`, prefix `/game/emulator`):
+  - `GET /` — "My Games" library + upload form (login required).
+  - `POST /upload` — extension allowlist + size cap (64 MB) + per-user quota (20 ROMs / 512 MB); rejects unless the rights-confirm checkbox is set; stores under `${GAME_SHARED_DIR}/uploads/<user_id>/<uuid><ext>` (random name, never the client basename) and inserts a row into the SQLite DB at `${GAME_SHARED_DIR}/emulator.db`.
+  - `GET /play/<rom_id>` — renders the EmulatorJS loader (sets `EJS_*` vars, loads `loader.js` from CDN).
+  - `GET /rom/<rom_id>` — streams the file bytes (explicit `Content-Type`, `send_file` with `conditional=True` for `Content-Length`/range). Same-origin fetch sends the session cookie → stays private.
+  - `POST /delete/<rom_id>` — removes file + metadata (owner, or admin via `GAME_ADMIN_USER_IDS`).
+- **Privacy**: ROMs are private to the uploader; the `rom`/`play` routes return 404 (not 403) for non-owners to avoid leaking which IDs exist.
+- **Legal**: upload form requires an explicit rights-confirmation checkbox + short disclaimer; no BIOS files are bundled or distributed (GBA runs via mGBA HLE). Provide a DMCA contact + the admin removal path above.
+- **Core mapping** (by extension): `.gba`→`gba`, `.gb`/`.gbc`→`gb`, `.nes`→`nes`, `.smc`/`.sfc`→`snes`, `.md`/`.genesis`→`segaMD`, `.sms`→`segaMS`, `.gg`→`segaGG`, `.32x`→`sega32x`.
+- **SQLite concurrency**: `emulator.py` opens `sqlite3.connect(..., timeout=30, check_same_thread=False)` since 2 gunicorn workers write the DB.
+- **No nginx change needed** for EmulatorJS itself (CDN), but the `/game/` `client_max_body_size` must cover uploads (see above).
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+sudo systemctl start redis-server.service
 sudo systemctl start nightcraft-auth.service
 sudo systemctl start nightcraft-radio.service
 sudo systemctl start nightcraft-neera.service
