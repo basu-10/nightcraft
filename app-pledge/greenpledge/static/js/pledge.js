@@ -119,7 +119,7 @@
 
   // ---- Community count-up (graceful with zeros) --------------------------
   var nf = new Intl.NumberFormat("en-US");
-  Array.prototype.forEach.call(document.querySelectorAll(".cnum"), function (el) {
+  Array.prototype.forEach.call(document.querySelectorAll(".stat-num"), function (el) {
     var target = Number(el.dataset.target || 0);
     if (target === 0) {
       el.textContent = "0";
