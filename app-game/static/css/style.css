@@ -1,8 +1,265 @@
+:root {
+  --neon-cyan: #38f0ff;
+  --neon-magenta: #ff3df0;
+  --neon-lime: #9bff3d;
+  --hub-bg: #070b18;
+}
+
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #0f172a;
+  font-family: "Rajdhani", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--hub-bg);
   color: #e2e8f0;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Animated arcade grid background */
+.arcade-grid {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(56, 240, 255, 0.18), transparent 55%),
+    radial-gradient(circle at 100% 100%, rgba(255, 61, 240, 0.16), transparent 55%),
+    linear-gradient(rgba(56, 240, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 240, 255, 0.07) 1px, transparent 1px),
+    var(--hub-bg);
+  background-size: 100% 100%, 100% 100%, 44px 44px, 44px 44px, 100% 100%;
+  animation: grid-pan 18s linear infinite;
+}
+
+@keyframes grid-pan {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to { background-position: 0 0, 0 0, 0 22px, 22px 0, 0 0; }
+}
+
+/* CRT scanline overlay */
+.scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.18) 3px,
+    rgba(0, 0, 0, 0.18) 4px
+  );
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
+
+/* Header */
+.hub-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.hub-kicker {
+  font-family: "Orbitron", sans-serif;
+  letter-spacing: 0.35em;
+  font-size: 0.8rem;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 12px rgba(56, 240, 255, 0.7);
+  margin: 0 0 0.5rem;
+}
+
+.hub-title {
+  margin: 0;
+  font-family: "Orbitron", sans-serif;
+  font-weight: 900;
+  font-size: clamp(2.75rem, 7vw, 5rem);
+  letter-spacing: 0.04em;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta), var(--neon-lime));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 18px rgba(56, 240, 255, 0.45));
+  position: relative;
+}
+
+/* Glitch echo */
+.hub-title::before,
+.hub-title::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: transparent;
+}
+.hub-title::before {
+  color: var(--neon-magenta);
+  -webkit-text-fill-color: var(--neon-magenta);
+  mix-blend-mode: screen;
+  animation: glitch 4s infinite steps(1);
+  clip-path: inset(0 0 60% 0);
+}
+.hub-title::after {
+  color: var(--neon-cyan);
+  -webkit-text-fill-color: var(--neon-cyan);
+  mix-blend-mode: screen;
+  animation: glitch 4s infinite reverse steps(1);
+  clip-path: inset(55% 0 0 0);
+}
+
+@keyframes glitch {
+  0%, 92%, 100% { transform: translate(0, 0); }
+  93% { transform: translate(-3px, 1px); }
+  95% { transform: translate(3px, -1px); }
+  97% { transform: translate(-2px, -1px); }
+}
+
+.hub-tagline {
+  margin: 0.85rem auto 0;
+  max-width: 36rem;
+  color: #cbd5e1;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+}
+
+/* Cards */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(11, 18, 38, 0.85);
+  color: #e2e8f0;
+  text-decoration: none;
+  overflow: hidden;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.game-card[data-accent="cyan"] { --accent: var(--neon-cyan); }
+.game-card[data-accent="magenta"] { --accent: var(--neon-magenta); }
+.game-card[data-accent="lime"] { --accent: var(--neon-lime); }
+
+.game-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 30px -4px var(--accent);
+}
+
+.card-glow {
+  position: absolute;
+  inset: -1px;
+  background: radial-gradient(circle at 50% -20%, var(--accent), transparent 60%);
+  opacity: 0.12;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+.game-card:hover .card-glow { opacity: 0.32; }
+
+.card h2 {
+  margin: 0 0 0.5rem;
+  font-family: "Orbitron", sans-serif;
+  font-size: 1.35rem;
+  letter-spacing: 0.02em;
+  color: #f8fafc;
+  position: relative;
+}
+
+.card p {
+  flex: 1;
+  margin: 0 0 1rem;
+  color: #94a3b8;
+  font-size: 1.02rem;
+}
+
+.card-badge {
+  align-self: flex-start;
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.15em;
+  padding: 0.25rem 0.55rem;
+  margin-bottom: 0.85rem;
+  border-radius: 999px;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  background: rgba(0, 0, 0, 0.25);
+  text-shadow: 0 0 8px var(--accent);
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+  flex-wrap: wrap;
+  position: relative;
+}
+
+.card-actions .btn {
+  flex: 1 1 120px;
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(30, 41, 59, 0.8);
+  color: #e2e8f0;
+  font-family: "Rajdhani", sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.card-actions .btn:hover {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 16px -2px rgba(56, 189, 248, 0.6);
+  transform: translateY(-2px);
+}
+
+.card-actions .btn.pvp {
+  border-color: var(--neon-magenta);
+  color: #ffd6fb;
+}
+.card-actions .btn.pvp:hover {
+  background: rgba(255, 61, 240, 0.16);
+  border-color: var(--neon-magenta);
+  box-shadow: 0 0 16px -2px var(--neon-magenta);
+}
+
+/* Footer */
+.hub-footer {
+  margin-top: 2.5rem;
+  text-align: center;
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  color: #64748b;
+}
+
+.blink {
+  color: var(--neon-lime);
+  animation: blink 1.2s steps(1) infinite;
+}
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arcade-grid,
+  .hub-title::before,
+  .hub-title::after,
+  .blink { animation: none; }
 }
 
 .page-shell {

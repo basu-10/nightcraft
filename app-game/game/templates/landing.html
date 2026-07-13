@@ -4,83 +4,62 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Game Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/static/css/style.css" />
-    <style>
-      .card-actions {
-        display: flex;
-        gap: 0.5rem;
-        margin-top: 1rem;
-        flex-wrap: wrap;
-      }
-      .card-actions .btn {
-        flex: 1 1 120px;
-        padding: 0.6rem 1rem;
-        border-radius: 10px;
-        border: 1px solid rgba(148, 163, 184, 0.25);
-        background: rgba(30, 41, 59, 0.8);
-        color: #e2e8f0;
-        font-size: 0.85rem;
-        cursor: pointer;
-        text-align: center;
-        text-decoration: none;
-        transition: background 0.18s ease, border-color 0.18s ease;
-      }
-      .card-actions .btn:hover {
-        background: rgba(56, 189, 248, 0.15);
-        border-color: rgba(56, 189, 248, 0.4);
-      }
-      .card-actions .btn.pvp {
-        border-color: rgba(56, 189, 248, 0.35);
-        color: #38bdf8;
-      }
-      .card {
-        display: flex;
-        flex-direction: column;
-        text-align: left;
-        padding: 1.25rem;
-      }
-      .card h2 {
-        margin: 0 0 0.5rem;
-      }
-      .card p {
-        flex: 1;
-      }
-    </style>
   </head>
-  <body>
+  <body class="game-hub">
+    <div class="arcade-grid" aria-hidden="true"></div>
+    <div class="scanlines" aria-hidden="true"></div>
+
     <main class="page-shell">
-      <header>
-        <h1>Game Hub</h1>
-        <p>Choose a game to play.</p>
+      <header class="hub-header">
+        <p class="hub-kicker">// NIGHTCRAFT ARCADE</p>
+        <h1 class="hub-title" data-text="GAME HUB">GAME HUB</h1>
+        <p class="hub-tagline">Insert coin. Pick a challenge. Play to win.</p>
       </header>
 
       <section class="cards">
-        <div class="card">
+        <article class="card game-card" data-accent="cyan">
+          <div class="card-glow" aria-hidden="true"></div>
+          <span class="card-badge">1P / 2P</span>
           <h2>Highest Number</h2>
           <p>Pick the larger number and test your eye for the highest digit.</p>
           <div class="card-actions">
-            <a class="btn" href="{{ url_for('game.highest_number') }}">Play vs AI</a>
-            <a class="btn pvp" href="{{ url_for('game.lobby', game='highest_number') }}">Play vs Others</a>
+            <a class="btn" href="{{ url_for('game.highest_number') }}">▶ Play vs AI</a>
+            <a class="btn pvp" href="{{ url_for('game.lobby', game='highest_number') }}">⚔ Play vs Others</a>
           </div>
-        </div>
+        </article>
 
-        <div class="card">
+        <article class="card game-card" data-accent="magenta">
+          <div class="card-glow" aria-hidden="true"></div>
+          <span class="card-badge">1P / 2P</span>
           <h2>Rock Paper Scissors</h2>
-          <p>Play a quick round against the browser.</p>
+          <p>Play a quick round against the browser or a live rival.</p>
           <div class="card-actions">
-            <a class="btn" href="{{ url_for('game.rock_paper_scissors') }}">Play vs AI</a>
-            <a class="btn pvp" href="{{ url_for('game.lobby', game='rock_paper_scissors') }}">Play vs Others</a>
+            <a class="btn" href="{{ url_for('game.rock_paper_scissors') }}">▶ Play vs AI</a>
+            <a class="btn pvp" href="{{ url_for('game.lobby', game='rock_paper_scissors') }}">⚔ Play vs Others</a>
           </div>
-        </div>
+        </article>
 
-        <div class="card">
+        <article class="card game-card" data-accent="lime">
+          <div class="card-glow" aria-hidden="true"></div>
+          <span class="card-badge">RETRO</span>
           <h2>My Games (Emulator)</h2>
           <p>Upload the ROMs you own and play them in your browser via EmulatorJS.</p>
           <div class="card-actions">
-            <a class="btn pvp" href="{{ url_for('emulator.index') }}">My Games</a>
+            <a class="btn pvp" href="{{ url_for('emulator.index') }}">🎮 My Games</a>
           </div>
-        </div>
+        </article>
       </section>
+
+      <footer class="hub-footer">
+        <span class="blink">●</span> STATUS: ONLINE &nbsp;·&nbsp; PLAYERS: ∞ &nbsp;·&nbsp; GG
+      </footer>
     </main>
   </body>
 </html>

@@ -89,6 +89,14 @@ def init_sso(app):
     )
 
 
+@bp.route("/register", methods=["GET"])
+def register():
+    auth_base = (current_app.config.get("AUTH_SERVICE_URL", "") or "").strip().rstrip("/")
+    if not auth_base:
+        return redirect(url_for("landing.home"))
+    return redirect(f"{auth_base}/register")
+
+
 @bp.route("/login")
 def login():
     if oauth is None:
