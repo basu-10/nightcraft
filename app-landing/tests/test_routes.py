@@ -68,15 +68,15 @@ def test_texttrace_route_renders_texttrace_landing_page():
 
     assert response.status_code == 200
     html = response.get_data(as_text=True)
-    assert "TextTrace" in html
-    assert "Search your words" in html
-    assert "the way" in html
-    assert "you think" in html
-    assert "Semantic Search" in html
-    assert "Local Embeddings" in html
-    assert "Private by Design" in html
-    assert "Pick your platform" in html
-    assert 'href="/texttrace"' in html or "texttrace" in html
+    assert "TexTrace" in html
+    assert "Search your files" in html
+    assert "with" in html
+    assert "meaning" in html
+    assert "On-Device Embeddings" in html
+    assert "Semantic Understanding" in html
+    assert "Download for Free" in html
+    assert "Download for macOS" in html
+    assert "textrace.config.toml" in html
 
 
 def test_texttrace_route_wires_github_and_download_links():

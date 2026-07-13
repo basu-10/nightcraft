@@ -166,7 +166,7 @@
 
       <!-- CTA row -->
       <div class="clip-reveal clip-delay-5 flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-        <a href="#download" class="group inline-flex items-center gap-2 bg-white text-black font-medium text-sm px-8 py-3.5 rounded-full hover:bg-emerald-50 transition-all duration-300 hover:shadow-[0_0_40px_-5px_#10b981]">
+        <a href="{{ texttrace_download_url }}" class="group inline-flex items-center gap-2 bg-white text-black font-medium text-sm px-8 py-3.5 rounded-full hover:bg-emerald-50 transition-all duration-300 hover:shadow-[0_0_40px_-5px_#10b981]">
           <span class="iconify text-base" data-icon="ph:download-simple-bold"></span>
           Download for Free
           <span class="iconify text-xs group-hover:translate-x-0.5 transition-transform" data-icon="ph:arrow-right-bold"></span>
@@ -557,19 +557,19 @@
           </p>
 
           <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-            <button class="group inline-flex items-center gap-2.5 bg-white text-black font-medium text-sm px-8 py-4 rounded-full hover:bg-emerald-50 transition-all duration-300 hover:shadow-[0_0_50px_-5px_#10b981]">
+            <a href="{{ texttrace_download_url }}" class="group inline-flex items-center gap-2.5 bg-white text-black font-medium text-sm px-8 py-4 rounded-full hover:bg-emerald-50 transition-all duration-300 hover:shadow-[0_0_50px_-5px_#10b981]">
               <span class="iconify text-lg" data-icon="ph:apple-logo-fill"></span>
               Download for macOS
               <span class="iconify text-xs opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" data-icon="ph:arrow-right-bold"></span>
-            </button>
-            <button class="group inline-flex items-center gap-2.5 text-sm text-white/60 hover:text-white px-8 py-4 rounded-full border border-white/10 hover:border-white/20 transition-all duration-300">
+            </a>
+            <a href="{{ texttrace_download_url }}" class="group inline-flex items-center gap-2.5 text-sm text-white/60 hover:text-white px-8 py-4 rounded-full border border-white/10 hover:border-white/20 transition-all duration-300">
               <span class="iconify text-lg" data-icon="ph:windows-logo-fill"></span>
               Windows
-            </button>
-            <button class="group inline-flex items-center gap-2.5 text-sm text-white/60 hover:text-white px-8 py-4 rounded-full border border-white/10 hover:border-white/20 transition-all duration-300">
+            </a>
+            <a href="{{ texttrace_download_url }}" class="group inline-flex items-center gap-2.5 text-sm text-white/60 hover:text-white px-8 py-4 rounded-full border border-white/10 hover:border-white/20 transition-all duration-300">
               <span class="iconify text-lg" data-icon="ph:linux-logo-fill"></span>
               Linux
-            </button>
+            </a>
           </div>
 
           <p class="text-xs text-white/20 font-mono">v0.8.2 · 42MB · Universal Binary · MIT License</p>
@@ -619,7 +619,7 @@
         <div>
           <h4 class="text-xs font-medium text-white/50 uppercase tracking-wider mb-4">Community</h4>
           <ul class="space-y-3">
-            <li><a href="#" class="text-sm text-white/30 hover:text-white/70 transition-colors flex items-center gap-2"><span class="iconify text-base" data-icon="mdi:github"></span>GitHub</a></li>
+            <li><a href="{{ texttrace_github_url }}" class="text-sm text-white/30 hover:text-white/70 transition-colors flex items-center gap-2"><span class="iconify text-base" data-icon="mdi:github"></span>GitHub</a></li>
             <li><a href="#" class="text-sm text-white/30 hover:text-white/70 transition-colors flex items-center gap-2"><span class="iconify text-base" data-icon="mdi:discord"></span>Discord</a></li>
             <li><a href="#" class="text-sm text-white/30 hover:text-white/70 transition-colors flex items-center gap-2"><span class="iconify text-base" data-icon="mdi:twitter"></span>Twitter</a></li>
           </ul>
