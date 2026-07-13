@@ -39,6 +39,30 @@ app.config["UPLOAD_FOLDER"] = str(UPLOAD_FOLDER)
 # (e.g. /tinyxl) behind Nginx, matching the rest of the Nightcraft stack.
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
+
+class PrefixStripper:
+    """Strip a forwarded mount prefix from PATH_INFO.
+
+    ProxyFix sets SCRIPT_NAME from X-Forwarded-Prefix but does NOT rewrite
+    PATH_INFO. If a proxy forwards the full subpath (e.g. /tinyxl/api/upload)
+    without stripping it, Flask would route against the prefixed path and 404.
+    This wrapper removes the prefix from PATH_INFO so routing matches whether
+    or not the upstream proxy strips the prefix.
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        prefix = (environ.get("HTTP_X_FORWARDED_PREFIX") or "").split(",")[0].strip()
+        if prefix and environ.get("PATH_INFO", "").startswith(prefix):
+            environ["PATH_INFO"] = environ["PATH_INFO"][len(prefix):] or "/"
+            environ["SCRIPT_NAME"] = prefix
+        return self.app(environ, start_response)
+
+
+app.wsgi_app = PrefixStripper(app.wsgi_app)
+
 # Ensure directories exist
 UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
