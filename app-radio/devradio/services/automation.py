@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections import deque
 import threading
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
@@ -365,10 +366,9 @@ def _prune_automation_logs(log_dir: Path) -> None:
         return
 
     try:
-        lines = jsonl_file.read_text(encoding="utf-8").splitlines()
-        if len(lines) > max_jsonl_lines:
-            kept = lines[-max_jsonl_lines:]
-            jsonl_file.write_text("\n".join(kept) + "\n", encoding="utf-8")
+        tail = deque(jsonl_file.open("r", encoding="utf-8"), maxlen=max_jsonl_lines)
+        if len(tail) >= max_jsonl_lines:
+            jsonl_file.write_text("".join(tail), encoding="utf-8")
     except Exception:
         current_app.logger.exception("Failed pruning automation JSONL log")
 
