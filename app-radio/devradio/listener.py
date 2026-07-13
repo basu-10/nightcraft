@@ -74,6 +74,33 @@ def _visible_channel_segments(channel_id):
     return visible
 
 
+def _group_segments_by_date(segments):
+    """Group (seg, local_time) tuples into non-overlapping recency buckets.
+
+    Buckets are evaluated in order so each segment lands in exactly one group:
+    Today, Yesterday, This Week, This Month, This Year, Older.
+    """
+    today = _as_utc_aware(now_app_timezone()).astimezone(app_timezone()).date()
+
+    buckets = [
+        (0, "Today", []),
+        (1, "Yesterday", []),
+        (7, "This Week", []),
+        (30, "This Month", []),
+        (365, "This Year", []),
+        (10 ** 9, "Older", []),
+    ]
+
+    for seg, local_time in segments:
+        day_offset = (today - local_time.date()).days
+        for threshold, label, bucket in buckets:
+            if day_offset <= threshold:
+                bucket.append((seg, local_time))
+                break
+
+    return [(label, bucket) for _, label, bucket in buckets if bucket]
+
+
 def _ticker_headlines_payload(channel_id, limit=25):
     visible_segments = _visible_channel_segments(channel_id)
     rows = []
@@ -236,7 +263,7 @@ def channel_page(channel_slug):
     return render_template(
         "listener/channel_page.html",
         channel=channel,
-        segments=_visible_channel_segments(channel.id),
+        groups=_group_segments_by_date(_visible_channel_segments(channel.id)),
         other_channels=other_channels,
         breaking_segment_ids=breaking_segment_ids,
     )

@@ -2,34 +2,47 @@
 {% block title %}{{ channel.name }} Stories | DevRadio{% endblock %}
 {% block content %}
 <section class="card">
-  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+  <div class="channel-head">
     <div>
-      <h1>{{ channel.name }} - Stories Available Now</h1>
-      <p>Only stories that have already played are visible.</p>
+      <h1>{{ channel.name }} — Stories</h1>
+      <p>Only stories that have already played are visible, grouped by when they aired.</p>
     </div>
     <a class="btn primary" href="{{ url_for('listener.player', channel_slug=channel.slug) }}" style="flex-shrink: 0; margin-left: 1rem;">▶ Go Live</a>
   </div>
-  <ul class="story-list compact">
-    {% for seg, local_time in segments %}
-      <li class="story-card">
-        <a class="story-card-link" href="{{ url_for('listener.article_detail', article_id=seg.article.id) }}" aria-label="Open article: {{ seg.article.short_headline or seg.article.title }}"></a>
-        {% if seg.article.image_url %}
-          <div class="story-card-thumb">
-            <img src="{{ seg.article.image_url }}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.style.display='none'" alt="">
+
+  {% if groups %}
+    <div class="story-groups">
+      {% for label, items in groups %}
+        <section class="story-group">
+          <div class="story-group-head">
+            <h2 class="story-group-label">{{ label }}</h2>
+            <span class="story-group-count" aria-label="{{ items|length }} stories">{{ items|length }}</span>
           </div>
-        {% endif %}
-        <strong>{{ local_time.strftime('%H:%M') }} IST</strong>
-        <span class="story-card-title">{{ seg.article.short_headline or seg.article.title }}</span>
-        {% if seg.id in breaking_segment_ids %}
-          <span class="subtle"><strong>Breaking Now</strong></span>
-        {% endif %}
-        <span class="subtle story-card-source">{{ seg.article.source_name or 'Source' }}</span>
-        <a class="btn ghost pill story-source-btn" href="{{ seg.article.source_url }}" target="_blank" rel="noreferrer" title="Open source" aria-label="Open source: {{ seg.article.source_name or 'Source' }}">↗</a>
-      </li>
-    {% else %}
-      <li>No stories available yet.</li>
-    {% endfor %}
-  </ul>
+          <ul class="story-list compact">
+            {% for seg, local_time in items %}
+              <li class="story-card">
+                <a class="story-card-link" href="{{ url_for('listener.article_detail', article_id=seg.article.id) }}" aria-label="Open article: {{ seg.article.short_headline or seg.article.title }}"></a>
+                {% if seg.article.image_url %}
+                  <div class="story-card-thumb">
+                    <img src="{{ seg.article.image_url }}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.style.display='none'" alt="">
+                  </div>
+                {% endif %}
+                <strong>{{ local_time.strftime('%H:%M') }} IST</strong>
+                <span class="story-card-title">{{ seg.article.short_headline or seg.article.title }}</span>
+                {% if seg.id in breaking_segment_ids %}
+                  <span class="subtle"><strong>Breaking Now</strong></span>
+                {% endif %}
+                <span class="subtle story-card-source">{{ seg.article.source_name or 'Source' }}</span>
+                <a class="btn ghost pill story-source-btn" href="{{ seg.article.source_url }}" target="_blank" rel="noreferrer" title="Open source" aria-label="Open source: {{ seg.article.source_name or 'Source' }}">↗</a>
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="subtle">No stories available yet.</p>
+  {% endif %}
 </section>
 
 {% if other_channels %}

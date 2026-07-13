@@ -71,16 +71,23 @@ body {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.45rem;
   font: inherit;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   color: var(--ink);
-  background: none;
-  border: none;
-  padding: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0.5rem 1rem;
   cursor: pointer;
+  box-shadow: var(--shadow-out);
+  transition: box-shadow 0.15s, background 0.15s;
+}
+
+.brand:hover {
+  box-shadow: var(--shadow-in);
 }
 
 .brand-caret {
@@ -1559,6 +1566,89 @@ textarea::placeholder {
 
 .story-list a:hover {
   text-decoration: underline;
+}
+
+/* ── Channel page date groups ── */
+
+.channel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.25rem;
+}
+
+.channel-head h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.35rem;
+}
+
+.channel-head p {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.88rem;
+}
+
+.story-groups {
+  display: grid;
+  gap: 1.85rem;
+  margin-top: 1.5rem;
+}
+
+.story-group {
+  animation: reveal 420ms ease-out both;
+}
+
+.story-group + .story-group {
+  border-top: 1px solid var(--border);
+  padding-top: 1.6rem;
+}
+
+.story-group-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 0.9rem;
+}
+
+.story-group-label {
+  margin: 0;
+  flex-shrink: 0;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0.4rem 0.95rem;
+  box-shadow: var(--shadow-out);
+}
+
+.story-group-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.65rem;
+  height: 1.65rem;
+  padding: 0 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  background: var(--surface);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-in);
+}
+
+.story-group-head::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.story-group .story-list {
+  gap: 0.6rem;
 }
 
 /* ── Admin ── */
