@@ -1,11 +1,9 @@
 from flask import render_template
 
 from . import bp
-from ..auth import login_required
 
 
 @bp.route("/")
-@login_required
 def landing():
     return render_template("landing.html")
 
