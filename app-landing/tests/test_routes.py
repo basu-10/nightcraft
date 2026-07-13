@@ -260,7 +260,7 @@ def test_fossil_landing_shows_demo_login_button_when_logged_out():
     response = client.get("/fossil")
     assert response.status_code == 200
     html = response.get_data(as_text=True)
-    assert "Login as demo-user-ALEX" in html
+    assert "Login with guest" in html
     assert "Publish with purpose" in html
     assert "Preserve forever" in html
 
@@ -280,6 +280,31 @@ def test_fossil_logout_clears_session_and_returns_to_landing():
     assert response.status_code == 200
     html = response.get_data(as_text=True)
     assert "Publish with purpose" in html
-    assert "Login as demo-user-ALEX" in html
+    assert "Login with guest" in html
     assert "At a glance" not in html
     assert "Network status" not in html
+
+
+def test_fossil_links_use_configured_external_urls():
+    app = create_app()
+    app.config.update(
+        TESTING=True,
+        FOSSIL_GITHUB_URL="https://github.com/nightcraft/fossil",
+        FOSSIL_DOWNLOAD_URL="https://nightcraft.example/fossil/releases",
+    )
+    client = app.test_client()
+
+    response = client.get("/fossil")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert 'href="https://github.com/nightcraft/fossil"' in html
+    assert 'href="https://nightcraft.example/fossil/releases"' in html
+
+
+def test_fossil_links_fall_back_to_app_url_when_unconfigured():
+    client = _client()
+
+    response = client.get("/fossil")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert 'href="/fossil"' in html

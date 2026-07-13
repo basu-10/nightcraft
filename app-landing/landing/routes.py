@@ -352,6 +352,8 @@ def fossil_library():
         posts=_FOSSIL_POSTS,
         user=fossil_user,
         fossil_url=current_app.config["FOSSIL_URL"],
+        fossil_github_url=current_app.config["FOSSIL_GITHUB_URL"],
+        fossil_download_url=current_app.config["FOSSIL_DOWNLOAD_URL"],
     )
 
 
@@ -377,7 +379,7 @@ def fossil_login():
 @main_bp.post("/fossil/login-demo")
 def fossil_login_demo():
     session["fossil_user"] = "demo-user-ALEX"
-    return redirect("/app")
+    return redirect(current_app.config["FOSSIL_URL"])
 
 
 @main_bp.post("/fossil/logout")

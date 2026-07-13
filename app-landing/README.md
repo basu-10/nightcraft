@@ -44,6 +44,9 @@ Default local URL: `http://127.0.0.1:5400`
 - `LANDING_NEERA_URL` (default `/neera`)
 - `LANDING_SEEKSAGE_URL` (default `/seeksage`)
 - `LANDING_NOTESTACK_URL` (default `/notestack`)
+- `LANDING_FOSSIL_URL` (default `/fossil`)
+- `LANDING_FOSSIL_GITHUB_URL` (default empty; FOSSil "View on GitHub"/Docs links fall back to `LANDING_FOSSIL_URL`)
+- `LANDING_FOSSIL_DOWNLOAD_URL` (default empty; FOSSil "Download" links fall back to `LANDING_FOSSIL_URL`)
 
 ## Tests
 
