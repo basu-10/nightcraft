@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>My Games</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <style>
+      .emulator-shell {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+      .emulator-section {
+        padding: 1.5rem;
+        border-radius: 18px;
+        background: rgba(15, 23, 42, 0.95);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        margin-bottom: 1.5rem;
+      }
+      .emulator-section h2 {
+        margin-top: 0;
+      }
+      .rom-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 0.75rem;
+      }
+      .rom-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.9rem 1.1rem;
+        border-radius: 12px;
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        flex-wrap: wrap;
+      }
+      .rom-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        min-width: 0;
+      }
+      .rom-name {
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .rom-sub {
+        color: #94a3b8;
+        font-size: 0.85rem;
+      }
+      .rom-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      .rom-actions .btn {
+        padding: 0.5rem 0.9rem;
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(30, 41, 59, 0.8);
+        color: #e2e8f0;
+        font-size: 0.85rem;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        transition: background 0.18s ease, border-color 0.18s ease;
+      }
+      .rom-actions .btn:hover {
+        background: rgba(56, 189, 248, 0.15);
+        border-color: rgba(56, 189, 248, 0.4);
+      }
+      .rom-actions .btn.danger {
+        border-color: rgba(248, 113, 113, 0.4);
+        color: #fecaca;
+      }
+      .upload-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .disclaimer {
+        color: #94a3b8;
+        font-size: 0.85rem;
+        margin: 1rem 0;
+        border-left: 2px solid rgba(56, 189, 248, 0.4);
+        padding-left: 0.75rem;
+      }
+      .checkbox-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin: 0.5rem 0 1rem;
+        font-size: 0.9rem;
+      }
+      .checkbox-row input {
+        margin-top: 0.25rem;
+      }
+      .empty-note {
+        color: #94a3b8;
+        text-align: center;
+        padding: 1rem;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .flash-error {
+        background: rgba(248, 113, 113, 0.16);
+        color: #fecaca;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="emulator-shell">
+      <header>
+        <h1>My Games</h1>
+        <p>Upload the ROMs you own and play them in your browser. Your library is private.</p>
+      </header>
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="flash-error">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <section class="emulator-section">
+        <h2>Upload a ROM</h2>
+        <form id="uploadForm" method="post" action="{{ url_for('emulator.upload') }}" enctype="multipart/form-data">
+          <div class="upload-row">
+            <input type="file" id="romFile" name="rom" accept=".gba,.gb,.gbc,.nes,.smc,.sfc,.md,.genesis,.sms,.gg,.32x" required />
+            <button type="submit">Upload</button>
+          </div>
+          <p class="rom-sub">
+            Supported: GBA, GB/GBC, NES, SNES, Genesis/Mega Drive, Master System, Game Gear. Max 64&nbsp;MB per file.
+          </p>
+          <div class="checkbox-row">
+            <input type="checkbox" id="rightsConfirm" name="rights_confirm" value="1" required />
+            <label for="rightsConfirm">
+              I confirm I own a legal copy of this game or otherwise have the right to upload it.
+              Uploads are private and not shared with others. Content may be removed on DMCA notice.
+            </label>
+          </div>
+          <p class="disclaimer">
+            By uploading you agree your ROMs are private to your account. We do not distribute BIOS files;
+            GBA titles run via the emulator's high-level BIOS emulation. For DMCA/takedown requests, contact the site operator.
+          </p>
+        </form>
+      </section>
+
+      <section class="emulator-section">
+        <h2>Your Library</h2>
+        {% if roms %}
+          <ul class="rom-list">
+            {% for rom in roms %}
+              <li class="rom-item">
+                <div class="rom-meta">
+                  <span class="rom-name" title="{{ rom.original_name }}">{{ rom.original_name }}</span>
+                  <span class="rom-sub">{{ rom.system }} &middot; {{ (rom.size / 1024 / 1024) | round(2) }} MB</span>
+                </div>
+                <div class="rom-actions">
+                  <a class="btn" href="{{ url_for('emulator.play', rom_id=rom.id) }}">Play</a>
+                  <form method="post" action="{{ url_for('emulator.delete', rom_id=rom.id) }}" onsubmit="return confirm('Delete this ROM? This cannot be undone.');">
+                    <button class="btn danger" type="submit">Delete</button>
+                  </form>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty-note">No ROMs yet. Upload one to get started.</p>
+        {% endif %}
+      </section>
+
+      <div class="room-actions" style="justify-content: flex-start;">
+        <a class="link-button" href="{{ url_for('game.landing') }}">Back to Hub</a>
+      </div>
+    </main>
+  </body>
+</html>

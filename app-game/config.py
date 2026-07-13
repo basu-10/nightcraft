@@ -42,6 +42,21 @@ class Config:
     OIDC_CLIENT_SECRET = os.environ.get("OIDC_CLIENT_SECRET", "")
     OIDC_REDIRECT_URI = os.environ.get("OIDC_REDIRECT_URI", "/game/auth/callback")
 
+    # Persistent shared volume (kept outside the gitignored source checkout).
+    GAME_SHARED_DIR = os.environ.get("GAME_SHARED_DIR", "/runtime/shared/app-game")
+    EMULATOR_UPLOAD_DIR = os.path.join(GAME_SHARED_DIR, "uploads")
+    EMULATOR_DB_PATH = os.path.join(GAME_SHARED_DIR, "emulator.db")
+
+    # ROM upload limits.
+    MAX_CONTENT_LENGTH = int(os.environ.get("GAME_MAX_UPLOAD_MB", "64")) * 1024 * 1024
+    EMULATOR_MAX_ROMS = int(os.environ.get("GAME_EMULATOR_MAX_ROMS", "20"))
+    EMULATOR_MAX_STORAGE_BYTES = int(os.environ.get("GAME_EMULATOR_MAX_STORAGE_MB", "512")) * 1024 * 1024
+
+    # User IDs (comma-separated) allowed to remove any ROM for DMCA takedowns.
+    GAME_ADMIN_USER_IDS = [
+        u.strip() for u in os.environ.get("GAME_ADMIN_USER_IDS", "").split(",") if u.strip()
+    ]
+
 
 class DevelopmentConfig(Config):
     DEBUG = True

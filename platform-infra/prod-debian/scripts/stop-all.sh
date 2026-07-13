@@ -3,6 +3,7 @@ set -euo pipefail
 
 sudo systemctl stop nightcraft-admin.service
 sudo systemctl stop nightcraft-game.service
+sudo systemctl stop redis-server.service
 sudo systemctl stop nightcraft-note.service
 sudo systemctl stop nightcraft-pledge.service
 sudo systemctl stop nightcraft-pledge.service

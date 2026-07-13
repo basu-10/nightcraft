@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ rom_name }} &middot; Play</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <style>
+      .play-shell {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+      #game {
+        width: 100%;
+        min-height: 480px;
+        background: #000;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        overflow: hidden;
+      }
+      .play-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.25rem;
+        flex-wrap: wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="play-shell">
+      <header>
+        <h1>{{ rom_name }}</h1>
+        <p>Running in your browser via EmulatorJS. The game runs on your device, not our servers.</p>
+      </header>
+
+      <div id="game"></div>
+
+      <div class="play-actions">
+        <a class="link-button" href="{{ url_for('emulator.index') }}">Back to My Games</a>
+      </div>
+    </main>
+
+    <script>
+      window.EJS_player = "#game";
+      window.EJS_core = {{ core | tojson }};
+      window.EJS_gameUrl = {{ game_url | tojson }};
+      window.EJS_pathtodata = "https://cdn.emulatorjs.org/stable/data/";
+      window.EJS_gameID = {{ rom_id | tojson }};
+      window.EJS_gameName = {{ rom_name | tojson }};
+      window.EJS_color = "#38bdf8";
+    </script>
+    <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
+  </body>
+</html>
