@@ -1,1206 +1,2036 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>FOSSil — Free Open Source Software for Information Library</title>
-    <meta name="description" content="A decentralized publishing platform for articles, collections, and posts.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <style>
-        :root {
-            --fossil-bg: #fafaf8;
-            --fossil-surface: #ffffff;
-            --fossil-border: #e8e6e1;
-            --fossil-text: #1a1a1a;
-            --fossil-muted: #5a5a5a;
-            --fossil-subtle: #f5f5f3;
-            --fossil-accent: #1a1a1a;
-            --fossil-green: #16a34a;
-            --fossil-sidebar-w: 220px;
-            --fossil-right-w: 280px;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: "Space Grotesk", system-ui, sans-serif;
-            color: var(--fossil-text);
-            background: var(--fossil-bg);
-            line-height: 1.5;
-        }
-
-        /* ========== LANDING PAGE ========== */
-        .fossil-landing header {
-            border-bottom: 1px solid var(--fossil-border);
-        }
-
-        .fossil-landing-nav {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1.25rem 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1.5rem;
-        }
-
-        .fossil-landing-logo {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.6rem;
-            text-decoration: none;
-            color: var(--fossil-text);
-        }
-
-        .fossil-landing-logo-box {
-            width: 40px;
-            height: 40px;
-            border: 2px solid var(--fossil-text);
-            border-radius: 6px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-family: "Archivo Black", sans-serif;
-            font-size: 1.25rem;
-            line-height: 1;
-        }
-
-        .fossil-landing-logo-text {
-            font-family: "Archivo Black", sans-serif;
-            font-size: 1.1rem;
-            letter-spacing: 0.02em;
-        }
-
-        .fossil-landing-links {
-            display: none;
-            align-items: center;
-            gap: 2rem;
-            list-style: none;
-            margin: 0;
-            padding: 0;
-        }
-
-        .fossil-landing-links a {
-            text-decoration: none;
-            color: var(--fossil-text);
-            font-size: 0.95rem;
-            font-weight: 500;
-        }
-
-        .fossil-landing-actions {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-        }
-
-        .fossil-landing-gh,
-        .fossil-landing-download,
-        .fossil-landing-demo {
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            padding: 0.55rem 0.9rem;
-            border-radius: 8px;
-            border: 1px solid var(--fossil-text);
-            transition: all 0.2s ease;
-            cursor: pointer;
-            background: transparent;
-            color: var(--fossil-text);
-            font-family: inherit;
-        }
-
-        .fossil-landing-gh:hover,
-        .fossil-landing-download:hover,
-        .fossil-landing-demo:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .fossil-landing-gh {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-
-        .fossil-landing-download {
-            color: var(--fossil-bg);
-            background: var(--fossil-text);
-        }
-
-        .fossil-landing-demo {
-            background: #166534;
-            color: #fff;
-            border-color: #166534;
-        }
-
-        .fossil-landing-demo:hover {
-            background: #14532d;
-            border-color: #14532d;
-        }
-
-        .fossil-hero {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 4rem 1.5rem 3rem;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 3rem;
-            align-items: center;
-        }
-
-        .fossil-hero-content h1 {
-            font-family: "Newsreader", "Times New Roman", serif;
-            font-size: clamp(2.4rem, 5vw, 3.6rem);
-            font-weight: 500;
-            line-height: 1.1;
-            margin: 0 0 1.2rem;
-            letter-spacing: -0.02em;
-        }
-
-        .fossil-hero-content > p {
-            color: var(--fossil-muted);
-            font-size: 1.05rem;
-            max-width: 52ch;
-            margin: 0 0 0.9rem;
-            line-height: 1.6;
-        }
-
-        .fossil-hero-content > p:last-of-type {
-            margin-bottom: 1.6rem;
-        }
-
-        .fossil-landing-ctas {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.8rem;
-            margin-bottom: 1.4rem;
-        }
-
-        .fossil-landing-btn-primary,
-        .fossil-landing-btn-secondary {
-            text-decoration: none;
-            font-weight: 500;
-            padding: 0.7rem 1.2rem;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            border: 1px solid transparent;
-            transition: all 0.2s ease;
-            font-family: inherit;
-            cursor: pointer;
-            background: transparent;
-            color: var(--fossil-text);
-        }
-
-        .fossil-landing-btn-primary {
-            color: var(--fossil-bg);
-            background: var(--fossil-text);
-        }
-
-        .fossil-landing-btn-secondary {
-            border-color: var(--fossil-text);
-        }
-
-        .fossil-landing-btn-primary:hover,
-        .fossil-landing-btn-secondary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .fossil-landing-platforms {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            color: var(--fossil-muted);
-            font-size: 0.9rem;
-        }
-
-        .fossil-landing-platforms svg {
-            width: 18px;
-            height: 18px;
-            opacity: 0.6;
-        }
-
-        .fossil-hero-visual {
-            display: none;
-        }
-
-        .fossil-app-window {
-            background: var(--fossil-surface);
-            border-radius: 12px;
-            box-shadow: 0 24px 60px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05);
-            overflow: hidden;
-            font-size: 0.85rem;
-        }
-
-        .fossil-app-titlebar {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid var(--fossil-border);
-        }
-
-        .fossil-app-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-        }
-
-        .fossil-app-dot.red { background: #ff5f57; }
-        .fossil-app-dot.yellow { background: #febc2e; }
-        .fossil-app-dot.green { background: #28c840; }
-
-        .fossil-app-body {
-            display: grid;
-            grid-template-columns: 180px 1fr;
-            min-height: 280px;
-        }
-
-        .fossil-app-sidebar {
-            border-right: 1px solid var(--fossil-border);
-            padding: 1rem 0.75rem;
-        }
-
-        .fossil-app-sidebar-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.4rem 0.5rem;
-            border-radius: 6px;
-            color: var(--fossil-muted);
-            font-size: 0.8rem;
-            margin-bottom: 0.2rem;
-        }
-
-        .fossil-app-sidebar-item.active {
-            background: var(--fossil-subtle);
-            color: var(--fossil-text);
-            font-weight: 500;
-        }
-
-        .fossil-app-sidebar-icon {
-            width: 16px;
-            height: 16px;
-            opacity: 0.5;
-        }
-
-        .fossil-app-content {
-            padding: 1rem;
-        }
-
-        .fossil-app-content h3 {
-            font-size: 0.95rem;
-            margin: 0 0 0.3rem;
-        }
-
-        .fossil-app-content > p {
-            color: var(--fossil-muted);
-            font-size: 0.75rem;
-            margin: 0 0 1rem;
-        }
-
-        .fossil-app-search {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            border: 1px solid var(--fossil-border);
-            border-radius: 6px;
-            padding: 0.4rem 0.6rem;
-            margin-bottom: 1rem;
-            font-size: 0.75rem;
-            color: var(--fossil-muted);
-        }
-
-        .fossil-app-list {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-        }
-
-        .fossil-app-list-item {
-            display: flex;
-            gap: 0.6rem;
-            padding: 0.6rem 0;
-            border-top: 1px solid #f0efe9;
-        }
-
-        .fossil-app-list-icon {
-            width: 32px;
-            height: 40px;
-            background: var(--fossil-subtle);
-            border-radius: 4px;
-            flex-shrink: 0;
-        }
-
-        .fossil-app-list-item h4 {
-            font-size: 0.8rem;
-            margin: 0 0 0.2rem;
-            font-weight: 600;
-        }
-
-        .fossil-app-list-item p {
-            font-size: 0.7rem;
-            color: var(--fossil-muted);
-            margin: 0;
-            line-height: 1.4;
-        }
-
-        .fossil-landing-features {
-            border-top: 1px solid var(--fossil-border);
-            border-bottom: 1px solid var(--fossil-border);
-            background: var(--fossil-surface);
-        }
-
-        .fossil-landing-features-inner {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 4rem 1.5rem;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 2.5rem;
-        }
-
-        .fossil-feature {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .fossil-feature-icon {
-            width: 40px;
-            height: 40px;
-            border: 1px solid var(--fossil-border);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            color: var(--fossil-muted);
-        }
-
-        .fossil-feature h3 {
-            font-size: 1rem;
-            font-weight: 600;
-            margin: 0 0 0.3rem;
-        }
-
-        .fossil-feature p {
-            font-size: 0.9rem;
-            color: var(--fossil-muted);
-            margin: 0;
-            line-height: 1.5;
-        }
-
-        .fossil-landing-stats {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 3.5rem 1.5rem;
-        }
-
-        .fossil-landing-stats-heading {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .fossil-landing-stats-icon {
-            width: 40px;
-            height: 40px;
-            border: 1px solid var(--fossil-border);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .fossil-landing-stats-heading h2 {
-            font-family: "Newsreader", "Times New Roman", serif;
-            font-size: 1.5rem;
-            font-weight: 500;
-            margin: 0;
-        }
-
-        .fossil-landing-stats-heading p {
-            font-size: 0.85rem;
-            color: var(--fossil-muted);
-            margin: 0.2rem 0 0;
-        }
-
-        .fossil-stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
-        }
-
-        .fossil-stat-value {
-            font-family: "Archivo Black", sans-serif;
-            font-size: 1.8rem;
-            margin: 0 0 0.2rem;
-        }
-
-        .fossil-stat-label {
-            font-size: 0.9rem;
-            color: var(--fossil-muted);
-            margin: 0;
-        }
-
-        /* ========== DASHBOARD ========== */
-        .fossil-dashboard {
-            display: flex;
-            min-height: 100vh;
-            background: var(--fossil-bg);
-        }
-
-        .fossil-dash-sidebar {
-            width: var(--fossil-sidebar-w);
-            background: var(--fossil-surface);
-            border-right: 1px solid var(--fossil-border);
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            z-index: 10;
-        }
-
-        .fossil-dash-sidebar-logo {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            padding: 1.25rem 1.25rem 1rem;
-            text-decoration: none;
-            color: var(--fossil-text);
-            border-bottom: 1px solid var(--fossil-border);
-        }
-
-        .fossil-dash-sidebar-logo-box {
-            width: 32px;
-            height: 32px;
-            border: 2px solid var(--fossil-text);
-            border-radius: 6px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-family: "Archivo Black", sans-serif;
-            font-size: 1rem;
-            line-height: 1;
-        }
-
-        .fossil-dash-sidebar-logo-text {
-            font-family: "Archivo Black", sans-serif;
-            font-size: 0.95rem;
-            letter-spacing: 0.02em;
-        }
-
-        .fossil-dash-sidebar-nav {
-            flex: 1;
-            padding: 0.75rem 0.5rem;
-            overflow-y: auto;
-        }
-
-        .fossil-dash-sidebar-item {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            padding: 0.5rem 0.6rem;
-            border-radius: 8px;
-            color: var(--fossil-muted);
-            font-size: 0.85rem;
-            margin-bottom: 0.15rem;
-            text-decoration: none;
-            transition: background 0.15s ease;
-        }
-
-        .fossil-dash-sidebar-item:hover {
-            background: var(--fossil-subtle);
-            color: var(--fossil-text);
-        }
-
-        .fossil-dash-sidebar-item.active {
-            background: var(--fossil-subtle);
-            color: var(--fossil-text);
-            font-weight: 500;
-        }
-
-        .fossil-dash-sidebar-icon {
-            width: 18px;
-            height: 18px;
-            opacity: 0.6;
-            flex-shrink: 0;
-        }
-
-        .fossil-dash-sidebar-footer {
-            padding: 0.75rem 0.5rem;
-            border-top: 1px solid var(--fossil-border);
-        }
-
-        .fossil-dash-main {
-            flex: 1;
-            margin-left: var(--fossil-sidebar-w);
-            margin-right: var(--fossil-right-w);
-            min-width: 0;
-        }
-
-        .fossil-dash-header {
-            position: sticky;
-            top: 0;
-            z-index: 5;
-            background: rgba(250, 250, 248, 0.92);
-            backdrop-filter: blur(8px);
-            border-bottom: 1px solid var(--fossil-border);
-            padding: 0.75rem 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-        }
-
-        .fossil-dash-search {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            border: 1px solid var(--fossil-border);
-            border-radius: 8px;
-            padding: 0.5rem 0.75rem;
-            font-size: 0.85rem;
-            color: var(--fossil-muted);
-            background: var(--fossil-surface);
-            max-width: 480px;
-            width: 100%;
-        }
-
-        .fossil-dash-search svg {
-            width: 16px;
-            height: 16px;
-            opacity: 0.5;
-            flex-shrink: 0;
-        }
-
-        .fossil-dash-new {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.55rem 0.9rem;
-            border-radius: 8px;
-            background: var(--fossil-text);
-            color: var(--fossil-bg);
-            border: none;
-            font-size: 0.85rem;
-            font-weight: 500;
-            cursor: pointer;
-            font-family: inherit;
-            transition: transform 0.15s ease;
-        }
-
-        .fossil-dash-new:hover {
-            transform: translateY(-1px);
-        }
-
-        .fossil-dash-new svg {
-            width: 16px;
-            height: 16px;
-        }
-
-        .fossil-dash-content {
-            padding: 1.5rem;
-        }
-
-        .fossil-dash-content h1 {
-            font-family: "Newsreader", "Times New Roman", serif;
-            font-size: 1.5rem;
-            font-weight: 500;
-            margin: 0 0 0.2rem;
-            letter-spacing: -0.01em;
-        }
-
-        .fossil-dash-content > p {
-            color: var(--fossil-muted);
-            font-size: 0.9rem;
-            margin: 0 0 1.25rem;
-        }
-
-        .fossil-dash-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-        }
-
-        .fossil-dash-card {
-            display: flex;
-            gap: 1rem;
-            padding: 1rem 0;
-            border-top: 1px solid var(--fossil-border);
-        }
-
-        .fossil-dash-card:last-child {
-            border-bottom: 1px solid var(--fossil-border);
-        }
-
-        .fossil-dash-card-icon {
-            width: 48px;
-            height: 56px;
-            background: var(--fossil-subtle);
-            border-radius: 6px;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--fossil-muted);
-        }
-
-        .fossil-dash-card-icon svg {
-            width: 24px;
-            height: 24px;
-            opacity: 0.5;
-        }
-
-        .fossil-dash-card-body {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .fossil-dash-card-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 1rem;
-            margin-bottom: 0.2rem;
-        }
-
-        .fossil-dash-card-title {
-            font-size: 0.95rem;
-            font-weight: 600;
-            margin: 0;
-            line-height: 1.3;
-        }
-
-        .fossil-dash-card-meta {
-            font-size: 0.75rem;
-            color: var(--fossil-muted);
-            margin: 0.15rem 0 0;
-        }
-
-        .fossil-dash-card-meta span {
-            margin-right: 0.5rem;
-        }
-
-        .fossil-dash-card-desc {
-            font-size: 0.8rem;
-            color: var(--fossil-muted);
-            margin: 0.2rem 0 0;
-            line-height: 1.45;
-            max-width: 60ch;
-        }
-
-        .fossil-dash-card-meta-right {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 0.35rem;
-            flex-shrink: 0;
-        }
-
-        .fossil-dash-time {
-            font-size: 0.75rem;
-            color: var(--fossil-muted);
-            white-space: nowrap;
-        }
-
-        .fossil-dash-verified {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            font-size: 0.7rem;
-            color: var(--fossil-green);
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            padding: 0.15rem 0.4rem;
-            border-radius: 4px;
-        }
-
-        .fossil-dash-verified svg {
-            width: 12px;
-            height: 12px;
-        }
-
-        .fossil-dash-peers {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            font-size: 0.7rem;
-            color: var(--fossil-muted);
-        }
-
-        .fossil-dash-peers svg {
-            width: 12px;
-            height: 12px;
-            opacity: 0.5;
-        }
-
-        .fossil-dash-card-actions {
-            opacity: 0;
-            transition: opacity 0.15s ease;
-        }
-
-        .fossil-dash-card:hover .fossil-dash-card-actions {
-            opacity: 1;
-        }
-
-        .fossil-dash-card-actions button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0.2rem;
-            color: var(--fossil-muted);
-            border-radius: 4px;
-        }
-
-        .fossil-dash-card-actions button:hover {
-            background: var(--fossil-subtle);
-            color: var(--fossil-text);
-        }
-
-        .fossil-dash-card-actions svg {
-            width: 16px;
-            height: 16px;
-        }
-
-        /* Right sidebar */
-        .fossil-dash-right {
-            width: var(--fossil-right-w);
-            background: var(--fossil-bg);
-            border-left: 1px solid var(--fossil-border);
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            right: 0;
-            padding: 1.25rem;
-            overflow-y: auto;
-        }
-
-        .fossil-dash-panel {
-            background: var(--fossil-surface);
-            border: 1px solid var(--fossil-border);
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .fossil-dash-panel-title {
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin: 0 0 0.75rem;
-            color: var(--fossil-text);
-        }
-
-        .fossil-dash-stats-list {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-        }
-
-        .fossil-dash-stats-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.4rem 0;
-            font-size: 0.8rem;
-        }
-
-        .fossil-dash-stats-item-left {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--fossil-muted);
-        }
-
-        .fossil-dash-stats-item-left svg {
-            width: 16px;
-            height: 16px;
-            opacity: 0.5;
-        }
-
-        .fossil-dash-stats-item-right {
-            font-weight: 500;
-            color: var(--fossil-text);
-        }
-
-        .fossil-dash-storage {
-            margin-top: 0.5rem;
-        }
-
-        .fossil-dash-storage-bar {
-            height: 6px;
-            background: var(--fossil-subtle);
-            border-radius: 3px;
-            overflow: hidden;
-            margin: 0.35rem 0 0.25rem;
-        }
-
-        .fossil-dash-storage-fill {
-            height: 100%;
-            background: var(--fossil-text);
-            border-radius: 3px;
-            width: 18.4%;
-        }
-
-        .fossil-dash-storage-text {
-            font-size: 0.7rem;
-            color: var(--fossil-muted);
-        }
-
-        .fossil-dash-network-dot {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--fossil-green);
-            margin-right: 0.4rem;
-        }
-
-        .fossil-dash-network-title {
-            font-size: 0.8rem;
-            color: var(--fossil-muted);
-            margin: 0 0 0.4rem;
-        }
-
-        .fossil-dash-recent-item {
-            padding: 0.5rem 0;
-            border-top: 1px solid var(--fossil-border);
-            font-size: 0.8rem;
-        }
-
-        .fossil-dash-recent-item:first-child {
-            border-top: none;
-            padding-top: 0;
-        }
-
-        .fossil-dash-recent-name {
-            color: var(--fossil-text);
-            font-weight: 500;
-            margin: 0 0 0.15rem;
-        }
-
-        .fossil-dash-recent-time {
-            color: var(--fossil-muted);
-            font-size: 0.7rem;
-        }
-
-        .fossil-dash-view-all {
-            display: block;
-            margin-top: 0.5rem;
-            font-size: 0.75rem;
-            color: var(--fossil-muted);
-            text-decoration: none;
-        }
-
-        .fossil-dash-view-all:hover {
-            color: var(--fossil-text);
-        }
-
-        .fossil-dash-user-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.6rem 1rem;
-            border-top: 1px solid var(--fossil-border);
-            font-size: 0.8rem;
-            color: var(--fossil-muted);
-        }
-
-        .fossil-dash-user-bar form {
-            display: inline;
-        }
-
-        .fossil-dash-user-bar button {
-            background: none;
-            border: none;
-            color: var(--fossil-muted);
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-family: inherit;
-            text-decoration: underline;
-            padding: 0;
-        }
-
-        .fossil-dash-user-bar button:hover {
-            color: var(--fossil-text);
-        }
-
-        @media (min-width: 900px) {
-            .fossil-landing-links {
-                display: flex;
-            }
-
-            .fossil-hero {
-                grid-template-columns: 1fr 1.1fr;
-                gap: 4rem;
-            }
-
-            .fossil-hero-visual {
-                display: block;
-            }
-        }
-
-        @media (min-width: 1024px) {
-            .fossil-landing-features-inner {
-                grid-template-columns: repeat(4, 1fr);
-                gap: 2rem;
-            }
-        }
-
-        @media (max-width: 1024px) {
-            .fossil-dash-right {
-                display: none;
-            }
-            .fossil-dash-main {
-                margin-right: 0;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .fossil-dash-sidebar {
-                display: none;
-            }
-            .fossil-dash-main {
-                margin-left: 0;
-            }
-            .fossil-dash-header {
-                flex-direction: column;
-                align-items: stretch;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOSSil — Preserve Knowledge Forever</title>
+<style>
+  /* ─── Reset & Base ─── */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg:          #F4F2EF;
+    --bg-raised:   #FAFAF8;
+    --bg-sunken:   #EAE8E4;
+    --bg-deep:     #E3E0DB;
+    --surface:     #F7F6F4;
+    --border:      #DCD9D3;
+    --border-light:#EBE9E5;
+    --text-primary:#1A1917;
+    --text-secondary:#6B6860;
+    --text-tertiary:#9E9B93;
+    --accent:      #5C7A5E;
+    --accent-hover:#4A634B;
+    --accent-light:#E8EDE8;
+    --accent-muted:rgba(92,122,94,0.08);
+    --shadow-neu:  6px 6px 14px rgba(0,0,0,0.06), -6px -6px 14px rgba(255,255,255,0.8);
+    --shadow-neu-sm:3px 3px 8px rgba(0,0,0,0.05), -3px -3px 8px rgba(255,255,255,0.7);
+    --shadow-neu-inset:inset 2px 2px 6px rgba(0,0,0,0.05), inset -2px -2px 6px rgba(255,255,255,0.7);
+    --max-w:       1200px;
+    --font-display:'Georgia', 'Times New Roman', 'Noto Serif', serif;
+    --font-body:   -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    --font-mono:   'SF Mono', 'Fira Code', 'Consolas', monospace;
+  }
+
+  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text-primary);
+    line-height: 1.65;
+    font-size: 16px;
+  }
+
+  a { color: inherit; text-decoration: none; }
+  img { display: block; max-width: 100%; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+
+  .container { max-width: var(--max-w); margin: 0 auto; padding: 0 40px; }
+
+  @media (max-width: 768px) {
+    .container { padding: 0 20px; }
+  }
+
+  /* ─── Navigation ─── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(244,242,239,0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .nav-inner {
+    max-width: var(--max-w); margin: 0 auto; padding: 0 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+
+  .nav-logo {
+    font-family: var(--font-display);
+    font-size: 20px; font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+
+  .nav-logo span { color: var(--accent); }
+
+  .nav-links { display: flex; align-items: center; gap: 32px; }
+
+  .nav-links a {
+    font-size: 13.5px; font-weight: 450;
+    color: var(--text-secondary);
+    transition: color 0.2s;
+    letter-spacing: 0.01em;
+  }
+
+  .nav-links a:hover { color: var(--text-primary); }
+
+  .nav-cta {
+    font-size: 13px; font-weight: 500;
+    padding: 7px 18px; border-radius: 6px;
+    background: var(--text-primary); color: var(--bg);
+    transition: background 0.2s, transform 0.15s;
+  }
+
+  .nav-cta:hover { background: #2e2d2a; transform: translateY(-1px); }
+
+  @media (max-width: 768px) {
+    .nav-inner { padding: 0 20px; }
+    .nav-links { display: none; }
+  }
+
+  /* ─── Section Spacing ─── */
+  section { padding: 120px 0; }
+
+  @media (max-width: 768px) {
+    section { padding: 72px 0; }
+  }
+
+  /* ─── Section Label ─── */
+  .section-label {
+    font-size: 11.5px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 16px;
+    font-family: var(--font-body);
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 36px; font-weight: 400;
+    line-height: 1.25; letter-spacing: -0.02em;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+  }
+
+  .section-subtitle {
+    font-size: 17px; line-height: 1.7;
+    color: var(--text-secondary);
+    max-width: 560px;
+  }
+
+  @media (max-width: 768px) {
+    .section-title { font-size: 28px; }
+    .section-subtitle { font-size: 15px; }
+  }
+
+  /* ─── Hero ─── */
+  .hero {
+    padding: 140px 0 100px;
+    text-align: center;
+  }
+
+  @media (max-width: 768px) {
+    .hero { padding: 100px 0 64px; }
+  }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 500;
+    color: var(--accent);
+    background: var(--accent-muted);
+    border: 1px solid rgba(92,122,94,0.12);
+    padding: 6px 16px; border-radius: 100px;
+    margin-bottom: 32px;
+    letter-spacing: 0.02em;
+  }
+
+  .hero-badge::before {
+    content: '';
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    display: inline-block;
+  }
+
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: 68px; font-weight: 400;
+    line-height: 1.08; letter-spacing: -0.035em;
+    color: var(--text-primary);
+    margin-bottom: 24px;
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 40px; letter-spacing: -0.025em; }
+  }
+
+  .hero-tagline {
+    font-size: 19px; line-height: 1.7;
+    color: var(--text-secondary);
+    max-width: 520px; margin: 0 auto 44px;
+    font-weight: 400;
+  }
+
+  @media (max-width: 768px) {
+    .hero-tagline { font-size: 16px; margin-bottom: 32px; }
+  }
+
+  .hero-actions {
+    display: flex; align-items: center; justify-content: center;
+    gap: 14px; flex-wrap: wrap;
+    margin-bottom: 80px;
+  }
+
+  @media (max-width: 768px) {
+    .hero-actions { margin-bottom: 56px; }
+  }
+
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 500;
+    padding: 12px 28px; border-radius: 8px;
+    background: var(--text-primary); color: var(--bg);
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .btn-primary:hover {
+    background: #2e2d2a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 500;
+    padding: 12px 28px; border-radius: 8px;
+    background: var(--bg-raised);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+    box-shadow: var(--shadow-neu-sm);
+  }
+
+  .btn-secondary:hover {
+    color: var(--text-primary);
+    border-color: #c8c5be;
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary svg { transition: transform 0.2s; }
+  .btn-secondary:hover svg { transform: translateX(3px); }
+
+  /* ─── App Preview (Hero) ─── */
+  .app-preview {
+    max-width: 1000px; margin: 0 auto;
+    background: var(--bg-raised);
+    border-radius: 16px;
+    box-shadow: var(--shadow-neu), 0 20px 60px rgba(0,0,0,0.04);
+    border: 1px solid var(--border-light);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .app-preview-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--surface);
+  }
+
+  .app-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+  }
+
+  .app-dot:nth-child(1) { background: #d4a0a0; border-color: #c49090; }
+  .app-dot:nth-child(2) { background: #d4c8a0; border-color: #c4b890; }
+  .app-dot:nth-child(3) { background: #a0c4a0; border-color: #90b490; }
+
+  .app-preview-url {
+    flex: 1; text-align: center;
+    font-size: 12px; color: var(--text-tertiary);
+    font-family: var(--font-mono);
+    letter-spacing: 0.02em;
+  }
+
+  .app-preview-body {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: 440px;
+  }
+
+  @media (max-width: 768px) {
+    .app-preview-body { grid-template-columns: 1fr; }
+    .app-sidebar { display: none; }
+  }
+
+  .app-sidebar {
+    border-right: 1px solid var(--border-light);
+    padding: 20px 0;
+    background: var(--surface);
+  }
+
+  .app-sidebar-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 20px;
+    font-size: 13px; color: var(--text-secondary);
+    transition: all 0.15s;
+    cursor: default;
+  }
+
+  .app-sidebar-item.active {
+    background: var(--accent-muted);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .app-sidebar-icon {
+    width: 16px; height: 16px;
+    border-radius: 3px;
+    background: var(--bg-deep);
+    flex-shrink: 0;
+  }
+
+  .app-sidebar-item.active .app-sidebar-icon {
+    background: var(--accent);
+    opacity: 0.5;
+  }
+
+  .app-sidebar-section {
+    padding: 16px 20px 6px;
+    font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  .app-content {
+    padding: 32px 40px;
+  }
+
+  @media (max-width: 768px) {
+    .app-content { padding: 24px 20px; }
+  }
+
+  .app-content-breadcrumb {
+    font-size: 12px; color: var(--text-tertiary);
+    margin-bottom: 20px;
+    font-family: var(--font-mono);
+  }
+
+  .app-content-title {
+    font-family: var(--font-display);
+    font-size: 28px; font-weight: 400;
+    line-height: 1.3; letter-spacing: -0.02em;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .app-content-meta {
+    font-size: 12.5px; color: var(--text-tertiary);
+    margin-bottom: 28px;
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .app-content-meta-dot {
+    width: 3px; height: 3px; border-radius: 50%;
+    background: var(--border);
+  }
+
+  .app-content-body p {
+    font-size: 14px; line-height: 1.8;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    max-width: 580px;
+  }
+
+  .app-content-body p:last-child { margin-bottom: 0; }
+
+  /* ─── Philosophy ─── */
+  .philosophy { background: var(--bg-raised); border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); }
+
+  .philosophy-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2px;
+    margin-top: 64px;
+    background: var(--border-light);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow-neu);
+  }
+
+  @media (max-width: 900px) {
+    .philosophy-grid { grid-template-columns: repeat(2, 1fr); }
+    .philosophy-grid > :last-child { grid-column: span 2; }
+  }
+
+  @media (max-width: 540px) {
+    .philosophy-grid { grid-template-columns: 1fr; }
+    .philosophy-grid > :last-child { grid-column: span 1; }
+  }
+
+  .philosophy-card {
+    background: var(--bg-raised);
+    padding: 40px 32px;
+    display: flex; flex-direction: column; gap: 16px;
+    transition: background 0.3s;
+  }
+
+  .philosophy-card:hover { background: var(--surface); }
+
+  .philosophy-numeral {
+    font-family: var(--font-display);
+    font-size: 32px; font-weight: 400;
+    color: var(--accent);
+    opacity: 0.5;
+    line-height: 1;
+  }
+
+  .philosophy-card h3 {
+    font-family: var(--font-display);
+    font-size: 18px; font-weight: 400;
+    line-height: 1.35;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+  }
+
+  .philosophy-card p {
+    font-size: 13.5px; line-height: 1.7;
+    color: var(--text-secondary);
+  }
+
+  /* ─── Product Showcase ─── */
+  .showcase-tabs {
+    display: flex; gap: 4px;
+    margin-bottom: 40px;
+    background: var(--bg-sunken);
+    border-radius: 10px;
+    padding: 4px;
+    display: inline-flex;
+    box-shadow: var(--shadow-neu-inset);
+  }
+
+  .showcase-tab {
+    font-size: 13px; font-weight: 500;
+    padding: 8px 20px; border-radius: 7px;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .showcase-tab:hover { color: var(--text-primary); }
+
+  .showcase-tab.active {
+    background: var(--bg-raised);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-neu-sm);
+  }
+
+  .showcase-panels { position: relative; }
+
+  .showcase-panel {
+    display: none;
+    background: var(--bg-raised);
+    border-radius: 14px;
+    box-shadow: var(--shadow-neu), 0 16px 48px rgba(0,0,0,0.03);
+    border: 1px solid var(--border-light);
+    overflow: hidden;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .showcase-panel.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .showcase-panel-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--surface);
+  }
+
+  /* ── Reading Panel ── */
+  .read-layout {
+    display: grid; grid-template-columns: 200px 1fr 180px;
+    min-height: 420px;
+  }
+
+  @media (max-width: 900px) {
+    .read-layout { grid-template-columns: 1fr; }
+    .read-toc, .read-aside { display: none; }
+  }
+
+  .read-toc {
+    border-right: 1px solid var(--border-light);
+    padding: 24px 20px;
+    background: var(--surface);
+  }
+
+  .read-toc-title {
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 16px;
+  }
+
+  .read-toc-item {
+    font-size: 12.5px; color: var(--text-secondary);
+    padding: 5px 0; padding-left: 12px;
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+    cursor: default;
+  }
+
+  .read-toc-item.active {
+    border-left-color: var(--accent);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .read-main { padding: 36px 40px; }
+
+  .read-main h2 {
+    font-family: var(--font-display);
+    font-size: 24px; font-weight: 400;
+    line-height: 1.35; margin-bottom: 6px;
+    letter-spacing: -0.015em;
+  }
+
+  .read-main .meta {
+    font-size: 12px; color: var(--text-tertiary);
+    margin-bottom: 28px;
+  }
+
+  .read-main p {
+    font-size: 14px; line-height: 1.85;
+    color: var(--text-secondary);
+    margin-bottom: 18px;
+  }
+
+  .read-main blockquote {
+    border-left: 2px solid var(--accent);
+    padding: 12px 0 12px 20px;
+    margin: 24px 0;
+    font-family: var(--font-display);
+    font-size: 16px; font-style: italic;
+    color: var(--text-primary);
+    line-height: 1.6;
+  }
+
+  .read-aside {
+    border-left: 1px solid var(--border-light);
+    padding: 24px 20px;
+    background: var(--surface);
+  }
+
+  .read-aside-label {
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 12px;
+  }
+
+  .read-aside-tag {
+    display: inline-block;
+    font-size: 11.5px; color: var(--text-secondary);
+    background: var(--bg-sunken);
+    padding: 4px 10px; border-radius: 4px;
+    margin: 0 4px 6px 0;
+  }
+
+  .read-aside-stat {
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: var(--text-tertiary);
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-light);
+    margin-top: 8px;
+  }
+
+  /* ── Writing Panel ── */
+  .write-layout {
+    display: grid; grid-template-columns: 1fr 1fr;
+    min-height: 420px;
+  }
+
+  @media (max-width: 768px) {
+    .write-layout { grid-template-columns: 1fr; }
+    .write-preview { display: none; }
+  }
+
+  .write-editor {
+    border-right: 1px solid var(--border-light);
+    display: flex; flex-direction: column;
+  }
+
+  .write-toolbar {
+    display: flex; align-items: center; gap: 2px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--surface);
+  }
+
+  .write-tool {
+    width: 30px; height: 28px;
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600;
+    color: var(--text-tertiary);
+    transition: all 0.15s;
+    cursor: default;
+  }
+
+  .write-tool:hover { background: var(--bg-sunken); color: var(--text-secondary); }
+  .write-tool.active { background: var(--accent-muted); color: var(--accent); }
+
+  .write-editor-body {
+    flex: 1; padding: 28px 32px;
+    font-family: var(--font-mono);
+    font-size: 13px; line-height: 1.9;
+    color: var(--text-secondary);
+  }
+
+  .write-editor-body .heading-line { color: var(--text-primary); font-weight: 600; }
+  .write-editor-body .bold { color: var(--text-primary); font-weight: 600; }
+  .write-editor-body .italic { font-style: italic; }
+  .write-editor-body .link { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+  .write-editor-body .empty-line { height: 1.5em; }
+
+  .write-preview {
+    background: var(--surface);
+    padding: 32px 36px;
+  }
+
+  .write-preview h2 {
+    font-family: var(--font-display);
+    font-size: 22px; font-weight: 400;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+
+  .write-preview .meta {
+    font-size: 12px; color: var(--text-tertiary);
+    margin-bottom: 24px;
+  }
+
+  .write-preview p {
+    font-size: 14px; line-height: 1.85;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+  }
+
+  .write-preview strong { color: var(--text-primary); font-weight: 600; }
+
+  /* ── Collection Panel ── */
+  .collection-layout { padding: 32px 36px; }
+
+  .collection-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .collection-header h2 {
+    font-family: var(--font-display);
+    font-size: 24px; font-weight: 400;
+    letter-spacing: -0.015em;
+    margin-bottom: 6px;
+  }
+
+  .collection-header .meta {
+    font-size: 13px; color: var(--text-tertiary);
+  }
+
+  .collection-sort {
+    font-size: 12px; color: var(--text-tertiary);
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    padding: 6px 14px; border-radius: 6px;
+  }
+
+  .collection-items { display: flex; flex-direction: column; gap: 2px; }
+
+  .collection-item {
+    display: grid;
+    grid-template-columns: 40px 1fr 100px 80px;
+    align-items: center; gap: 16px;
+    padding: 16px 16px;
+    border-radius: 8px;
+    transition: background 0.15s;
+    cursor: default;
+  }
+
+  .collection-item:hover { background: var(--surface); }
+
+  @media (max-width: 768px) {
+    .collection-item { grid-template-columns: 1fr; gap: 4px; }
+    .collection-item-num, .collection-item-words, .collection-item-date { display: none; }
+  }
+
+  .collection-item-num {
+    font-size: 12px; color: var(--text-tertiary);
+    font-family: var(--font-mono);
+    text-align: center;
+  }
+
+  .collection-item-title {
+    font-size: 14.5px; color: var(--text-primary);
+    font-weight: 450;
+  }
+
+  .collection-item-desc {
+    font-size: 12.5px; color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+
+  .collection-item-words {
+    font-size: 12px; color: var(--text-tertiary);
+    text-align: right;
+    font-family: var(--font-mono);
+  }
+
+  .collection-item-date {
+    font-size: 12px; color: var(--text-tertiary);
+    text-align: right;
+  }
+
+  /* ── Search Panel ── */
+  .search-layout { padding: 40px 36px; }
+
+  .search-bar {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0 20px;
+    height: 52px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-neu-inset);
+  }
+
+  .search-icon {
+    width: 16px; height: 16px;
+    border: 2px solid var(--text-tertiary);
+    border-radius: 50%;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .search-icon::after {
+    content: '';
+    position: absolute;
+    width: 2px; height: 7px;
+    background: var(--text-tertiary);
+    bottom: -6px; right: -4px;
+    transform: rotate(-45deg);
+    border-radius: 1px;
+  }
+
+  .search-bar span {
+    font-size: 14.5px; color: var(--text-tertiary);
+  }
+
+  .search-bar .typed { color: var(--text-primary); }
+
+  .search-filters {
+    display: flex; gap: 8px; margin-bottom: 32px;
+  }
+
+  .search-filter {
+    font-size: 12px; font-weight: 500;
+    padding: 5px 14px; border-radius: 6px;
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+    background: var(--bg-raised);
+    transition: all 0.15s;
+    cursor: default;
+  }
+
+  .search-filter.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-muted);
+  }
+
+  .search-results { display: flex; flex-direction: column; gap: 16px; }
+
+  .search-result {
+    padding: 20px 24px;
+    border-radius: 10px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-raised);
+    transition: all 0.2s;
+    cursor: default;
+  }
+
+  .search-result:hover {
+    border-color: var(--border);
+    box-shadow: var(--shadow-neu-sm);
+  }
+
+  .search-result-type {
+    font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .search-result h3 {
+    font-family: var(--font-display);
+    font-size: 17px; font-weight: 400;
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+
+  .search-result h3 mark {
+    background: none;
+    color: var(--accent);
+    font-weight: 600;
+    font-style: normal;
+  }
+
+  .search-result p {
+    font-size: 13px; line-height: 1.65;
+    color: var(--text-tertiary);
+  }
+
+  .search-result p mark {
+    background: var(--accent-muted);
+    color: var(--accent);
+    font-weight: 500;
+    border-radius: 2px;
+    padding: 0 2px;
+  }
+
+  .search-result-meta {
+    display: flex; gap: 12px; margin-top: 10px;
+    font-size: 11.5px; color: var(--text-tertiary);
+  }
+
+  /* ── Profile Panel ── */
+  .profile-layout {
+    display: grid; grid-template-columns: 280px 1fr;
+    min-height: 420px;
+  }
+
+  @media (max-width: 768px) {
+    .profile-layout { grid-template-columns: 1fr; }
+    .profile-sidebar { border-right: none; border-bottom: 1px solid var(--border-light); }
+  }
+
+  .profile-sidebar {
+    border-right: 1px solid var(--border-light);
+    padding: 36px 28px;
+    text-align: center;
+    background: var(--surface);
+  }
+
+  .profile-avatar {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: var(--bg-deep);
+    margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-size: 28px; font-weight: 400;
+    color: var(--text-secondary);
+  }
+
+  .profile-name {
+    font-family: var(--font-display);
+    font-size: 20px; font-weight: 400;
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+  }
+
+  .profile-handle {
+    font-size: 13px; color: var(--text-tertiary);
+    font-family: var(--font-mono);
+    margin-bottom: 16px;
+  }
+
+  .profile-bio {
+    font-size: 13px; line-height: 1.7;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+  }
+
+  .profile-stats {
+    display: flex; justify-content: center; gap: 28px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-light);
+  }
+
+  .profile-stat-num {
+    font-size: 20px; font-weight: 500;
+    color: var(--text-primary);
+    font-family: var(--font-display);
+  }
+
+  .profile-stat-label {
+    font-size: 11px; color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+
+  .profile-content { padding: 32px 36px; }
+
+  .profile-tabs {
+    display: flex; gap: 0;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 24px;
+  }
+
+  .profile-tab {
+    font-size: 13px; font-weight: 500;
+    padding: 10px 20px;
+    color: var(--text-tertiary);
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    cursor: default;
+    margin-bottom: -1px;
+  }
+
+  .profile-tab.active {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent);
+  }
+
+  .profile-articles { display: flex; flex-direction: column; gap: 20px; }
+
+  .profile-article {
+    display: flex; gap: 16px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .profile-article:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .profile-article-thumb {
+    width: 80px; height: 60px;
+    border-radius: 6px;
+    background: var(--bg-deep);
+    flex-shrink: 0;
+  }
+
+  .profile-article-info h4 {
+    font-size: 14.5px; font-weight: 450;
+    margin-bottom: 4px;
+    color: var(--text-primary);
+  }
+
+  .profile-article-info p {
+    font-size: 12.5px; color: var(--text-tertiary);
+    line-height: 1.5;
+  }
+
+  .profile-article-info .meta {
+    font-size: 11.5px; color: var(--text-tertiary);
+    margin-top: 6px;
+  }
+
+  /* ─── Content Model ─── */
+  .model { background: var(--bg-raised); border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); }
+
+  .model-center { display: flex; justify-content: center; margin-top: 64px; }
+
+  .model-diagram {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    align-items: center;
+    gap: 0;
+    max-width: 800px;
+    width: 100%;
+  }
+
+  @media (max-width: 700px) {
+    .model-diagram {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+    .model-connector-h { display: none; }
+    .model-connector-v { display: block !important; }
+  }
+
+  .model-node {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px 28px;
+    text-align: center;
+    box-shadow: var(--shadow-neu);
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .model-node:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-neu), 0 8px 24px rgba(92,122,94,0.06);
+  }
+
+  .model-node-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: var(--accent-muted);
+    margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .model-node-icon svg {
+    width: 20px; height: 20px;
+    stroke: var(--accent);
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .model-node h3 {
+    font-family: var(--font-display);
+    font-size: 20px; font-weight: 400;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+
+  .model-node p {
+    font-size: 13px; color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .model-connector-h {
+    width: 56px; height: 2px;
+    background: var(--border);
+    position: relative;
+  }
+
+  .model-connector-h::after {
+    content: '';
+    position: absolute;
+    right: -4px; top: -4px;
+    width: 0; height: 0;
+    border-left: 6px solid var(--border);
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+  }
+
+  .model-connector-v {
+    display: none;
+    width: 2px; height: 40px;
+    background: var(--border);
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .model-connector-v::after {
+    content: '';
+    position: absolute;
+    bottom: -4px; left: -4px;
+    width: 0; height: 0;
+    border-top: 6px solid var(--border);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+  }
+
+  .model-note {
+    text-align: center;
+    margin-top: 48px;
+    font-size: 14px;
+    color: var(--text-tertiary);
+    font-style: italic;
+    font-family: var(--font-display);
+  }
+
+  /* ─── Features ─── */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 64px;
+  }
+
+  @media (max-width: 900px) {
+    .features-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 540px) {
+    .features-grid { grid-template-columns: 1fr; }
+  }
+
+  .feature-card {
+    background: var(--bg-raised);
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    padding: 36px 32px;
+    box-shadow: var(--shadow-neu-sm);
+    transition: all 0.3s;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+
+  .feature-card:hover {
+    border-color: var(--border);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-neu);
+  }
+
+  .feature-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--bg-sunken);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-neu-inset);
+  }
+
+  .feature-icon svg {
+    width: 16px; height: 16px;
+    stroke: var(--text-secondary);
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .feature-card h3 {
+    font-family: var(--font-display);
+    font-size: 17px; font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+  }
+
+  .feature-card p {
+    font-size: 13.5px; line-height: 1.7;
+    color: var(--text-secondary);
+  }
+
+  /* ─── Example Archive ─── */
+  .archive { background: var(--bg-raised); border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); }
+
+  .archive-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 64px;
+  }
+
+  @media (max-width: 900px) {
+    .archive-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 540px) {
+    .archive-grid { grid-template-columns: 1fr; }
+  }
+
+  .archive-card {
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 28px 26px;
+    box-shadow: var(--shadow-neu-sm);
+    transition: all 0.3s;
+    display: flex; flex-direction: column; gap: 12px;
+    cursor: default;
+  }
+
+  .archive-card:hover {
+    border-color: var(--border);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-neu);
+  }
+
+  .archive-card-type {
+    display: inline-flex; align-self: flex-start;
+    font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 3px 10px; border-radius: 4px;
+  }
+
+  .archive-card-type.article { color: var(--accent); background: var(--accent-muted); }
+  .archive-card-type.collection { color: #7a6e5c; background: rgba(122,110,92,0.08); }
+  .archive-card-type.post { color: #5c6e7a; background: rgba(92,110,122,0.08); }
+
+  .archive-card h3 {
+    font-family: var(--font-display);
+    font-size: 17px; font-weight: 400;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+  }
+
+  .archive-card p {
+    font-size: 13px; line-height: 1.65;
+    color: var(--text-secondary);
+    flex: 1;
+  }
+
+  .archive-card-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-light);
+    font-size: 12px; color: var(--text-tertiary);
+  }
+
+  .archive-card-author {
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .archive-card-author-avatar {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--bg-deep);
+  }
+
+  /* ─── CTA Banner ─── */
+  .cta-banner {
+    text-align: center;
+    padding: 120px 0;
+  }
+
+  .cta-banner h2 {
+    font-family: var(--font-display);
+    font-size: 40px; font-weight: 400;
+    line-height: 1.2; letter-spacing: -0.03em;
+    margin-bottom: 16px;
+  }
+
+  .cta-banner h2 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  @media (max-width: 768px) {
+    .cta-banner h2 { font-size: 28px; }
+  }
+
+  .cta-banner p {
+    font-size: 17px; color: var(--text-secondary);
+    margin-bottom: 36px;
+    max-width: 480px;
+    margin-left: auto; margin-right: auto;
+    line-height: 1.7;
+  }
+
+  /* ─── Footer ─── */
+  footer {
+    border-top: 1px solid var(--border-light);
+    padding: 64px 0;
+    background: var(--bg-raised);
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 2fr repeat(3, 1fr);
+    gap: 48px;
+  }
+
+  @media (max-width: 768px) {
+    .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+    .footer-brand { grid-column: span 2; }
+  }
+
+  @media (max-width: 480px) {
+    .footer-grid { grid-template-columns: 1fr; }
+    .footer-brand { grid-column: span 1; }
+  }
+
+  .footer-brand-name {
+    font-family: var(--font-display);
+    font-size: 22px; font-weight: 700;
+    margin-bottom: 10px;
+    letter-spacing: -0.02em;
+  }
+
+  .footer-brand-name span { color: var(--accent); }
+
+  .footer-brand p {
+    font-size: 13.5px; color: var(--text-secondary);
+    line-height: 1.7;
+    max-width: 280px;
+  }
+
+  .footer-col h4 {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 16px;
+  }
+
+  .footer-col a {
+    display: block;
+    font-size: 13.5px; color: var(--text-secondary);
+    padding: 5px 0;
+    transition: color 0.15s;
+  }
+
+  .footer-col a:hover { color: var(--text-primary); }
+
+  .footer-bottom {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-light);
+    font-size: 12px; color: var(--text-tertiary);
+  }
+
+  @media (max-width: 540px) {
+    .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
+  }
+
+  .footer-bottom-links { display: flex; gap: 20px; }
+  .footer-bottom-links a { transition: color 0.15s; }
+  .footer-bottom-links a:hover { color: var(--text-primary); }
+
+  /* ─── Misc ─── */
+  .text-center { text-align: center; }
+  .mx-auto { margin-left: auto; margin-right: auto; }
+
+  .divider {
+    width: 40px; height: 1px;
+    background: var(--border);
+    margin: 0 auto;
+  }
+</style>
 </head>
 <body>
-    {% if user %}
-    {% include "fossil_dashboard.html" %}
-    {% else %}
-    <div class="fossil-landing">
-        <header>
-            <div class="fossil-landing-nav">
-                <a href="#" class="fossil-landing-logo">
-                    <span class="fossil-landing-logo-box">F</span>
-                    <span class="fossil-landing-logo-text">FOSSil</span>
-                </a>
-                <nav class="fossil-landing-links" aria-label="Main">
-                    <a href="#">About</a>
-                    <a href="#">Features</a>
-                    <a href="#">Principles</a>
-                    <a href="#">Get Started</a>
-                    <a href="#">Docs</a>
-                    <a href="#">Blog</a>
-                </nav>
-                <div class="fossil-landing-actions">
-                    <a href="#" class="fossil-landing-gh">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
-                        </svg>
-                        View on GitHub
-                    </a>
-                    <a href="#" class="fossil-landing-download">Download FOSSil</a>
-                    <form method="post" action="{{ url_for('main.fossil_login_demo') }}" style="display:inline;">
-                        <button type="submit" class="fossil-landing-demo">Login with guest</button>
-                    </form>
-                </div>
-            </div>
-        </header>
 
-        <main>
-            <section class="fossil-hero">
-                <div class="fossil-hero-content">
-                    <h1>Publish with purpose.<br>Preserve forever.</h1>
-                    <p>FOSSil is a decentralized publishing platform for articles, collections, and posts.</p>
-                    <p>Every publication is cryptographically signed, content-addressed, and preserved by readers across the network.</p>
-                    <p>No servers to control. No algorithms to manipulate. Just verifiable knowledge that endures.</p>
-                    <div class="fossil-landing-ctas">
-                        <a href="#" class="fossil-landing-btn-primary">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                                <polyline points="7 10 12 15 17 10"/>
-                                <line x1="12" y1="15" x2="12" y2="3"/>
-                            </svg>
-                            Download FOSSil
-                        </a>
-                        <a href="#" class="fossil-landing-btn-secondary">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <polygon points="5 3 19 12 5 21 5 3"/>
-                            </svg>
-                            See How It Works
-                        </a>
-                    </div>
-                    <div class="fossil-landing-platforms">
-                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.26-3.14-2.53-1.71-2.48-.31-6.15.94-8.01.88-1.33 1.94-2.71 3.31-2.71.65 0 1.45.22 1.94.22.49 0 1.37-.26 2.38-.26 1.06 0 2.72.34 3.48 2.36 1.34 3.5.33 9.35-1.31 11.47zM12.08 3.4c.69-.84 1.16-2 1.05-3.17-1.03.04-2.29.69-3.03 1.55-.66.75-1.24 1.96-1.08 3.17 1.16.09 2.35-.59 3.06-1.55z"/></svg>
-                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
-                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.333.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.132 1.884 1.071.771-.06 1.592-.536 2.257-1.306.631-.765 1.683-1.084 2.378-1.503.348-.199.629-.469.649-.853.023-.4-.2-.811-.714-1.376v-.097l-.003-.003c-.17-.2-.25-.535-.338-.926-.085-.401-.182-.786-.492-1.046h-.003c-.059-.054-.123-.067-.188-.135a.357.357 0 00-.19-.064c.431-1.278.264-2.55-.173-3.694-.533-1.41-1.465-2.638-2.175-3.483-.796-1.005-1.576-1.957-1.56-3.368.026-2.152.236-6.133-3.544-6.139zm.529 3.405h.013c.213 0 .396.062.584.198.19.135.33.332.438.533.105.259.158.459.166.724 0-.02.006-.04.006-.06v.105a.086.086 0 01-.004-.021l-.004-.024a1.807 1.807 0 01-.15.706c-.105.258-.264.48-.468.674-.2.198-.47.332-.796.332-.227 0-.418-.06-.597-.196-.18-.132-.314-.319-.433-.533-.12-.21-.198-.468-.21-.764.02.027.042.053.065.078.183.198.398.397.636.53.258.134.53.198.812.198zm-1.46 1.37c.016.06.034.112.058.16.19.38.613.658 1.113.658.114 0 .225-.015.334-.042.165-.04.323-.095.47-.167.535-.264.87-.67.943-1.191a1.96 1.96 0 00-.014-.522c-.1-.57-.404-.95-.857-1.177a2.053 2.053 0 00-.393-.146l-.028-.008c-.06-.02-.123-.033-.186-.037-.055-.003-.11-.003-.165.003a.993.993 0 00-.333.065 1.53 1.53 0 00-.386.21 1.636 1.636 0 00-.46.46c-.12.18-.21.39-.27.63-.058.24-.09.49-.09.76 0 .266.03.523.09.77.06.24.15.46.27.65.12.18.27.33.45.45.18.12.39.21.63.27.24.06.5.09.77.09.27 0 .53-.03.78-.09.24-.06.46-.15.65-.27.18-.12.33-.27.45-.45.12-.18.21-.39.27-.63...."/></svg>
-                        macOS, Windows, Linux
-                    </div>
-                </div>
-                <div class="fossil-hero-visual">
-                    <div class="fossil-app-window">
-                        <div class="fossil-app-titlebar">
-                            <span class="fossil-app-dot red"></span>
-                            <span class="fossil-app-dot yellow"></span>
-                            <span class="fossil-app-dot green"></span>
-                        </div>
-                        <div class="fossil-app-body">
-                            <aside class="fossil-app-sidebar">
-                                <div class="fossil-app-sidebar-item active">
-                                    <svg class="fossil-app-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                                    Home
-                                </div>
-                                <div class="fossil-app-sidebar-item">
-                                    <svg class="fossil-app-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                    Articles
-                                </div>
-                                <div class="fossil-app-sidebar-item">
-                                    <svg class="fossil-app-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
-                                    Collections
-                                </div>
-                                <div class="fossil-app-sidebar-item">
-                                    <svg class="fossil-app-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-                                    Posts
-                                </div>
-                                <div class="fossil-app-sidebar-item">
-                                    <svg class="fossil-app-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                    Search
-                                </div>
-                                <div class="fossil-app-sidebar-item" style="margin-top: auto; border-top: 1px solid #e8e6e1; padding-top: 0.6rem; margin-top: 0.6rem;">
-                                    <svg class="fossil-app-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                                    Library
-                                </div>
-                            </aside>
-                            <div class="fossil-app-content">
-                                <h3>Recent Publications</h3>
-                                <p>Articles, collections and posts from across the network.</p>
-                                <div class="fossil-app-search">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                    Search publications...
-                                </div>
-                                <ul class="fossil-app-list">
-                                    <li class="fossil-app-list-item">
-                                        <div class="fossil-app-list-icon"></div>
-                                        <div>
-                                            <h4>A Minimalist Guide to Local-First Software</h4>
-                                            <p>A practical explanation of principles and patterns for building reliable, local-first applications that respect user autonomy.</p>
-                                        </div>
-                                    </li>
-                                    <li class="fossil-app-list-item">
-                                        <div class="fossil-app-list-icon"></div>
-                                        <div>
-                                            <h4>Essential Papers on Decentralization</h4>
-                                            <p>A curated collection of foundational texts on decentralization, peer-to-peer systems, and digital commons.</p>
-                                        </div>
-                                    </li>
-                                    <li class="fossil-app-list-item">
-                                        <div class="fossil-app-list-icon"></div>
-                                        <div>
-                                            <h4>The Long History of Open Knowledge</h4>
-                                            <p>Tracing the lineage of open knowledge from early print culture to today's digital commons.</p>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="fossil-landing-features">
-                <div class="fossil-landing-features-inner">
-                    <div class="fossil-feature">
-                        <div class="fossil-feature-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                                <polyline points="9 12 11 14 15 10"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3>Verifiable &amp; Authentic</h3>
-                            <p>Every publication is cryptographically signed. Verify authorship, integrity, and provenance with confidence.</p>
-                        </div>
-                    </div>
-                    <div class="fossil-feature">
-                        <div class="fossil-feature-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <circle cx="12" cy="12" r="2"/>
-                                <path d="M16.24 7.76a6 6 0 010 8.49m-8.48-.01a6 6 0 010-8.49m11.31-2.83a10 10 0 010 14.14m-14.14 0a10 10 0 010-14.14"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3>Decentralized &amp; Resilient</h3>
-                            <p>Distributed across a peer-to-peer network. The more it's read, the harder it is to erase.</p>
-                        </div>
-                    </div>
-                    <div class="fossil-feature">
-                        <div class="fossil-feature-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
-                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                                <line x1="12" y1="22.08" x2="12" y2="12"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3>Built for the Long Term</h3>
-                            <p>Designed for longevity and preservation. Your knowledge should outlive any platform.</p>
-                        </div>
-                    </div>
-                    <div class="fossil-feature">
-                        <div class="fossil-feature-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                                <path d="M7 11V7a5 5 0 0110 0v4"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h3>Private by Design</h3>
-                            <p>No accounts required. Your data stays on your device. Share what you choose, keep the rest.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="fossil-landing-stats">
-                <div class="fossil-landing-stats-heading">
-                    <div class="fossil-landing-stats-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
-                            <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <h2>A modern public library for the digital age.</h2>
-                        <p>FOSSil is open source, community governed, and built on the belief that knowledge is a commons.</p>
-                    </div>
-                </div>
-                <div class="fossil-stats-grid">
-                    <div>
-                        <p class="fossil-stat-value">12,458</p>
-                        <p class="fossil-stat-label">Publications</p>
-                    </div>
-                    <div>
-                        <p class="fossil-stat-value">3,852</p>
-                        <p class="fossil-stat-label">Peers Online</p>
-                    </div>
-                    <div>
-                        <p class="fossil-stat-value">1.2 PB</p>
-                        <p class="fossil-stat-label">Data Preserved</p>
-                    </div>
-                </div>
-            </section>
-        </main>
+<!-- ─── Navigation ─── -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">FOSS<span>il</span></a>
+    <div class="nav-links">
+      <a href="#philosophy">Philosophy</a>
+      <a href="#showcase">Product</a>
+      <a href="#model">Model</a>
+      <a href="#features">Features</a>
+      <a href="#archive">Archive</a>
+      <a href="#" class="nav-cta">Get Started</a>
     </div>
-    {% endif %}
+  </div>
+</nav>
+
+<!-- ─── Hero ─── -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge">Open Source &middot; Self-Hostable</div>
+    <h1>Knowledge worth<br><em>keeping forever</em></h1>
+    <p class="hero-tagline">A publishing and archival platform built to preserve articles, collections, and ideas for decades — not minutes.</p>
+    <div class="hero-actions">
+      <a href="#" class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        Start Publishing
+      </a>
+      <a href="#showcase" class="btn-secondary">
+        View Product
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </a>
+    </div>
+
+    <!-- Hero App Preview -->
+    <div class="app-preview">
+      <div class="app-preview-bar">
+        <div class="app-dot"></div>
+        <div class="app-dot"></div>
+        <div class="app-dot"></div>
+        <span class="app-preview-url">fossil.example.org/articles/the-lifecycle-of-software-systems</span>
+      </div>
+      <div class="app-preview-body">
+        <div class="app-sidebar">
+          <div class="app-sidebar-section">Library</div>
+          <div class="app-sidebar-item">
+            <div class="app-sidebar-icon"></div>
+            All Articles
+          </div>
+          <div class="app-sidebar-item">
+            <div class="app-sidebar-icon"></div>
+            Collections
+          </div>
+          <div class="app-sidebar-item">
+            <div class="app-sidebar-icon"></div>
+            Posts
+          </div>
+          <div class="app-sidebar-section">Recent</div>
+          <div class="app-sidebar-item active">
+            <div class="app-sidebar-icon"></div>
+            The Lifecycle of…
+          </div>
+          <div class="app-sidebar-item">
+            <div class="app-sidebar-icon"></div>
+            Notes on Archival…
+          </div>
+          <div class="app-sidebar-item">
+            <div class="app-sidebar-icon"></div>
+            Digital Permanence…
+          </div>
+          <div class="app-sidebar-section">Tags</div>
+          <div class="app-sidebar-item">
+            <div class="app-sidebar-icon"></div>
+            software-engineering
+          </div>
+          <div class="app-sidebar-item">
+            <div class="app-sidebar-icon"></div>
+            archival-science
+          </div>
+        </div>
+        <div class="app-content">
+          <div class="app-content-breadcrumb">Library / Articles / Software Engineering</div>
+          <h2 class="app-content-title">The Lifecycle of Software Systems: Why Most Code Dies Young</h2>
+          <div class="app-content-meta">
+            <span>Elena Vasquez</span>
+            <div class="app-content-meta-dot"></div>
+            <span>Mar 14, 2026</span>
+            <div class="app-content-meta-dot"></div>
+            <span>12 min read</span>
+          </div>
+          <div class="app-content-body">
+            <p>The average software system has a lifespan far shorter than most engineers assume. While we build with optimism — clean architectures, comprehensive tests, thorough documentation — the reality is that the vast majority of codebases are abandoned within a decade of their creation.</p>
+            <p>This isn't necessarily a failure. Systems outlive their purpose, organizations pivot, and technologies evolve. But the knowledge embedded in these systems — the decisions, the tradeoffs, the reasoning — deserves to survive beyond the code itself.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Philosophy ─── -->
+<section class="philosophy" id="philosophy">
+  <div class="container text-center">
+    <div class="section-label">Philosophy</div>
+    <h2 class="section-title mx-auto" style="max-width:600px;">Built for the next fifty years,<br>not the next fifty minutes</h2>
+    <p class="section-subtitle mx-auto">FOSSil is designed around a set of convictions about what publishing software should be — and what it has no business being.</p>
+
+    <div class="philosophy-grid">
+      <div class="philosophy-card">
+        <div class="philosophy-numeral">01</div>
+        <h3>Built for Permanence</h3>
+        <p>Every design decision is filtered through a single question: will this still work in twenty years? We choose stable formats, simple architectures, and minimal dependencies.</p>
+      </div>
+      <div class="philosophy-card">
+        <div class="philosophy-numeral">02</div>
+        <h3>Open Formats</h3>
+        <p>Your content lives in plain Markdown, stored in standard file structures. No proprietary databases, no lock-in. Export everything at any time with a single command.</p>
+      </div>
+      <div class="philosophy-card">
+        <div class="philosophy-numeral">03</div>
+        <h3>You Own Your Writing</h3>
+        <p>Self-hosted by default. Your data, your server, your rules. We provide the software — you keep the sovereignty that platforms quietly take away.</p>
+      </div>
+      <div class="philosophy-card">
+        <div class="philosophy-numeral">04</div>
+        <h3>No Algorithmic Feeds</h3>
+        <p>There is no engagement metric to optimize. Content is organized by author intent, not machine learning. Readers find writing through structure, not stimulation.</p>
+      </div>
+      <div class="philosophy-card">
+        <div class="philosophy-numeral">05</div>
+        <h3>Outliving Trends</h3>
+        <p>We don't follow design fads. The interface is calm, typographically sound, and intentionally understated — because the content is what matters.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Product Showcase ─── -->
+<section id="showcase">
+  <div class="container">
+    <div class="section-label">Product</div>
+    <h2 class="section-title">Every surface, considered</h2>
+    <p class="section-subtitle">A reading and writing experience designed for focus, clarity, and longevity.</p>
+
+    <div style="margin-top:40px;">
+      <div class="showcase-tabs">
+        <button class="showcase-tab active" data-panel="reading">Reading</button>
+        <button class="showcase-tab" data-panel="writing">Writing</button>
+        <button class="showcase-tab" data-panel="collection">Collections</button>
+        <button class="showcase-tab" data-panel="search">Search</button>
+        <button class="showcase-tab" data-panel="profile">Profile</button>
+      </div>
+
+      <div class="showcase-panels">
+
+        <!-- Reading -->
+        <div class="showcase-panel active" id="panel-reading">
+          <div class="showcase-panel-bar">
+            <div class="app-dot"></div><div class="app-dot"></div><div class="app-dot"></div>
+          </div>
+          <div class="read-layout">
+            <div class="read-toc">
+              <div class="read-toc-title">Contents</div>
+              <div class="read-toc-item active">The Paradox of Longevity</div>
+              <div class="read-toc-item">Why Systems Fail</div>
+              <div class="read-toc-item">Knowledge vs. Code</div>
+              <div class="read-toc-item">The Archival Imperative</div>
+              <div class="read-toc-item">What We Can Preserve</div>
+              <div class="read-toc-item">A Framework for Permanence</div>
+            </div>
+            <div class="read-main">
+              <h2>The Paradox of Longevity in Software</h2>
+              <div class="meta">Elena Vasquez · Mar 14, 2026 · 12 min read</div>
+              <p>We build software with the implicit belief that it will endure. We name versions with confidence, plan roadmaps years ahead, and architect systems as if permanence were a technical problem with a technical solution.</p>
+              <p>But longevity in software is not primarily a technical challenge. It is an organizational one, a cultural one, and — most importantly — an informational one. The code is the easy part.</p>
+              <blockquote>The question is not whether a system can run in twenty years, but whether anyone will understand why it was built.</blockquote>
+              <p>What dies first is never the binary. It is the context: the decision rationale, the constraints that shaped the architecture, the assumptions that no longer hold but were never documented.</p>
+            </div>
+            <div class="read-aside">
+              <div class="read-aside-label">Tags</div>
+              <span class="read-aside-tag">software-engineering</span>
+              <span class="read-aside-tag">archival-science</span>
+              <span class="read-aside-tag">systems-thinking</span>
+              <div class="read-aside-label" style="margin-top:24px;">Details</div>
+              <div class="read-aside-stat"><span>Words</span><span>2,847</span></div>
+              <div class="read-aside-stat"><span>Collection</span><span>On Permanence</span></div>
+              <div class="read-aside-stat"><span>Format</span><span>Markdown</span></div>
+              <div class="read-aside-stat"><span>License</span><span>CC BY-SA</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Writing -->
+        <div class="showcase-panel" id="panel-writing">
+          <div class="showcase-panel-bar">
+            <div class="app-dot"></div><div class="app-dot"></div><div class="app-dot"></div>
+          </div>
+          <div class="write-layout">
+            <div class="write-editor">
+              <div class="write-toolbar">
+                <div class="write-tool active">B</div>
+                <div class="write-tool"><em>I</em></div>
+                <div class="write-tool" style="text-decoration:underline;">U</div>
+                <div class="write-tool" style="font-size:11px;">H1</div>
+                <div class="write-tool" style="font-size:11px;">H2</div>
+                <div class="write-tool">&ldquo;</div>
+                <div class="write-tool">&gt;</div>
+                <div class="write-tool" style="font-size:11px; font-family:var(--font-mono);">&lt;/&gt;</div>
+                <div class="write-tool" style="font-size:11px; margin-left:auto;">☰</div>
+              </div>
+              <div class="write-editor-body">
+                <div class="heading-line">## The Paradox of Longevity</div>
+                <div class="empty-line"></div>
+                <div>We build software with the implicit belief that it will <span class="bold">endure</span>. We name versions with confidence, plan roadmaps years ahead, and architect systems as if permanence were a <span class="italic">technical problem</span> with a technical solution.</div>
+                <div class="empty-line"></div>
+                <div>But longevity in software is not primarily a technical challenge. It is an <span class="link">organizational one</span>, a cultural one, and — most importantly — an informational one.</div>
+                <div class="empty-line"></div>
+                <div>> The question is not whether a system can run in twenty years, but whether anyone will understand why it was built.</div>
+                <div class="empty-line"></div>
+                <div>What dies first is never the binary. It is the <span class="bold">context</span>: the decision rationale, the constraints that shaped the architecture, the assumptions that no longer hold.</div>
+              </div>
+            </div>
+            <div class="write-preview">
+              <h2>The Paradox of Longevity</h2>
+              <div class="meta">Draft · Auto-saved 12s ago</div>
+              <p>We build software with the implicit belief that it will <strong>endure</strong>. We name versions with confidence, plan roadmaps years ahead, and architect systems as if permanence were a <em>technical problem</em> with a technical solution.</p>
+              <p>But longevity in software is not primarily a technical challenge. It is an organizational one, a cultural one, and — most importantly — an informational one.</p>
+              <blockquote style="border-left:2px solid var(--accent);padding:12px 0 12px 20px;margin:20px 0;font-family:var(--font-display);font-size:15px;font-style:italic;color:var(--text-primary);line-height:1.6;">The question is not whether a system can run in twenty years, but whether anyone will understand why it was built.</blockquote>
+              <p>What dies first is never the binary. It is the <strong>context</strong>: the decision rationale, the constraints that shaped the architecture, the assumptions that no longer hold.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Collection -->
+        <div class="showcase-panel" id="panel-collection">
+          <div class="showcase-panel-bar">
+            <div class="app-dot"></div><div class="app-dot"></div><div class="app-dot"></div>
+          </div>
+          <div class="collection-layout">
+            <div class="collection-header">
+              <div>
+                <h2>On Permanence</h2>
+                <div class="meta">A collection by Elena Vasquez · 7 articles · Updated Mar 2026</div>
+              </div>
+              <div class="collection-sort">Sorted by date ↓</div>
+            </div>
+            <div class="collection-items">
+              <div class="collection-item">
+                <div class="collection-item-num">01</div>
+                <div>
+                  <div class="collection-item-title">The Paradox of Longevity in Software</div>
+                  <div class="collection-item-desc">Why most codebases are abandoned within a decade</div>
+                </div>
+                <div class="collection-item-words">2,847</div>
+                <div class="collection-item-date">Mar 2026</div>
+              </div>
+              <div class="collection-item">
+                <div class="collection-item-num">02</div>
+                <div>
+                  <div class="collection-item-title">Notes on Archival Formats</div>
+                  <div class="collection-item-desc">Plain text, Markdown, and the case against binary</div>
+                </div>
+                <div class="collection-item-words">1,923</div>
+                <div class="collection-item-date">Feb 2026</div>
+              </div>
+              <div class="collection-item">
+                <div class="collection-item-num">03</div>
+                <div>
+                  <div class="collection-item-title">Digital Permanence and Institutional Memory</div>
+                  <div class="collection-item-desc">What organizations lose when engineers leave</div>
+                </div>
+                <div class="collection-item-words">3,412</div>
+                <div class="collection-item-date">Jan 2026</div>
+              </div>
+              <div class="collection-item">
+                <div class="collection-item-num">04</div>
+                <div>
+                  <div class="collection-item-title">The Library of Alexandria Wasn't Burned</div>
+                  <div class="collection-item-desc">A revisionist history with lessons for digital archivists</div>
+                </div>
+                <div class="collection-item-words">4,201</div>
+                <div class="collection-item-date">Dec 2025</div>
+              </div>
+              <div class="collection-item">
+                <div class="collection-item-num">05</div>
+                <div>
+                  <div class="collection-item-title">File Formats That Outlast Civilizations</div>
+                  <div class="collection-item-desc">What we can learn from ancient writing systems</div>
+                </div>
+                <div class="collection-item-words">2,156</div>
+                <div class="collection-item-date">Nov 2025</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search -->
+        <div class="showcase-panel" id="panel-search">
+          <div class="showcase-panel-bar">
+            <div class="app-dot"></div><div class="app-dot"></div><div class="app-dot"></div>
+          </div>
+          <div class="search-layout">
+            <div class="search-bar">
+              <div class="search-icon"></div>
+              <span><span class="typed">archival format</span>|</span>
+            </div>
+            <div class="search-filters">
+              <div class="search-filter active">All</div>
+              <div class="search-filter">Articles</div>
+              <div class="search-filter">Collections</div>
+              <div class="search-filter">Posts</div>
+            </div>
+            <div class="search-results">
+              <div class="search-result">
+                <div class="search-result-type">Article</div>
+                <h3>Notes on <mark>Archival</mark> <mark>Format</mark>s</h3>
+                <p>Plain text, Markdown, and the case against binary storage for long-term knowledge preservation. When choosing an <mark>archival format</mark>, the primary consideration should be…</p>
+                <div class="search-result-meta">
+                  <span>Elena Vasquez</span>
+                  <span>·</span>
+                  <span>Feb 2026</span>
+                  <span>·</span>
+                  <span>1,923 words</span>
+                </div>
+              </div>
+              <div class="search-result">
+                <div class="search-result-type">Post</div>
+                <h3>Thoughts on PDF as an <mark>archival format</mark></h3>
+                <p>PDF is often proposed as a solution for preservation, but its complexity makes it a poor choice for true <mark>archival</mark> needs. A <mark>format</mark> that requires specific rendering engines to display correctly…</p>
+                <div class="search-result-meta">
+                  <span>Marcus Chen</span>
+                  <span>·</span>
+                  <span>Jan 2026</span>
+                  <span>·</span>
+                  <span>342 words</span>
+                </div>
+              </div>
+              <div class="search-result">
+                <div class="search-result-type">Collection</div>
+                <h3>On Permanence</h3>
+                <p>A curated collection exploring <mark>archival</mark> science, digital preservation, and <mark>format</mark> longevity across 7 articles by Elena Vasquez.</p>
+                <div class="search-result-meta">
+                  <span>Elena Vasquez</span>
+                  <span>·</span>
+                  <span>7 articles</span>
+                  <span>·</span>
+                  <span>Updated Mar 2026</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile -->
+        <div class="showcase-panel" id="panel-profile">
+          <div class="showcase-panel-bar">
+            <div class="app-dot"></div><div class="app-dot"></div><div class="app-dot"></div>
+          </div>
+          <div class="profile-layout">
+            <div class="profile-sidebar">
+              <div class="profile-avatar">EV</div>
+              <div class="profile-name">Elena Vasquez</div>
+              <div class="profile-handle">@elena.vasquez</div>
+              <div class="profile-bio">Software engineer and writer. Interested in systems that outlast their creators. Based in Zurich.</div>
+              <div class="profile-stats">
+                <div style="text-align:center;">
+                  <div class="profile-stat-num">24</div>
+                  <div class="profile-stat-label">Articles</div>
+                </div>
+                <div style="text-align:center;">
+                  <div class="profile-stat-num">5</div>
+                  <div class="profile-stat-label">Collections</div>
+                </div>
+                <div style="text-align:center;">
+                  <div class="profile-stat-num">12</div>
+                  <div class="profile-stat-label">Posts</div>
+                </div>
+              </div>
+            </div>
+            <div class="profile-content">
+              <div class="profile-tabs">
+                <div class="profile-tab active">Articles</div>
+                <div class="profile-tab">Collections</div>
+                <div class="profile-tab">Posts</div>
+              </div>
+              <div class="profile-articles">
+                <div class="profile-article">
+                  <div class="profile-article-thumb"></div>
+                  <div class="profile-article-info">
+                    <h4>The Paradox of Longevity in Software</h4>
+                    <p>Why most codebases are abandoned within a decade of their creation.</p>
+                    <div class="meta">Mar 14, 2026 · 12 min · On Permanence</div>
+                  </div>
+                </div>
+                <div class="profile-article">
+                  <div class="profile-article-thumb"></div>
+                  <div class="profile-article-info">
+                    <h4>Notes on Archival Formats</h4>
+                    <p>Plain text, Markdown, and the case against binary storage.</p>
+                    <div class="meta">Feb 22, 2026 · 8 min · On Permanence</div>
+                  </div>
+                </div>
+                <div class="profile-article">
+                  <div class="profile-article-thumb"></div>
+                  <div class="profile-article-info">
+                    <h4>Digital Permanence and Institutional Memory</h4>
+                    <p>What organizations lose when engineers leave and documentation doesn't survive.</p>
+                    <div class="meta">Jan 9, 2026 · 15 min · On Permanence</div>
+                  </div>
+                </div>
+                <div class="profile-article">
+                  <div class="profile-article-thumb"></div>
+                  <div class="profile-article-info">
+                    <h4>The Quiet Cost of Abstraction</h4>
+                    <p>How layers of indirection create knowledge that exists nowhere at all.</p>
+                    <div class="meta">Nov 18, 2025 · 10 min · Software Craft</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Content Model ─── -->
+<section class="model" id="model">
+  <div class="container text-center">
+    <div class="section-label">Content Model</div>
+    <h2 class="section-title mx-auto" style="max-width:560px;">Three types of content,<br>one coherent system</h2>
+    <p class="section-subtitle mx-auto">Every piece of writing in FOSSil has a clear type and place. No ambiguity, no miscategorization.</p>
+
+    <div class="model-center">
+      <div class="model-diagram">
+        <div class="model-node">
+          <div class="model-node-icon">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
+          <h3>Articles</h3>
+          <p>Long-form, structured writing. Essays, research, technical documentation. The core of your archive.</p>
+        </div>
+
+        <div class="model-connector-h"></div>
+        <div class="model-connector-v"></div>
+
+        <div class="model-node">
+          <div class="model-node-icon">
+            <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h3>Collections</h3>
+          <p>Curated groupings of articles. A table of contents with context — the way a real bibliography works.</p>
+        </div>
+
+        <div class="model-connector-h"></div>
+        <div class="model-connector-v"></div>
+
+        <div class="model-node">
+          <div class="model-node-icon">
+            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h3>Posts</h3>
+          <p>Short, informal notes. Observations, links, quick thoughts. Timestamped, but not over-structured.</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="model-note">Articles can belong to multiple collections. Posts stand alone. Everything is searchable.</p>
+  </div>
+</section>
+
+<!-- ─── Features ─── -->
+<section id="features">
+  <div class="container">
+    <div class="section-label">Features</div>
+    <h2 class="section-title">What's under the surface</h2>
+    <p class="section-subtitle">No feature bloat. No dashboards full of metrics. Just the tools that matter for serious publishing.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        </div>
+        <h3>Markdown-Native Editor</h3>
+        <p>Write in Markdown with a live preview. No WYSIWYG abstractions — your content stays clean and portable from the first keystroke.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        </div>
+        <h3>Plain-Text Storage</h3>
+        <p>Every article is a .md file on disk. Every collection is a simple directory structure. Your archive is always accessible, even without FOSSil running.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <h3>Full-Text Search</h3>
+        <p>Instant search across every article, post, and collection. Results ranked by relevance, not recency or popularity.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3>Self-Hosted by Default</h3>
+        <p>Deploy on your own server with a single binary. No cloud dependency, no subscription, no third-party data access.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <h3>Git Integration</h3>
+        <p>Every change is versioned. Full history, diffs, and the ability to revert to any previous state. Your writing workflow, versioned.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <h3>Typographically Sound</h3>
+        <p>Reading experience designed around line length, leading, and type scale — not decoration. Content is always the hero.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Example Archive ─── -->
+<section class="archive" id="archive">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Example Archive</div>
+      <h2 class="section-title mx-auto" style="max-width:520px;">What lives inside a FOSSil instance</h2>
+      <p class="section-subtitle mx-auto">Real content, realistic structure. This is what a mature archive looks like.</p>
+    </div>
+
+    <div class="archive-grid">
+      <div class="archive-card">
+        <span class="archive-card-type article">Article</span>
+        <h3>The Paradox of Longevity in Software</h3>
+        <p>Why most codebases are abandoned within a decade of their creation, and what the knowledge embedded in them deserves.</p>
+        <div class="archive-card-footer">
+          <div class="archive-card-author">
+            <div class="archive-card-author-avatar"></div>
+            Elena Vasquez
+          </div>
+          <span>12 min</span>
+        </div>
+      </div>
+      <div class="archive-card">
+        <span class="archive-card-type collection">Collection</span>
+        <h3>On Permanence</h3>
+        <p>A seven-part exploration of digital preservation, archival science, and the systems that outlast their creators.</p>
+        <div class="archive-card-footer">
+          <div class="archive-card-author">
+            <div class="archive-card-author-avatar"></div>
+            Elena Vasquez
+          </div>
+          <span>7 articles</span>
+        </div>
+      </div>
+      <div class="archive-card">
+        <span class="archive-card-type post">Post</span>
+        <h3>Thoughts on PDF as an Archival Format</h3>
+        <p>PDF is often proposed as a solution for preservation, but its complexity makes it a poor choice for true archival needs.</p>
+        <div class="archive-card-footer">
+          <div class="archive-card-author">
+            <div class="archive-card-author-avatar"></div>
+            Marcus Chen
+          </div>
+          <span>3 min</span>
+        </div>
+      </div>
+      <div class="archive-card">
+        <span class="archive-card-type article">Article</span>
+        <h3>The Quiet Cost of Abstraction</h3>
+        <p>How layers of indirection in modern software create knowledge that exists nowhere — not in docs, not in code, not in anyone's head.</p>
+        <div class="archive-card-footer">
+          <div class="archive-card-author">
+            <div class="archive-card-author-avatar"></div>
+            Elena Vasquez
+          </div>
+          <span>10 min</span>
+        </div>
+      </div>
+      <div class="archive-card">
+        <span class="archive-card-type article">Article</span>
+        <h3>Against Gamification in Knowledge Work</h3>
+        <p>Streaks, badges, and leaderboards don't make you learn more. They make you optimize for the metric instead of the understanding.</p>
+        <div class="archive-card-footer">
+          <div class="archive-card-author">
+            <div class="archive-card-author-avatar"></div>
+            Sora Tanaka
+          </div>
+          <span>8 min</span>
+        </div>
+      </div>
+      <div class="archive-card">
+        <span class="archive-card-type collection">Collection</span>
+        <h3>Software Craft</h3>
+        <p>Writing about the practice of building software with care — from naming conventions to error handling to the ethics of defaults.</p>
+        <div class="archive-card-footer">
+          <div class="archive-card-author">
+            <div class="archive-card-author-avatar"></div>
+            Elena Vasquez
+          </div>
+          <span>11 articles</span>
+        </div>
+      </div>
+      <div class="archive-card">
+        <span class="archive-card-type post">Post</span>
+        <h3>Link: The Library of Congress Digital Strategy</h3>
+        <p>The LOC released their 2025–2030 digital preservation framework. Surprisingly thoughtful on format obsolescence.</p>
+        <div class="archive-card-footer">
+          <div class="archive-card-author">
+            <div class="archive-card-author-avatar"></div>
+            Marcus Chen
+          </div>
+          <span>1 min</span>
+        </div>
+      </div>
+      <div class="archive-card">
+        <span class="archive-card-type article">Article</span>
+        <h3>File Formats That Outlast Civilizations</h3>
+        <p>What cuneiform tablets and medieval manuscripts can teach us about choosing storage formats for the digital age.</p>
+        <div class="archive-card-footer">
+          <div class="archive-card-author">
+            <div class="archive-card-author-avatar"></div>
+            Elena Vasquez
+          </div>
+          <span>14 min</span>
+        </div>
+      </div>
+      <div class="archive-card">
+        <span class="archive-card-type post">Post</span>
+        <h3>Shipped: FOSSil v0.4.0</h3>
+        <p>Git integration, improved search indexing, and a new collection-level table of contents view. Full changelog inside.</p>
+        <div class="archive-card-footer">
+          <div class="archive-card-author">
+            <div class="archive-card-author-avatar"></div>
+            Sora Tanaka
+          </div>
+          <span>2 min</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTA Banner ─── -->
+<section class="cta-banner">
+  <div class="container">
+    <div class="divider" style="margin-bottom:48px;"></div>
+    <h2>Start building an archive<br>that <em>outlasts you</em></h2>
+    <p>FOSSil is free and open source. Deploy it today, and your writing will still be here in twenty years.</p>
+    <div class="hero-actions">
+      <a href="#" class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        View on GitHub
+      </a>
+      <a href="#" class="btn-secondary">
+        Read the Docs
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Footer ─── -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-brand-name">FOSS<span>il</span></div>
+        <p>Free Open Source Software for Information Library. Built to preserve knowledge for decades.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="#">Features</a>
+        <a href="#">Documentation</a>
+        <a href="#">Changelog</a>
+        <a href="#">Roadmap</a>
+      </div>
+      <div class="footer-col">
+        <h4>Community</h4>
+        <a href="#">GitHub</a>
+        <a href="#">Discussions</a>
+        <a href="#">Contributing</a>
+        <a href="#">Code of Conduct</a>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <a href="#">Self-Hosting Guide</a>
+        <a href="#">Migration Tools</a>
+        <a href="#">API Reference</a>
+        <a href="#">License (AGPL-3.0)</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 FOSSil Contributors. Open source under AGPL-3.0.</span>
+      <div class="footer-bottom-links">
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Status</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ─── Minimal JS for Tabs ─── -->
+<script>
+  document.querySelectorAll('.showcase-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var panelId = this.getAttribute('data-panel');
+      document.querySelectorAll('.showcase-tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.showcase-panel').forEach(function(p) { p.classList.remove('active'); });
+      this.classList.add('active');
+      document.getElementById('panel-' + panelId).classList.add('active');
+    });
+  });
+</script>
 </body>
 </html>

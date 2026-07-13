@@ -1,164 +1,740 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>The Green Pledge</title>
-    <meta name="description" content="See how your pledge could help the Earth breathe easier.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-  </head>
-  <body class="pledge-page">
-    <header class="pledge-header">
-      <div class="header-inner">
-        <a class="brand" href="{{ url_for('landing.home') }}">
-          <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.6C11.7 4.8 14.3 4.8 16.2 6.6A7 7 0 0 1 22 12c0 3.5-2.5 6.5-6 7.5"/><path d="M12 20v-8"/><path d="M8 20h8"/></svg>
-          The Green Pledge
-        </a>
-        <nav class="header-nav">
-          <a href="{{ url_for('landing.home') }}">About</a>
-          <a href="#how">How it works</a>
-          <a href="#leaderboard">Leaderboard</a>
-          <a class="btn-pledge" href="{{ url_for('auth.register') }}">Make a Pledge</a>
-        </nav>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Green Pledge — Our Planet, Our Promise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,440;0,9..144,560;1,9..144,440;1,9..144,500&family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#060a07;
+    --panel:#0b1310;
+    --panel-2:#0f1a14;
+    --ink:#eef1e6;
+    --ink-dim:#9aa896;
+    --ink-faint:#5c6a58;
+    --leaf:#8fc06a;
+    --leaf-deep:#5f9a49;
+    --gold:#e6c67c;
+    --hair:rgba(238,241,230,0.1);
+    --hair-soft:rgba(238,241,230,0.05);
+    --serif:'Fraunces', serif;
+    --sans:'Inter', sans-serif;
+    --mono:'Space Grotesk', sans-serif;
+    --ease:cubic-bezier(.22,.61,.36,1);
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  html{scroll-behavior:smooth;}
+
+  body{
+    background:var(--void);
+    color:var(--ink);
+    font-family:var(--sans);
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  ::selection{background:var(--leaf-deep);color:var(--void);}
+
+  a,button{font-family:inherit;}
+
+  :focus-visible{outline:1px solid var(--leaf);outline-offset:4px;}
+
+  /* ---------- background texture ---------- */
+  .section{
+    position:relative;
+    width:100%;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:6vh 6vw;
+    overflow:hidden;
+  }
+
+  .grain{
+    position:fixed; inset:0; pointer-events:none; z-index:5; opacity:.035; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ---------- brand ---------- */
+  .brand{
+    position:fixed; top:0; left:0; z-index:20;
+    display:flex; align-items:center; gap:.6em;
+    padding:2.6vh 4vw;
+    font-family:var(--serif); font-size:15px; letter-spacing:.02em; color:var(--ink);
+    mix-blend-mode:normal;
+  }
+  .brand .mark{
+    width:16px;height:16px;position:relative;flex:none;
+  }
+  .brand .mark svg{width:100%;height:100%;fill:var(--leaf);}
+  .brand span{opacity:.92;}
+
+  /* ================= HERO ================= */
+  .hero{ justify-content:flex-start; padding-top:14vh; text-align:center; gap:0; }
+
+  .hero-eyebrow{
+    font-family:var(--mono); font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--ink-faint); opacity:0; animation:rise .9s var(--ease) .1s forwards;
+  }
+
+  .hero h1{
+    font-family:var(--serif); font-weight:440;
+    font-size:clamp(2.6rem, 6vw, 4.6rem);
+    line-height:1.04; letter-spacing:-.01em;
+    margin-top:.5rem;
+    opacity:0; animation:rise 1s var(--ease) .2s forwards;
+  }
+  .hero h1 em{ font-style:italic; font-weight:440; color:var(--leaf); }
+
+  .hero-stats{
+    display:flex; gap:0; margin-top:4.2vh;
+    opacity:0; animation:rise 1s var(--ease) .45s forwards;
+  }
+  .hero-stats .stat{
+    padding:0 2.4rem; text-align:center;
+    border-right:1px solid var(--hair);
+  }
+  .hero-stats .stat:last-child{border-right:none;}
+  .hero-stats .stat b{
+    display:block; font-family:var(--mono); font-weight:500;
+    font-size:clamp(1.3rem,2.4vw,1.7rem); color:var(--ink);
+  }
+  .hero-stats .stat span{
+    display:block; margin-top:.35rem; font-size:11.5px; color:var(--ink-dim);
+    letter-spacing:.03em;
+  }
+
+  .earth-stage{
+    position:relative;
+    margin-top:5vh;
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; animation:fadeIn 1.4s var(--ease) .6s forwards;
+  }
+  #heroEarthStage{ width:min(46vw,480px); height:min(46vw,480px); }
+
+  .play-row{
+    margin-top:4.2vh; display:flex; flex-direction:column; align-items:center; gap:1.1rem;
+    opacity:0; animation:rise 1s var(--ease) .9s forwards;
+  }
+
+  .play-btn{
+    width:74px; height:74px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, rgba(143,192,106,.35), rgba(95,154,73,.06) 70%);
+    border:1px solid var(--hair);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; position:relative;
+    transition:transform .5s var(--ease), border-color .5s var(--ease), background .5s var(--ease);
+  }
+  .play-btn::before{
+    content:''; position:absolute; inset:-14px; border-radius:50%;
+    border:1px solid var(--hair-soft);
+    animation:pulse-ring 3.6s ease-out infinite;
+  }
+  .play-btn:hover{ transform:scale(1.06); border-color:var(--leaf); }
+  .play-btn svg{ width:20px; height:20px; fill:var(--leaf); margin-left:3px; }
+
+  .play-caption{ font-family:var(--serif); font-style:italic; font-size:1.02rem; color:var(--ink); }
+  .play-sub{ font-size:13px; color:var(--ink-dim); max-width:280px; text-align:center; line-height:1.5; }
+
+  @keyframes rise{ from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+  @keyframes pulse-ring{
+    0%{ transform:scale(.9); opacity:.6; }
+    80%{ transform:scale(1.35); opacity:0; }
+    100%{ transform:scale(1.35); opacity:0; }
+  }
+
+  /* ================= EARTH (shared component) ================= */
+  .earth{ position:relative; width:100%; height:100%; }
+
+  .earth-atmosphere{
+    position:absolute; inset:-9%; border-radius:50%; z-index:0;
+    background:radial-gradient(circle at 38% 32%, rgba(143,192,106,.22), rgba(230,198,124,.05) 45%, transparent 72%);
+    filter:blur(6px);
+    transition:opacity 1s var(--ease);
+  }
+
+  .earth-sphere{
+    position:absolute; inset:0; border-radius:50%; overflow:hidden; z-index:1;
+    box-shadow:
+      inset -18px -22px 60px rgba(0,0,0,.65),
+      inset 10px 10px 40px rgba(255,255,255,.05),
+      0 0 80px rgba(0,0,0,.5);
+  }
+
+  .earth-ocean{
+    position:absolute; inset:0;
+    background:radial-gradient(circle at 40% 35%, var(--ocean-hi,#123b40), var(--ocean-lo,#081f22) 75%);
+    transition:background 1.2s var(--ease);
+  }
+
+  .earth-land-wrap{
+    position:absolute; inset:-16%;
+    animation:spin 90s linear infinite;
+  }
+  .earth-land-wrap svg{ width:100%; height:100%; display:block; }
+  .earth-land-wrap ellipse{ transition:fill 1.2s var(--ease); }
+
+  .earth-clouds{
+    position:absolute; inset:-20%;
+    animation:spin-rev 130s linear infinite;
+    opacity:.5; transition:opacity 1.2s var(--ease);
+  }
+  .cloud-blob{
+    position:absolute; border-radius:50%; background:#fff; filter:blur(7px);
+  }
+
+  .earth-poles{
+    position:absolute; inset:0; z-index:2; pointer-events:none;
+  }
+  .earth-poles::before,.earth-poles::after{
+    content:''; position:absolute; left:50%; width:70%; height:26%;
+    background:radial-gradient(ellipse at center, rgba(255,255,255,.85), transparent 70%);
+    filter:blur(4px); transform:translateX(-50%);
+  }
+  .earth-poles::before{ top:-6%; }
+  .earth-poles::after{ bottom:-6%; }
+
+  .earth-shading{
+    position:absolute; inset:0; border-radius:50%; z-index:3; pointer-events:none;
+    background:radial-gradient(circle at 32% 28%, rgba(255,246,214,.16), transparent 40%),
+               radial-gradient(circle at 68% 74%, rgba(0,0,0,.55), transparent 55%),
+               radial-gradient(circle at 50% 50%, transparent 55%, rgba(0,0,0,.4) 100%);
+  }
+
+  .earth-birds{ position:absolute; inset:-18% -6%; z-index:4; pointer-events:none; }
+  .bird{
+    position:absolute; width:22px; height:10px; opacity:0;
+    transition:opacity .8s ease;
+  }
+  .bird.on{ opacity:.75; }
+  .bird svg{ width:100%; height:100%; }
+  .bird path{ fill:none; stroke:rgba(238,241,230,.7); stroke-width:2; stroke-linecap:round; }
+
+  @keyframes spin{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+  @keyframes spin-rev{ from{ transform:rotate(0deg); } to{ transform:rotate(-360deg); } }
+  @keyframes fly{
+    0%{ transform:translate(-10%,10%); }
+    50%{ transform:translate(60%,-6%); }
+    100%{ transform:translate(120%,4%); }
+  }
+
+  /* ================= CINEMATIC OVERLAY ================= */
+  .cinematic-overlay{
+    position:fixed; inset:0; z-index:100;
+    background:radial-gradient(circle at 50% 45%, #0b1712 0%, #040705 78%);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; visibility:hidden; pointer-events:none;
+    transition:opacity 1.1s var(--ease), visibility 1.1s;
+  }
+  .cinematic-overlay.active{ opacity:1; visibility:visible; pointer-events:auto; }
+
+  #cinematicEarthStage{
+    width:min(58vw,620px); height:min(58vw,620px);
+    transform:scale(.86); transition:transform 3.5s var(--ease);
+  }
+  .cinematic-overlay.active #cinematicEarthStage{ transform:scale(1.06); }
+
+  .cinematic-lines{
+    position:absolute; left:0; right:0; bottom:16vh; text-align:center; padding:0 8vw;
+  }
+  .cinematic-lines p{
+    position:absolute; left:0; right:0;
+    font-family:var(--serif); font-style:italic; font-weight:440;
+    font-size:clamp(1.2rem,2.6vw,2rem);
+    color:var(--ink);
+    opacity:0; transform:translateY(10px);
+    transition:opacity 1.2s var(--ease), transform 1.2s var(--ease);
+  }
+  .cinematic-lines p.visible{ opacity:1; transform:translateY(0); }
+
+  .cinematic-skip{
+    position:absolute; bottom:6vh; left:50%; transform:translateX(-50%);
+    font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--ink-faint); background:none; border:none; cursor:pointer;
+    padding:.6em 1em; opacity:.6; transition:opacity .3s ease;
+  }
+  .cinematic-skip:hover{ opacity:1; }
+
+  /* ================= EXPLORE / SLIDER ================= */
+  .explore{ padding-top:10vh; padding-bottom:10vh; gap:0; }
+  .explore-head{ text-align:center; max-width:640px; }
+  .explore-head h2{
+    font-family:var(--serif); font-weight:440; font-size:clamp(2rem,4.4vw,3rem); line-height:1.08;
+  }
+  .explore-head h2 em{ font-style:italic; color:var(--leaf); }
+  .explore-head p{ margin-top:1rem; color:var(--ink-dim); font-size:.95rem; }
+
+  .explore-body{
+    margin-top:6vh; width:100%; max-width:1180px;
+    display:grid; grid-template-columns:1.15fr .85fr; align-items:center; gap:6vw;
+  }
+
+  .slider-panel{ width:100%; }
+
+  .slider-readout{
+    display:flex; align-items:baseline; gap:.6rem; margin-bottom:2.2rem;
+  }
+  .slider-readout span{
+    font-family:var(--mono); font-weight:600; font-size:clamp(2rem,4vw,2.8rem); color:var(--leaf);
+    font-variant-numeric:tabular-nums;
+  }
+  .slider-readout small{ color:var(--ink-dim); font-size:13px; letter-spacing:.03em; }
+
+  .range-wrap{ position:relative; padding:.4rem 0 .2rem; }
+
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:1px;
+    background:var(--hair); outline:none; cursor:pointer; margin:0;
+  }
+  input[type=range]::-webkit-slider-runnable-track{ height:1px; background:transparent; }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none;
+    width:15px; height:15px; border-radius:50%;
+    background:var(--leaf); border:3px solid var(--void);
+    box-shadow:0 0 0 1px var(--leaf), 0 0 16px rgba(143,192,106,.6);
+    margin-top:-7px; transition:transform .2s ease;
+  }
+  input[type=range]::-webkit-slider-thumb:hover{ transform:scale(1.15); }
+  input[type=range]::-moz-range-track{ height:1px; background:var(--hair); }
+  input[type=range]::-moz-range-thumb{
+    width:15px; height:15px; border-radius:50%; border:3px solid var(--void);
+    background:var(--leaf); box-shadow:0 0 0 1px var(--leaf), 0 0 16px rgba(143,192,106,.6);
+  }
+
+  .tick-row{
+    display:flex; justify-content:space-between; margin-top:.7rem;
+  }
+  .tick-row span{
+    font-family:var(--mono); font-size:10.5px; color:var(--ink-faint); letter-spacing:.02em;
+  }
+  .tick-row span.active{ color:var(--leaf); }
+
+  .impact-grid{
+    margin-top:3.6rem; display:grid; grid-template-columns:repeat(2,1fr); gap:1.6rem 2.4rem;
+  }
+  .impact-item{ border-top:1px solid var(--hair); padding-top:1rem; }
+  .impact-item b{
+    display:block; font-family:var(--mono); font-weight:500; font-size:1.35rem; color:var(--ink);
+    font-variant-numeric:tabular-nums;
+  }
+  .impact-item span{ display:block; margin-top:.3rem; font-size:12px; color:var(--ink-dim); }
+
+  #exploreEarthStage{ width:100%; aspect-ratio:1/1; max-width:440px; margin:0 auto; }
+
+  /* ================= CTA ================= */
+  .cta{ text-align:center; gap:0; }
+  .cta-eyebrow{
+    font-family:var(--mono); font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--ink-faint);
+  }
+  .cta h2{
+    font-family:var(--serif); font-weight:440; font-size:clamp(2.2rem,5vw,3.6rem); margin-top:.6rem;
+  }
+  .cta p{
+    margin-top:1.4rem; color:var(--ink-dim); font-size:1rem; max-width:420px; line-height:1.7;
+  }
+  .cta-btn{
+    margin-top:2.6rem;
+    font-family:var(--sans); font-size:.9rem; letter-spacing:.02em; font-weight:500;
+    color:var(--void); background:var(--leaf);
+    padding:.95em 2.2em; border-radius:100px; border:none; cursor:pointer;
+    transition:transform .35s var(--ease), background .35s var(--ease);
+  }
+  .cta-btn:hover{ transform:translateY(-2px); background:#a3d17f; }
+
+  .foot{ margin-top:5vh; font-size:11px; color:var(--ink-faint); letter-spacing:.03em; }
+
+  /* ================= RESPONSIVE ================= */
+  @media (max-width:900px){
+    .explore-body{ grid-template-columns:1fr; gap:5vh; }
+    #exploreEarthStage{ order:-1; max-width:300px; }
+    .impact-grid{ grid-template-columns:1fr 1fr; }
+    .hero-stats .stat{ padding:0 1.1rem; }
+  }
+  @media (max-width:560px){
+    .impact-grid{ grid-template-columns:1fr 1fr; gap:1.2rem 1.4rem; }
+    .hero-stats .stat b{ font-size:1.1rem; }
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .earth-land-wrap,.earth-clouds{ animation:none; }
+    .play-btn::before{ animation:none; }
+    html{ scroll-behavior:auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+
+<div class="brand">
+  <span class="mark"><svg viewBox="0 0 24 24"><path d="M12 2C7 2 3 6 3 11c0 6 9 11 9 11s9-5 9-11c0-5-4-9-9-9zm0 4c2.8 0 5 2.2 5 5 0 2.5-2.8 5.3-5 7-2.2-1.7-5-4.5-5-7 0-2.8 2.2-5 5-5z"/></svg></span>
+  <span>The Green Pledge</span>
+</div>
+
+<!-- ================= HERO ================= -->
+<section class="section hero" id="hero">
+  <p class="hero-eyebrow">Launch day</p>
+  <h1>Our planet.<br><em>Our promise.</em></h1>
+
+  <div class="hero-stats">
+    <div class="stat"><b id="statPeople">12</b><span>People pledged</span></div>
+    <div class="stat"><b id="statPledged">180 kg</b><span>CO₂ pledged</span></div>
+    <div class="stat"><b id="statDone">42 kg</b><span>CO₂ completed</span></div>
+  </div>
+
+  <div class="earth-stage" id="heroEarthStage"></div>
+
+  <div class="play-row">
+    <button class="play-btn" id="playBtn" aria-label="Play the story">
+      <svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8V4z"/></svg>
+    </button>
+    <p class="play-caption">Our story is just beginning.</p>
+    <p class="play-sub">Press play to see what millions of small promises could become.</p>
+  </div>
+</section>
+
+<!-- ================= CINEMATIC OVERLAY ================= -->
+<div class="cinematic-overlay" id="cinematicOverlay">
+  <div id="cinematicEarthStage"></div>
+  <div class="cinematic-lines">
+    <p data-line="0">Every promise starts small.</p>
+    <p data-line="1">But small promises, multiplied, become momentum.</p>
+    <p data-line="2">Imagine if more of us joined.</p>
+  </div>
+  <button class="cinematic-skip" id="skipBtn">Skip</button>
+</div>
+
+<!-- ================= EXPLORE ================= -->
+<section class="section explore" id="explore">
+  <div class="explore-head">
+    <h2>Imagine if <em>more of us</em> joined.</h2>
+    <p>Move the slider to see the impact we could create together.</p>
+  </div>
+
+  <div class="explore-body">
+    <div class="slider-panel">
+      <div class="slider-readout"><span id="peopleCount">100,000</span><small>people pledging</small></div>
+
+      <div class="range-wrap">
+        <input type="range" id="peopleSlider" min="0" max="7" step="1" value="4" aria-label="Number of people pledging">
+        <div class="tick-row" id="tickRow"></div>
       </div>
-    </header>
 
-    <main class="pledge-main">
-      <!-- Hero Section -->
-      <section class="hero-section">
-        <div class="hero-grid">
-          <div class="hero-left">
-            <h1 class="hero-title">
-              Our planet.<br>
-              Our <span class="text-lime">promise.</span>
-            </h1>
-            <p class="hero-subtitle">Small choices. Big change.<br>Together, we can build a greener future.</p>
+      <div class="impact-grid">
+        <div class="impact-item"><b id="impCo2">10,000,000 kg</b><span>CO₂ saved per year</span></div>
+        <div class="impact-item"><b id="impTrees">450,000</b><span>Trees equivalent planted</span></div>
+        <div class="impact-item"><b id="impCars">2,150</b><span>Cars off the road for a year</span></div>
+        <div class="impact-item"><b id="impHomes">14,800</b><span>Homes powered for a year</span></div>
+        <div class="impact-item"><b id="impFlights">1,820</b><span>Flights avoided (NYC ↔ LA)</span></div>
+      </div>
+    </div>
 
-            <div class="hero-stats">
-              <div class="stat-card">
-                <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                <div class="stat-content">
-                  <span class="stat-num" data-target="{{ community.people }}">0</span>
-                  <span class="stat-label">People Pledged</span>
-                </div>
-              </div>
-              <div class="stat-card">
-                <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.6C11.7 4.8 14.3 4.8 16.2 6.6A7 7 0 0 1 22 12c0 3.5-2.5 6.5-6 7.5"/><path d="M12 20v-8"/><path d="M8 20h8"/></svg>
-                <div class="stat-content">
-                  <span class="stat-num" data-target="{{ community.co2_pledged }}">0</span>
-                  <span class="stat-label">kg CO&#8322; Pledged</span>
-                </div>
-              </div>
-              <div class="stat-card">
-                <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-7"/><path d="M12 15a5 5 0 0 0 5-5c0-2.76-2.24-5-5-5S7 7.24 7 10a5 5 0 0 0 5 5z"/><path d="M7 15h10"/></svg>
-                <div class="stat-content">
-                  <span class="stat-num" data-target="{{ community.co2_completed }}">0</span>
-                  <span class="stat-label">kg CO&#8322; Completed</span>
-                </div>
-              </div>
-            </div>
+    <div class="earth-stage" id="exploreEarthStage"></div>
+  </div>
+</section>
 
-            <p class="hero-note">
-              <svg class="note-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.6C11.7 4.8 14.3 4.8 16.2 6.6A7 7 0 0 1 22 12c0 3.5-2.5 6.5-6 7.5"/></svg>
-              Each pledge brings us closer to a better tomorrow.
-            </p>
-          </div>
+<!-- ================= CTA ================= -->
+<section class="section cta" id="cta">
+  <p class="cta-eyebrow">One promise. One year.</p>
+  <h2>Make Your Green Pledge</h2>
+  <p>One promise. One year. Thousands of people. One healthier planet. Your pledge joins a living count that grows every time someone else says yes.</p>
+  <button class="cta-btn">Make My Pledge</button>
+  <p class="foot">Every pledge brings us closer to a better tomorrow.</p>
+</section>
 
-          <div class="hero-right">
-            <div class="earth-host" id="heroEarth" aria-hidden="true"></div>
-            <div class="play-prompt">
-              <p class="play-eyebrow">Our story is just beginning.</p>
-              <h2 class="play-title">Press Play</h2>
-              <p class="play-caption">See how millions of small promises<br>can make our planet breathe easier.</p>
-              <button class="play-btn" id="playBtn" type="button" aria-label="Play the vision">
-                <span class="play-ring"></span>
-                <span class="play-tri"></span>
-              </button>
-              <p class="play-hint">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                click to play
-              </p>
-            </div>
-          </div>
+<script>
+(function(){
+
+  /* ---------------- EARTH FACTORY ---------------- */
+  // land ellipse layout, abstract continent clusters (viewBox 0 0 200 200)
+  const LAND = [
+    {cx:58,cy:66,rx:26,ry:19,rot:-18},
+    {cx:48,cy:92,rx:19,ry:25,rot:8},
+    {cx:74,cy:110,rx:15,ry:21,rot:-22},
+    {cx:38,cy:56,rx:13,ry:9,rot:5},
+    {cx:142,cy:58,rx:29,ry:17,rot:12},
+    {cx:151,cy:88,rx:21,ry:29,rot:-10},
+    {cx:160,cy:120,rx:17,ry:13,rot:16},
+    {cx:120,cy:38,rx:15,ry:9,rot:-6},
+    {cx:100,cy:142,rx:8,ry:6,rot:0},
+    {cx:176,cy:70,rx:6,ry:5,rot:0},
+    {cx:28,cy:122,rx:7,ry:5,rot:0},
+    {cx:96,cy:30,rx:9,ry:6,rot:10},
+  ];
+
+  const FOREST = [
+    {cx:55,cy:65,r:2.4,t:0.05},{cx:64,cy:72,r:1.8,t:0.15},{cx:46,cy:88,r:2.1,t:0.1},
+    {cx:52,cy:98,r:1.6,t:0.3},{cx:72,cy:106,r:2,t:0.2},{cx:78,cy:116,r:1.5,t:0.45},
+    {cx:140,cy:56,r:2.3,t:0.12},{cx:148,cy:64,r:1.7,t:0.35},{cx:150,cy:86,r:2.2,t:0.08},
+    {cx:158,cy:96,r:1.6,t:0.5},{cx:160,cy:118,r:1.9,t:0.4},{cx:122,cy:40,r:1.5,t:0.6},
+    {cx:100,cy:140,r:1.4,t:0.65},{cx:36,cy:58,r:1.4,t:0.75},{cx:175,cy:68,r:1.3,t:0.55},
+    {cx:96,cy:32,r:1.4,t:0.7},
+  ];
+
+  const BIRD_PATH = 'M0,8 Q5,0 11,8 Q17,0 22,8';
+  const BIRD_SPOTS = [
+    {top:'8%',left:'6%',delay:'0s',dur:'14s'},
+    {top:'18%',left:'62%',delay:'3s',dur:'16s'},
+    {top:'70%',left:'12%',delay:'6s',dur:'15s'},
+    {top:'30%',left:'30%',delay:'9s',dur:'13s'},
+    {top:'80%',left:'55%',delay:'2s',dur:'17s'},
+    {top:'55%',left:'75%',delay:'8s',dur:'14s'},
+    {top:'12%',left:'40%',delay:'11s',dur:'15s'},
+    {top:'65%',left:'85%',delay:'5s',dur:'16s'},
+  ];
+
+  let earthUid = 0;
+
+  function createEarth(container){
+    earthUid++;
+    const uid = 'e'+earthUid;
+    container.innerHTML = '';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'earth';
+
+    const landEllipses = LAND.map(l=>
+      `<ellipse cx="${l.cx}" cy="${l.cy}" rx="${l.rx}" ry="${l.ry}" transform="rotate(${l.rot} ${l.cx} ${l.cy})" fill="url(#land-${uid})"/>`
+    ).join('');
+
+    const forestCircles = FOREST.map((f,i)=>
+      `<circle data-thresh="${f.t}" cx="${f.cx}" cy="${f.cy}" r="${f.r}" fill="#cfe6a8" opacity="0" style="transition:opacity 1s ease"/>`
+    ).join('');
+
+    const birds = BIRD_SPOTS.map((b,i)=>
+      `<div class="bird" data-idx="${i}" style="top:${b.top};left:${b.left};animation:fly ${b.dur} linear ${b.delay} infinite;">
+         <svg viewBox="0 0 22 10"><path d="${BIRD_PATH}"/></svg>
+       </div>`
+    ).join('');
+
+    wrap.innerHTML = `
+      <div class="earth-atmosphere"></div>
+      <div class="earth-sphere">
+        <div class="earth-ocean"></div>
+        <div class="earth-land-wrap">
+          <svg viewBox="0 0 200 200">
+            <defs>
+              <linearGradient id="land-${uid}" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#7c7248"/>
+                <stop offset="100%" stop-color="#5f6b3d"/>
+              </linearGradient>
+            </defs>
+            ${landEllipses}
+            ${forestCircles}
+          </svg>
         </div>
-      </section>
+        <div class="earth-clouds"></div>
+        <div class="earth-poles"></div>
+        <div class="earth-shading"></div>
+      </div>
+      <div class="earth-birds">${birds}</div>
+    `;
 
-      <!-- Slider / Future Section -->
-      <section class="future-section" id="future" hidden>
-        <div class="future-inner">
-          <div class="future-text">
-            <h2 class="future-title">Imagine if <span class="text-lime">more of us</span> joined.</h2>
-            <p class="future-subtitle">Move the slider to see the impact we can create together.</p>
+    container.appendChild(wrap);
 
-            <div class="slider-wrap">
-              <div class="slider-header">
-                <span class="slider-num" id="participantsNum">0</span>
-                <span class="slider-label">people joining the pledge</span>
-              </div>
-              <input class="slider" id="slider" type="range" min="0" max="1000" value="250" aria-label="Number of people joining">
-              <div class="slider-ticks">
-                <span>10K</span>
-                <span>100K</span>
-                <span>1M</span>
-                <span>10M</span>
-                <span>100M</span>
-              </div>
-            </div>
+    // scatter cloud blobs
+    const cloudLayer = wrap.querySelector('.earth-clouds');
+    const cloudBlobs = [];
+    const cloudDefs = [
+      {t:8,l:20,s:34},{t:22,l:60,s:26},{t:40,l:10,s:22},{t:55,l:40,s:30},
+      {t:65,l:70,s:24},{t:78,l:25,s:20},{t:15,l:80,s:18},{t:88,l:55,s:22}
+    ];
+    cloudDefs.forEach(c=>{
+      const b = document.createElement('div');
+      b.className = 'cloud-blob';
+      b.style.top = c.t+'%'; b.style.left = c.l+'%';
+      b.style.width = c.s+'%'; b.style.height = (c.s*0.6)+'%';
+      cloudLayer.appendChild(b);
+      cloudBlobs.push(b);
+    });
 
-            <div class="impact-grid">
-              <div class="impact-card">
-                <svg class="impact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.6C11.7 4.8 14.3 4.8 16.2 6.6A7 7 0 0 1 22 12c0 3.5-2.5 6.5-6 7.5"/><path d="M12 20v-8"/><path d="M8 20h8"/></svg>
-                <div class="impact-content">
-                  <span class="impact-num" id="co2">0</span>
-                  <span class="impact-label">kg CO&#8322; Saved<br>per year</span>
-                </div>
-              </div>
-              <div class="impact-card">
-                <svg class="impact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-7"/><path d="M12 15a5 5 0 0 0 5-5c0-2.76-2.24-5-5-5S7 7.24 7 10a5 5 0 0 0 5 5z"/><path d="M7 15h10"/></svg>
-                <div class="impact-content">
-                  <span class="impact-num" id="trees">0</span>
-                  <span class="impact-label">Trees Equivalent<br>planted</span>
-                </div>
-              </div>
-              <div class="impact-card">
-                <svg class="impact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2.4-3-3.8c-.5-.4-1.2-.4-1.7 0C9.3 7.6 7 10 7 10s-2.7.6-4.5 1.1C1.4 11.3.7 12.1.7 13v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
-                <div class="impact-content">
-                  <span class="impact-num" id="cars">0</span>
-                  <span class="impact-label">Cars Off the Road<br>for a year</span>
-                </div>
-              </div>
-              <div class="impact-card">
-                <svg class="impact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                <div class="impact-content">
-                  <span class="impact-num" id="homes">0</span>
-                  <span class="impact-label">Homes Powered<br>for a year</span>
-                </div>
-              </div>
-              <div class="impact-card">
-                <svg class="impact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
-                <div class="impact-content">
-                  <span class="impact-num" id="flights">0</span>
-                  <span class="impact-label">Flights Avoided<br>(NYC ↔ LA)</span>
-                </div>
-              </div>
-            </div>
+    return {
+      root: wrap,
+      landGrad: wrap.querySelector(`#land-${uid} stop:nth-child(1)`),
+      landGrad2: wrap.querySelector(`#land-${uid} stop:nth-child(2)`),
+      ocean: wrap.querySelector('.earth-ocean'),
+      clouds: wrap.querySelector('.earth-clouds'),
+      forestDots: Array.from(wrap.querySelectorAll('circle[data-thresh]')),
+      birds: Array.from(wrap.querySelectorAll('.bird')),
+    };
+  }
 
-            <div class="future-cta">
-              <a class="btn-primary" href="{{ url_for('auth.register') }}">Make Your Green Pledge</a>
-              <a class="btn-ghost" href="#how">Learn how it works <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
-            </div>
-          </div>
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function lerpColor(hexA,hexB,t){
+    const a = hexA.match(/\w\w/g).map(h=>parseInt(h,16));
+    const b = hexB.match(/\w\w/g).map(h=>parseInt(h,16));
+    const c = a.map((v,i)=>Math.round(lerp(v,b[i],t)));
+    return '#'+c.map(v=>v.toString(16).padStart(2,'0')).join('');
+  }
 
-          <div class="future-earth">
-            <div class="earth-host" id="futureEarth" aria-hidden="true"></div>
-          </div>
-        </div>
-      </section>
-    </main>
+  function updateEarth(earth, t){
+    // t: 0..1 greenness / thriving factor
+    const landLo = lerpColor('#7c7248','#4f8a49', t);
+    const landHi = lerpColor('#5f6b3d','#3f7a3f', t);
+    earth.landGrad.setAttribute('stop-color', landLo);
+    earth.landGrad2.setAttribute('stop-color', landHi);
 
-    <script src="{{ url_for('static', filename='js/pledge.js') }}"></script>
-  </body>
+    earth.ocean.style.setProperty('--ocean-hi', lerpColor('#123b40','#1a6b78', t));
+    earth.ocean.style.setProperty('--ocean-lo', lerpColor('#081f22','#0d3a42', t));
+
+    earth.clouds.style.opacity = (0.38 + t*0.42).toFixed(2);
+
+    earth.forestDots.forEach(dot=>{
+      const th = parseFloat(dot.getAttribute('data-thresh'));
+      dot.style.opacity = t > th ? Math.min(1,(t-th)*3.2).toFixed(2) : 0;
+    });
+
+    const visibleBirds = Math.round(t * earth.birds.length);
+    earth.birds.forEach((b,i)=>{
+      b.classList.toggle('on', i < visibleBirds);
+    });
+  }
+
+  /* ---------------- INSTANTIATE EARTHS ---------------- */
+  const heroEarth = createEarth(document.getElementById('heroEarthStage'));
+  const cineEarth  = createEarth(document.getElementById('cinematicEarthStage'));
+  const exploreEarth = createEarth(document.getElementById('exploreEarthStage'));
+
+  const HERO_T = 0.06; // launch day: barely any green yet
+  updateEarth(heroEarth, HERO_T);
+  updateEarth(cineEarth, HERO_T);
+
+  /* ---------------- HERO STAT COUNT-UP ---------------- */
+  function countUp(el, to, opts){
+    opts = opts||{};
+    const duration = opts.duration||1400;
+    const suffix = opts.suffix||'';
+    const start = performance.now();
+    function frame(now){
+      const p = Math.min(1,(now-start)/duration);
+      const eased = 1-Math.pow(1-p,3);
+      const val = Math.round(to*eased);
+      el.textContent = val.toLocaleString()+suffix;
+      if(p<1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+  window.addEventListener('load', ()=>{
+    countUp(document.getElementById('statPeople'), 12);
+    countUp(document.getElementById('statPledged'), 180, {suffix:' kg'});
+    countUp(document.getElementById('statDone'), 42, {suffix:' kg'});
+  });
+
+  /* ---------------- CINEMATIC SEQUENCE ---------------- */
+  const overlay = document.getElementById('cinematicOverlay');
+  const playBtn = document.getElementById('playBtn');
+  const skipBtn = document.getElementById('skipBtn');
+  const lines = Array.from(document.querySelectorAll('.cinematic-lines p'));
+  let cineTimers = [];
+
+  function clearCineTimers(){ cineTimers.forEach(t=>clearTimeout(t)); cineTimers=[]; }
+
+  function startCinematic(){
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    lines.forEach(l=>l.classList.remove('visible'));
+
+    const stepMs = 4500;
+    lines.forEach((line,i)=>{
+      cineTimers.push(setTimeout(()=> line.classList.add('visible'), i*stepMs + 400));
+      cineTimers.push(setTimeout(()=> line.classList.remove('visible'), i*stepMs + stepMs - 500));
+    });
+
+    cineTimers.push(setTimeout(endCinematic, 15000));
+  }
+
+  function endCinematic(){
+    clearCineTimers();
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+    lines.forEach(l=>l.classList.remove('visible'));
+    document.getElementById('explore').scrollIntoView({behavior:'smooth'});
+  }
+
+  playBtn.addEventListener('click', startCinematic);
+  skipBtn.addEventListener('click', endCinematic);
+
+  /* ---------------- EXPLORE SLIDER ---------------- */
+  const STEPS = [10,100,1000,10000,100000,1000000,10000000,100000000];
+  const LABELS = ['10','100','1K','10K','100K','1M','10M','100M'];
+  const slider = document.getElementById('peopleSlider');
+  const peopleCountEl = document.getElementById('peopleCount');
+  const tickRow = document.getElementById('tickRow');
+
+  LABELS.forEach((lab,i)=>{
+    const s = document.createElement('span');
+    s.textContent = lab;
+    if(i===parseInt(slider.value)) s.classList.add('active');
+    tickRow.appendChild(s);
+  });
+
+  const RATIOS = {
+    co2: 100,        // kg per person per year
+    trees: 4.5,
+    cars: 0.0215,
+    homes: 0.148,
+    flights: 0.0182,
+  };
+
+  function formatNum(n, decimals){
+    if(decimals){
+      return n.toLocaleString(undefined,{maximumFractionDigits:decimals});
+    }
+    return Math.round(n).toLocaleString();
+  }
+
+  let animFrame = null;
+  function animateImpact(prevN, nextN){
+    if(animFrame) cancelAnimationFrame(animFrame);
+    const duration = 700;
+    const start = performance.now();
+    function frame(now){
+      const p = Math.min(1,(now-start)/duration);
+      const eased = 1-Math.pow(1-p,3);
+      const n = Math.round(lerp(prevN,nextN,eased));
+      renderImpact(n);
+      if(p<1) animFrame = requestAnimationFrame(frame);
+    }
+    animFrame = requestAnimationFrame(frame);
+  }
+
+  function renderImpact(n){
+    peopleCountEl.textContent = n.toLocaleString();
+    document.getElementById('impCo2').textContent = formatNum(n*RATIOS.co2)+' kg';
+    document.getElementById('impTrees').textContent = formatNum(n*RATIOS.trees);
+    document.getElementById('impCars').textContent = formatNum(n*RATIOS.cars);
+    document.getElementById('impHomes').textContent = formatNum(n*RATIOS.homes);
+    document.getElementById('impFlights').textContent = formatNum(n*RATIOS.flights);
+  }
+
+  let currentPeople = STEPS[parseInt(slider.value)];
+  renderImpact(currentPeople);
+
+  slider.addEventListener('input', ()=>{
+    const idx = parseInt(slider.value);
+    const nextPeople = STEPS[idx];
+    const t = idx / (STEPS.length-1);
+
+    Array.from(tickRow.children).forEach((s,i)=> s.classList.toggle('active', i===idx));
+
+    animateImpact(currentPeople, nextPeople);
+    currentPeople = nextPeople;
+
+    updateEarth(exploreEarth, t);
+    updateEarth(heroEarth, Math.max(HERO_T, t*0.5));
+  });
+
+  updateEarth(exploreEarth, parseInt(slider.value)/(STEPS.length-1));
+
+})();
+</script>
+</body>
 </html>
