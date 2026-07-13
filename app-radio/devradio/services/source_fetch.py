@@ -86,11 +86,11 @@ class SourceArticleFetcher:
                 if self.extract_images:
                     image_url = self._extract_lead_image(soup, source_url)
 
-                article_html, article_text = self._extract_main_html(soup)
+                article_html, article_text = self._extract_main_html(soup, source_url)
                 if len(article_text) < self.min_chars:
-                    return FetchResult(text=None, status="too_short")
+                    return FetchResult(text=None, status="too_short", image_url=image_url)
                 if len(article_html) > self.max_chars * 3:
-                    return FetchResult(text=None, status="too_long")
+                    return FetchResult(text=None, status="too_long", image_url=image_url)
                 return FetchResult(text=article_html, status="ok", image_url=image_url)
             except requests.RequestException:
                 if attempt > self.max_retries:
@@ -152,13 +152,13 @@ class SourceArticleFetcher:
         "subscribe", "popup", "modal", "overlay", "masthead",
     ])
 
-    def _extract_main_html(self, soup: BeautifulSoup) -> tuple[str, str]:
+    def _extract_main_html(self, soup: BeautifulSoup, base_url: str | None = None) -> tuple[str, str]:
 
         # Strip universally useless tags.
         for bad in soup(["script", "style", "noscript", "svg", "iframe",
                          "form", "button", "input", "select", "textarea",
                          "picture", "figure"]):
-            bad.decompose()
+            bad.unwrap()
 
         # Strip structural boilerplate by tag.
         for bad in soup(["nav", "header", "footer", "aside"]):
@@ -195,6 +195,32 @@ class SourceArticleFetcher:
 
         if candidate is None:
             return "", ""
+
+        # Absolutize image URLs against the article URL so hotlinked body
+        # images resolve to the origin host rather than our own.
+        if base_url:
+            for img in candidate.find_all("img"):
+                for attr in ("src", "data-src", "data-lazy-src"):
+                    raw = img.get(attr)
+                    if not raw:
+                        continue
+                    absolute = self._normalize_image_url(raw, base_url)
+                    if absolute:
+                        img[attr] = absolute
+                srcset = img.get("srcset")
+                if srcset:
+                    rewritten = []
+                    for part in srcset.split(","):
+                        part = part.strip()
+                        if not part:
+                            continue
+                        tokens = part.split()
+                        candidate_url = tokens[0]
+                        absolute = self._normalize_image_url(candidate_url, base_url)
+                        if absolute:
+                            tokens[0] = absolute
+                        rewritten.append(" ".join(tokens))
+                    img["srcset"] = ", ".join(rewritten)
 
         article_text = " ".join(candidate.get_text(" ", strip=True).split())
         article_html = str(candidate)

@@ -298,15 +298,28 @@ def article_detail(article_id):
     channel = article.channel
     other_channels = Channel.query.filter(Channel.id != channel.id).order_by(Channel.name.asc()).all()
 
-    # Get all articles in the same channel, sorted by created_at DESC
-    all_articles = Article.query.filter_by(channel_id=article.channel_id).order_by(Article.created_at.desc()).all()
-
-    # Find current index
-    current_idx = next((idx for idx, a in enumerate(all_articles) if a.id == article_id), None)
-
-    # Get previous and next articles
-    prev_article = all_articles[current_idx + 1] if current_idx is not None and current_idx + 1 < len(all_articles) else None
-    next_article = all_articles[current_idx - 1] if current_idx is not None and current_idx > 0 else None
+    # Previous/next within the channel, ordered the same way as the channel
+    # list (created_at DESC, id DESC tie-break). Bounded queries instead of
+    # loading the entire channel per article view.
+    created = article.created_at
+    prev_article = (
+        Article.query.filter_by(channel_id=article.channel_id)
+        .filter(
+            (Article.created_at < created)
+            | ((Article.created_at == created) & (Article.id < article.id))
+        )
+        .order_by(Article.created_at.desc(), Article.id.desc())
+        .first()
+    )
+    next_article = (
+        Article.query.filter_by(channel_id=article.channel_id)
+        .filter(
+            (Article.created_at > created)
+            | ((Article.created_at == created) & (Article.id > article.id))
+        )
+        .order_by(Article.created_at.asc(), Article.id.asc())
+        .first()
+    )
 
     is_bookmarked = False
     app_user = get_current_user()

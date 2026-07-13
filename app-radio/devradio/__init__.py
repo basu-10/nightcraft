@@ -12,39 +12,6 @@ from .services.crypto import EncryptionService
 from .utils import format_in_app_timezone
 
 
-def _acquire_process_lock(lock_path: str):
-    """Acquire a non-blocking process lock; returns a file handle when acquired."""
-    try:
-        import fcntl  # Linux production path
-    except ImportError:
-        return None
-
-    lock_file = open(lock_path, "a+", encoding="utf-8")
-    try:
-        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-        return lock_file
-    except OSError:
-        lock_file.close()
-        return None
-
-
-def _release_process_lock(lock_file) -> None:
-    if lock_file is None:
-        return
-
-    try:
-        import fcntl
-
-        fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
-    except Exception:
-        pass
-    finally:
-        try:
-            lock_file.close()
-        except Exception:
-            pass
-
-
 def _start_automated_worker(app):
     if app.config.get("TESTING"):
         return
@@ -60,30 +27,18 @@ def _start_automated_worker(app):
         return
 
     interval_seconds = int(app.config.get("AUTOMATED_INGEST_INTERVAL_SECONDS", 3600))
-    lock_path = app.config.get("AUTOMATED_WORKER_LOCK_FILE") or os.path.join(
-        app.instance_path,
-        "automated_ingestion.lock",
-    )
     os.makedirs(app.instance_path, exist_ok=True)
 
     def _worker_loop():
         while True:
-            lock_file = None
             try:
                 with app.app_context():
-                    lock_file = _acquire_process_lock(lock_path)
-                    if lock_file is None:
-                        app.logger.debug("Automated ingestion skipped in this worker because lock is held")
-                        time.sleep(max(60, interval_seconds))
-                        continue
-
                     from .services.automation import run_automated_ingestion
 
                     run_automated_ingestion()
             except Exception:
                 app.logger.exception("Automated ingestion worker iteration failed")
             finally:
-                _release_process_lock(lock_file)
                 try:
                     db.session.remove()
                 except Exception:
@@ -124,8 +79,23 @@ def _ensure_schema_compatibility(app):
                 db.session.commit()
 
             if "image_url" not in article_columns:
-                db.session.execute(text("ALTER TABLE article ADD COLUMN image_url VARCHAR(1000)"))
+                db.session.execute(text("ALTER TABLE article ADD COLUMN image_url VARCHAR(2000)"))
                 db.session.commit()
+            else:
+                # Widen an already-existing column if it is still the old width.
+                image_url_col = next(
+                    (col for col in inspector.get_columns("article") if col["name"] == "image_url"),
+                    None,
+                )
+                needs_widen = False
+                if image_url_col is not None:
+                    col_type = image_url_col["type"]
+                    length = getattr(col_type, "length", None)
+                    if length is not None and int(length) < 2000:
+                        needs_widen = True
+                if needs_widen:
+                    db.session.execute(text("ALTER TABLE article ALTER COLUMN image_url TYPE VARCHAR(2000)"))
+                    db.session.commit()
 
             db.session.execute(
                 text("CREATE UNIQUE INDEX IF NOT EXISTS ix_article_source_url_unique ON article(source_url)")

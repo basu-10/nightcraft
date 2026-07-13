@@ -114,7 +114,7 @@ class Article(TimestampMixin, db.Model):
     channel_id = db.Column(db.Integer, db.ForeignKey("channel.id"), nullable=False)
     source_name = db.Column(db.String(120), nullable=False)
     source_url = db.Column(db.String(500), nullable=False, unique=True)
-    image_url = db.Column(db.String(1000), nullable=True)
+    image_url = db.Column(db.String(2000), nullable=True)
     title = db.Column(db.String(300), nullable=False)
     summary = db.Column(db.Text, nullable=True)
     raw_excerpt = db.Column(db.Text, nullable=True)

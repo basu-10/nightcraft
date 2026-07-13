@@ -627,7 +627,17 @@ def run_automated_ingestion(limit_per_feed=None, skip_timestamp_gate=False):
             "failures": [],
         }
     try:
-        return _run_automated_ingestion_locked(limit_per_feed=limit_per_feed, skip_timestamp_gate=skip_timestamp_gate)
+        # Cross-process guard so the systemd timer and a manual run-now trigger
+        # can never run a second ingestion while one is already in flight.
+        from .process_lock import try_run_with_process_lock
+
+        app = current_app._get_current_object()
+        return try_run_with_process_lock(
+            app,
+            _run_automated_ingestion_locked,
+            limit_per_feed=limit_per_feed,
+            skip_timestamp_gate=skip_timestamp_gate,
+        )
     finally:
         _ingestion_lock.release()
 
@@ -635,6 +645,9 @@ def run_automated_ingestion(limit_per_feed=None, skip_timestamp_gate=False):
 def _run_automated_ingestion_locked(limit_per_feed=None, skip_timestamp_gate=False):
     _reset_db_session_state()
 
+    # Lazy import to avoid a module-level circular dependency: ingestion.py
+    # imports helpers from this module, so importing it at the top would cycle.
+    from .ingestion import _extract_feed_entry_image
     limit_per_feed = get_automated_feed_fetch_limit() if limit_per_feed is None else parse_automated_feed_fetch_limit(limit_per_feed)
     spacing_minutes = int(current_app.config.get("AUTOMATED_SEGMENT_SPACING_MINUTES", 8))
     run_started = now_app_timezone()
@@ -839,6 +852,9 @@ def _run_automated_ingestion_locked(limit_per_feed=None, skip_timestamp_gate=Fal
                     )
                     continue
 
+                # Prefer the feed-provided image; fall back to the page scrape.
+                entry_image = _extract_feed_entry_image(entry) or fetched.image_url
+
                 try:
                     with db.session.begin_nested():
                         article = Article(
@@ -850,7 +866,7 @@ def _run_automated_ingestion_locked(limit_per_feed=None, skip_timestamp_gate=Fal
                             raw_excerpt=strip_html(entry_summary)[:2000],
                             source_full_article=fetched.text,
                             internal_content=fetched.text,
-                            image_url=fetched.image_url,
+                            image_url=entry_image,
                             short_headline=title[:160],
                             published_at=published_at,
                             status="approved",

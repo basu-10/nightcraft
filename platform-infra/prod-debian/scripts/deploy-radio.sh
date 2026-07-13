@@ -29,4 +29,10 @@ log "Running app-radio setup CLI"
 )
 
 log "app-radio ready from ${RADIO_SRC_DIR}"
-log "Run sudo systemctl restart nightcraft-radio.service"
+log "Restarting nightcraft-radio.service"
+systemctl restart nightcraft-radio.service
+
+log "Enabling nightcraft-radio-ingest.timer (hourly ingestion, out of gunicorn)"
+systemctl enable --now nightcraft-radio-ingest.timer
+
+log "Deployment complete. Verify: systemctl status nightcraft-radio.service nightcraft-radio-ingest.timer"

@@ -29,6 +29,7 @@ _ARTICLE_ALLOWED_TAGS = {
     "h6",
     "hr",
     "i",
+    "img",
     "li",
     "ol",
     "p",
@@ -46,6 +47,7 @@ _ARTICLE_ALLOWED_TAGS = {
 
 _ARTICLE_ALLOWED_ATTRS = {
     "a": {"href", "title", "target", "rel"},
+    "img": {"src", "alt", "title", "loading", "referrerpolicy", "width", "height"},
     "th": {"colspan", "rowspan", "scope"},
     "td": {"colspan", "rowspan", "scope"},
 }
@@ -103,6 +105,18 @@ def _is_safe_link(href: str) -> bool:
     return parsed.scheme.lower() in {"http", "https", "mailto"}
 
 
+def _is_safe_image_src(src: str) -> bool:
+    """Only absolute http(s) image URLs are safe; relative/anchor/data URIs are rejected."""
+    if not src:
+        return False
+    if src.startswith("data:") or src.startswith("#") or src.startswith("javascript:"):
+        return False
+    parsed = urlparse(src)
+    if not parsed.scheme:
+        return False
+    return parsed.scheme.lower() in {"http", "https"} and bool(parsed.netloc)
+
+
 def sanitize_article_html(raw_html: str) -> str:
     if not raw_html:
         return ""
@@ -140,6 +154,14 @@ def sanitize_article_html(raw_html: str) -> str:
                     del tag.attrs["target"]
                     if "rel" in tag.attrs:
                         del tag.attrs["rel"]
+
+        if tag_name == "img":
+            src = (tag.get("src") or "").strip()
+            if not _is_safe_image_src(src):
+                tag.decompose()
+                continue
+            tag["referrerpolicy"] = "no-referrer"
+            tag["loading"] = "lazy"
 
     for table_cell in soup.find_all(["th", "td"]):
         for span_attr in ["colspan", "rowspan"]:

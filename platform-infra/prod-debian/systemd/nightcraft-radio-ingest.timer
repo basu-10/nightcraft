@@ -1,0 +1,16 @@
+[Unit]
+Description=Nightcraft DevRadio Automated Ingestion Timer
+Documentation=file:///nightcraft-source-code/platform-infra/prod-debian/env-examples/radio.env.example
+
+[Timer]
+# Run hourly ("a few times a day"). RandomizedDelaySec spreads the trigger so a
+# machine reboot / service restart never fires an ingestion spike instantly,
+# which previously thrashed the box. Persistent=false so we do not backfill
+# missed runs after downtime (the next tick handles it).
+OnCalendar=*-*-* *:00:00
+RandomizedDelaySec=600
+Persistent=false
+Unit=nightcraft-radio-ingest.service
+
+[Install]
+WantedBy=timers.target

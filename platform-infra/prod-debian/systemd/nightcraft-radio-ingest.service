@@ -1,0 +1,21 @@
+[Unit]
+Description=Nightcraft DevRadio Automated Ingestion (oneshot)
+After=network.target postgresql.service nightcraft-radio.service
+Wants=postgresql.service
+
+[Service]
+Type=oneshot
+User=dev
+Group=dev
+WorkingDirectory=/nightcraft-source-code/app-radio
+EnvironmentFile=/etc/nightcraft/app-radio.env
+# Reuses the existing `flask automated-run` CLI command. create_app() does not
+# spawn a background worker because FLASK_AUTOMATED_BACKGROUND_ENABLED=false,
+# so this oneshot is the sole driver of ingestion. The cross-process flock in
+# run_automated_ingestion() prevents overlap with a manual run-now trigger.
+ExecStart=/runtime/venvs/dev-podcast-app/bin/python -m flask --app devradio automated-run
+# Keep the command-line short for journalctl; nothing to clean up on success.
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target
