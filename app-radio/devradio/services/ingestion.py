@@ -9,6 +9,69 @@ from ..utils import strip_html
 from .source_fetch import SourceArticleFetcher
 
 
+def _first_image_from_html(html: str | None, base_url: str) -> str | None:
+    if not html:
+        return None
+    from bs4 import BeautifulSoup
+    from urllib.parse import urljoin, urlparse
+
+    soup = BeautifulSoup(html, "html.parser")
+    for prop in ("og:image", "og:image:url", "twitter:image", "twitter:image:src"):
+        tag = soup.find("meta", attrs={"property": prop}) or soup.find("meta", attrs={"name": prop})
+        if tag and tag.get("content"):
+            try:
+                absolute = urljoin(base_url, tag["content"].strip())
+            except ValueError:
+                continue
+            parsed = urlparse(absolute)
+            if parsed.scheme in {"http", "https"} and parsed.netloc:
+                return absolute
+    return None
+
+
+def _extract_feed_entry_image(entry) -> str | None:
+    """Best-effort image URL from an RSS/Atom entry, without extra requests."""
+    base = entry.get("link") or ""
+
+    media_thumbnail = entry.get("media_thumbnail")
+    if isinstance(media_thumbnail, list):
+        for item in media_thumbnail:
+            if isinstance(item, dict) and item.get("url"):
+                return item["url"]
+
+    media_content = entry.get("media_content")
+    if isinstance(media_content, list):
+        for item in media_content:
+            if isinstance(item, dict) and (item.get("type") or "").startswith("image"):
+                if item.get("url"):
+                    return item["url"]
+
+    enclosures = entry.get("enclosures")
+    if isinstance(enclosures, list):
+        for item in enclosures:
+            item_type = (item.get("type") or item.get("mime") or "") if isinstance(item, dict) else ""
+            if item_type.startswith("image"):
+                url = item.get("href") or item.get("url")
+                if url:
+                    return url
+
+    # Fall back to an <img> embedded in the entry summary or content HTML.
+    html_sources = []
+    if entry.get("summary"):
+        html_sources.append(entry["summary"])
+    content = entry.get("content")
+    if isinstance(content, list):
+        for block in content:
+            if isinstance(block, dict) and block.get("value"):
+                html_sources.append(block["value"])
+
+    for html in html_sources:
+        img = _first_image_from_html(html, base)
+        if img:
+            return img
+    return None
+
+
 def ingest_articles(limit_per_feed=5, source_feed_ids=None, restage_existing=False):
     created = 0
     created_by_source = {}
@@ -40,6 +103,7 @@ def ingest_articles(limit_per_feed=5, source_feed_ids=None, restage_existing=Fal
             max_retries=int(current_app.config.get("SOURCE_FETCH_MAX_RETRIES", 2)),
             retry_backoff_seconds=float(current_app.config.get("SOURCE_FETCH_RETRY_BACKOFF_SECONDS", 2.0)),
             respect_robots=bool(current_app.config.get("SOURCE_FETCH_RESPECT_ROBOTS", True)),
+            extract_images=bool(current_app.config.get("SOURCE_FETCH_EXTRACT_IMAGES", True)),
         )
 
     for feed in feeds:
@@ -49,6 +113,8 @@ def ingest_articles(limit_per_feed=5, source_feed_ids=None, restage_existing=Fal
             title = (entry.get("title") or "Untitled story").strip()
             if not source_url:
                 continue
+
+            feed_image = _extract_feed_entry_image(entry)
 
             duplicate = Article.query.filter_by(source_url=source_url).first()
             if duplicate:
@@ -69,9 +135,14 @@ def ingest_articles(limit_per_feed=5, source_feed_ids=None, restage_existing=Fal
 
                     if fetcher:
                         fetched = fetcher.fetch(source_url)
-                        if fetched.status == "ok" and fetched.text:
-                            duplicate.source_full_article = fetched.text
-                            changed = True
+                        if fetched.status == "ok":
+                            if fetched.text:
+                                duplicate.source_full_article = fetched.text
+                                changed = True
+                            page_image = fetched.image_url
+                            if page_image and not duplicate.image_url:
+                                duplicate.image_url = page_image
+                                changed = True
 
                     if changed:
                         restaged += 1
@@ -83,10 +154,12 @@ def ingest_articles(limit_per_feed=5, source_feed_ids=None, restage_existing=Fal
                 published_at = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
 
             source_full_article = None
+            page_image = None
             if fetcher and source_url:
                 fetched = fetcher.fetch(source_url)
                 if fetched.status == "ok":
                     source_full_article = fetched.text
+                    page_image = fetched.image_url
 
             article = Article(
                 channel_id=feed.channel_id,
@@ -97,6 +170,7 @@ def ingest_articles(limit_per_feed=5, source_feed_ids=None, restage_existing=Fal
                 source_full_article=source_full_article,
                 published_at=published_at,
                 status="staged",
+                image_url=feed_image or page_image,
             )
             created += 1
             created_by_source[feed.name] = created_by_source.get(feed.name, 0) + 1

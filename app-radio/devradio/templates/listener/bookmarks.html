@@ -22,6 +22,11 @@
       {% for row in bookmark_rows %}
         <li class="bookmark-card">
           <div class="bookmark-card-body">
+            {% if row.article.image_url %}
+              <div class="bookmark-thumb">
+                <img src="{{ row.article.image_url }}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.style.display='none'" alt="">
+              </div>
+            {% endif %}
             <a class="bookmark-title" href="{{ url_for('listener.article_detail', article_id=row.article.id) }}">{{ row.article.short_headline or row.article.title }}</a>
             <div class="bookmark-meta">
               <span class="status-pill">{{ row.article.source_name }}</span>

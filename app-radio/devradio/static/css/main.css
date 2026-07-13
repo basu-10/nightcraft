@@ -819,6 +819,21 @@ button.danger {
   overflow: hidden;
 }
 
+.neo-focus-image {
+  flex-shrink: 0;
+  margin: -1.1rem -1.1rem 0.75rem;
+  overflow: hidden;
+  max-height: 140px;
+  background: var(--ink-weak);
+}
+
+.neo-focus-image img {
+  width: 100%;
+  max-height: 140px;
+  object-fit: cover;
+  display: block;
+}
+
 .neo-lastplayed-sidebar {
   border: 1px solid var(--border);
   border-radius: 20px;
@@ -1496,6 +1511,21 @@ textarea::placeholder {
   line-height: 1.35;
 }
 
+.story-card-thumb {
+  grid-column: 1 / -1;
+  margin-top: 0.5rem;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background: var(--ink-weak);
+}
+
+.story-card-thumb img {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  display: block;
+}
+
 .story-card-source {
   justify-self: start;
   text-align: left;
@@ -1767,6 +1797,22 @@ textarea::placeholder {
   gap: 2rem;
 }
 
+.article-hero-image {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  width: 100%;
+}
+
+.article-hero-image img {
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  border-radius: 1rem;
+  display: block;
+  background: var(--ink-weak);
+}
+
 .article-summary,
 .article-excerpt {
   display: grid;
@@ -1958,6 +2004,20 @@ textarea::placeholder {
   min-width: 0;
   display: grid;
   gap: 0.35rem;
+}
+
+.bookmark-thumb {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background: var(--ink-weak);
+}
+
+.bookmark-thumb img {
+  width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+  display: block;
 }
 
 .bookmark-title {

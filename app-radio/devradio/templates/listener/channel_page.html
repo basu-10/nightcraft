@@ -13,6 +13,11 @@
     {% for seg, local_time in segments %}
       <li class="story-card">
         <a class="story-card-link" href="{{ url_for('listener.article_detail', article_id=seg.article.id) }}" aria-label="Open article: {{ seg.article.short_headline or seg.article.title }}"></a>
+        {% if seg.article.image_url %}
+          <div class="story-card-thumb">
+            <img src="{{ seg.article.image_url }}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.style.display='none'" alt="">
+          </div>
+        {% endif %}
         <strong>{{ local_time.strftime('%H:%M') }} IST</strong>
         <span class="story-card-title">{{ seg.article.short_headline or seg.article.title }}</span>
         {% if seg.id in breaking_segment_ids %}

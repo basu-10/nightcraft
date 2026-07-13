@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 import time
 from dataclasses import dataclass
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 from urllib.robotparser import RobotFileParser
 
 import requests
@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 class FetchResult:
     text: str | None
     status: str
+    image_url: str | None = None
 
 
 class SourceArticleFetcher:
@@ -29,6 +30,7 @@ class SourceArticleFetcher:
         max_retries: int = 2,
         retry_backoff_seconds: float = 2.0,
         respect_robots: bool = True,
+        extract_images: bool = True,
     ):
         self.user_agent = user_agent
         self.timeout_seconds = timeout_seconds
@@ -39,6 +41,7 @@ class SourceArticleFetcher:
         self.max_retries = max_retries
         self.retry_backoff_seconds = retry_backoff_seconds
         self.respect_robots = respect_robots
+        self.extract_images = extract_images
 
         self._session = requests.Session()
         self._session.headers.update(
@@ -75,12 +78,16 @@ class SourceArticleFetcher:
                 if "text/html" not in content_type and "application/xhtml+xml" not in content_type:
                     return FetchResult(text=None, status="non_html")
 
+                image_url = None
+                if self.extract_images:
+                    image_url = self._extract_lead_image(response.text, source_url)
+
                 article_html, article_text = self._extract_main_html(response.text)
                 if len(article_text) < self.min_chars:
                     return FetchResult(text=None, status="too_short")
                 if len(article_html) > self.max_chars * 3:
                     return FetchResult(text=None, status="too_long")
-                return FetchResult(text=article_html, status="ok")
+                return FetchResult(text=article_html, status="ok", image_url=image_url)
             except requests.RequestException:
                 if attempt > self.max_retries:
                     return FetchResult(text=None, status="request_error")
@@ -182,3 +189,62 @@ class SourceArticleFetcher:
         article_text = " ".join(candidate.get_text(" ", strip=True).split())
         article_html = str(candidate)
         return article_html, article_text
+
+    _IMAGE_META_PROPERTIES = (
+        "og:image",
+        "og:image:url",
+        "og:image:secure_url",
+        "twitter:image",
+        "twitter:image:src",
+        "image",
+    )
+
+    _IMAGE_EXTENSIONS = frozenset([
+        ".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif", ".bmp", ".svg",
+    ])
+
+    def _normalize_image_url(self, raw_url: str | None, base_url: str) -> str | None:
+        if not raw_url:
+            return None
+        candidate = raw_url.strip()
+        if not candidate:
+            return None
+        # Resolve relative paths against the article URL.
+        try:
+            absolute = urljoin(base_url, candidate)
+        except ValueError:
+            return None
+        parsed = urlparse(absolute)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            return None
+        return absolute
+
+    def _extract_lead_image(self, html: str, base_url: str) -> str | None:
+        soup = BeautifulSoup(html, "html.parser")
+
+        # 1) Open Graph / Twitter / schema image metadata (most reliable).
+        for prop in self._IMAGE_META_PROPERTIES:
+            tag = soup.find("meta", attrs={"property": prop}) or soup.find("meta", attrs={"name": prop})
+            if tag and tag.get("content"):
+                normalized = self._normalize_image_url(tag["content"], base_url)
+                if normalized:
+                    return normalized
+
+        # 2) First meaningful <img> inside the main article content.
+        candidate = soup.find("article") or soup.find("main") or soup.body
+        if candidate is not None:
+            for img in candidate.find_all("img"):
+                src = img.get("src") or img.get("data-src") or img.get("data-lazy-src")
+                if not src:
+                    continue
+                normalized = self._normalize_image_url(src, base_url)
+                if not normalized:
+                    continue
+                path = urlparse(normalized).path.lower()
+                if any(path.endswith(ext) for ext in self._IMAGE_EXTENSIONS):
+                    return normalized
+                # Accept CDN-style URLs that lack a clean extension but look media-like.
+                if any(token in path for token in ("/image", "/img", "/photo", "/media", "/wp-content/uploads", "/assets")):
+                    return normalized
+
+        return None

@@ -49,6 +49,9 @@
         <label>Short headline
           <input name="short_headline" value="{{ article.short_headline or '' }}">
         </label>
+        <label>Cover / article image URL
+          <input name="image_url" value="{{ article.image_url or '' }}">
+        </label>
         <label>Full article (from source)
           <textarea name="source_full_article" rows="8">{{ article.source_full_article or '' }}</textarea>
         </label>

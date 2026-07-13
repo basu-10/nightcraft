@@ -84,6 +84,11 @@
     {% if current_segment %}
       <section class="neo-body-grid" :class="{ 'lastplayed-open': showLastPlayed }">
         <article class="neo-focus">
+          {% if current_segment.article.image_url %}
+            <div class="neo-focus-image">
+              <img src="{{ current_segment.article.image_url }}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.style.display='none'" alt="">
+            </div>
+          {% endif %}
           <h2>{{ current_segment.article.short_headline or current_segment.article.title }}</h2>
           <div class="neo-desc article-rich-text">{{ focus_article_html|safe }}</div>
           {% if breaking_active and current_segment.id in breaking_segment_ids %}

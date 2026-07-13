@@ -529,6 +529,7 @@ def move_to_stage_two(article_id):
 def update_article(article_id):
     article = db.get_or_404(Article, article_id)
     article.short_headline = request.form.get("short_headline", "").strip()
+    article.image_url = request.form.get("image_url", "").strip() or None
     article.source_full_article = request.form.get("source_full_article", "").strip()
     article.bullet_summary = request.form.get("bullet_summary", "").strip()
     article.narration_script = request.form.get("narration_script", "").strip()

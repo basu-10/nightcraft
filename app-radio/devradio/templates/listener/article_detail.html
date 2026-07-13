@@ -19,6 +19,12 @@
       </div>
     </div>
 
+    {% if article.image_url %}
+      <div class="article-hero-image">
+        <img src="{{ article.image_url }}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.style.display='none'" alt="">
+      </div>
+    {% endif %}
+
     <div class="article-detail-content">
       <div class="article-summary">
         <h2>Summary</h2>

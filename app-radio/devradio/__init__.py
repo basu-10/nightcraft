@@ -123,6 +123,10 @@ def _ensure_schema_compatibility(app):
                 db.session.execute(text("ALTER TABLE article ADD COLUMN source_full_article TEXT"))
                 db.session.commit()
 
+            if "image_url" not in article_columns:
+                db.session.execute(text("ALTER TABLE article ADD COLUMN image_url VARCHAR(1000)"))
+                db.session.commit()
+
             db.session.execute(
                 text("CREATE UNIQUE INDEX IF NOT EXISTS ix_article_source_url_unique ON article(source_url)")
             )
@@ -162,6 +166,8 @@ def create_app(test_config=None, instance_path=None):
         SOURCE_FETCH_MAX_RETRIES=2,
         SOURCE_FETCH_RETRY_BACKOFF_SECONDS=2.0,
         SOURCE_FETCH_RESPECT_ROBOTS=True,
+        SOURCE_FETCH_EXTRACT_IMAGES=True,
+        ARTICLE_IMAGES_ENABLED=True,
         AUTOMATED_BACKGROUND_ENABLED=True,
         AUTOMATED_INGEST_INTERVAL_SECONDS=3600,
         AUTOMATED_SEGMENT_SPACING_MINUTES=8,
