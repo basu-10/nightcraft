@@ -119,31 +119,24 @@ def test_experimental_route_renders_sections_and_apps():
     assert "SeekSage" not in html
 
 
-def test_fossil_library_renders_with_dummy_auth_and_posts():
+def test_fossil_library_renders_landing_page():
     client = _client()
 
-    anonymous = client.get("/fossil")
-    assert anonymous.status_code == 200
-    anon_html = anonymous.get_data(as_text=True)
-    assert "FOSSil" in anon_html
-    assert "Keeping a Slow Notebook" in anon_html
-    assert "Sign In" in anon_html
-    assert "Sign Out" not in anon_html
-    assert "Add to the library" not in anon_html
-
-    logged_in = client.post("/fossil/login", data={"username": "guest"})
-    assert logged_in.status_code == 302
-
-    after = client.get("/fossil")
-    assert after.status_code == 200
-    after_html = after.get_data(as_text=True)
-    assert "Signed in as" in after_html
-    assert "Sign Out" in after_html
-    assert "Add to the library" in after_html
-
-    logout = client.post("/fossil/logout")
-    assert logout.status_code == 302
-    assert "Sign Out" not in client.get("/fossil").get_data(as_text=True)
+    response = client.get("/fossil")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "FOSSil" in html
+    assert "Publish with purpose" in html
+    assert "Preserve forever" in html
+    assert "Decentralized publishing platform" in html
+    assert "Download FOSSil" in html
+    assert "See How It Works" in html
+    assert "macOS, Windows, Linux" in html
+    assert "Verifiable" in html
+    assert "Decentralized" in html
+    assert "12,458" in html
+    assert "3,852" in html
+    assert "1.2 PB" in html
 
 
 def test_platform_admin_alias_route_still_works_for_local_usage():
