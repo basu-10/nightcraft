@@ -78,11 +78,15 @@ class SourceArticleFetcher:
                 if "text/html" not in content_type and "application/xhtml+xml" not in content_type:
                     return FetchResult(text=None, status="non_html")
 
+                # Parse the document exactly once and reuse the tree for both
+                # image detection and main-content extraction. Re-parsing the
+                # full page a second time was needlessly expensive per fetch.
+                soup = BeautifulSoup(response.text, "html.parser")
                 image_url = None
                 if self.extract_images:
-                    image_url = self._extract_lead_image(response.text, source_url)
+                    image_url = self._extract_lead_image(soup, source_url)
 
-                article_html, article_text = self._extract_main_html(response.text)
+                article_html, article_text = self._extract_main_html(soup)
                 if len(article_text) < self.min_chars:
                     return FetchResult(text=None, status="too_short")
                 if len(article_html) > self.max_chars * 3:
@@ -141,8 +145,7 @@ class SourceArticleFetcher:
         "subscribe", "popup", "modal", "overlay", "masthead",
     ])
 
-    def _extract_main_html(self, html: str) -> tuple[str, str]:
-        soup = BeautifulSoup(html, "html.parser")
+    def _extract_main_html(self, soup: BeautifulSoup) -> tuple[str, str]:
 
         # Strip universally useless tags.
         for bad in soup(["script", "style", "noscript", "svg", "iframe",
@@ -219,8 +222,7 @@ class SourceArticleFetcher:
             return None
         return absolute
 
-    def _extract_lead_image(self, html: str, base_url: str) -> str | None:
-        soup = BeautifulSoup(html, "html.parser")
+    def _extract_lead_image(self, soup: BeautifulSoup, base_url: str) -> str | None:
 
         # 1) Open Graph / Twitter / schema image metadata (most reliable).
         for prop in self._IMAGE_META_PROPERTIES:

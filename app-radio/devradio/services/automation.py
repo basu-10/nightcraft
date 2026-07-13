@@ -38,8 +38,14 @@ ALLOWED_AUTOMATED_SOURCE_KEYS = {
     "unity_blog",
 }
 
-# Default to full-feed scans; admins can set a numeric cap from the Automated page.
-DEFAULT_AUTOMATED_FEED_FETCH_LIMIT = 0
+# Cap per-feed scans so a single run stays bounded and lightweight on small servers.
+# Admins can raise this from the Automated page if the host has more capacity.
+DEFAULT_AUTOMATED_FEED_FETCH_LIMIT = 8
+# Hard ceiling on total article fetches per run, regardless of per-feed cap.
+DEFAULT_AUTOMATED_MAX_TOTAL_FETCHES = 48
+# Wall-clock budget for a single run; once exceeded the run stops accepting new
+# fetches so the worker goes back to sleeping instead of hogging the server.
+DEFAULT_AUTOMATED_RUN_TIME_BUDGET_SECONDS = 240.0
 _ingestion_lock = threading.Lock()
 AUTOMATED_FEED_FETCH_LIMIT_SETTING_KEY = "automated_feed_fetch_limit"
 
@@ -613,6 +619,12 @@ def _run_automated_ingestion_locked(limit_per_feed=None, skip_timestamp_gate=Fal
     fetcher = _build_fetcher()
     run_id = f"run_{run_started.strftime('%Y%m%d_%H%M%S_%f')}"
 
+    max_total_fetches = int(current_app.config.get("AUTOMATED_MAX_TOTAL_FETCHES", DEFAULT_AUTOMATED_MAX_TOTAL_FETCHES))
+    run_time_budget_seconds = float(current_app.config.get("AUTOMATED_RUN_TIME_BUDGET_SECONDS", DEFAULT_AUTOMATED_RUN_TIME_BUDGET_SECONDS))
+    run_deadline = run_started + timedelta(seconds=run_time_budget_seconds)
+    total_fetches = 0
+    budget_reached = False
+
     eligible_ids = set(eligible_automated_feed_ids())
     if not eligible_ids:
         run_payload = {
@@ -704,6 +716,8 @@ def _run_automated_ingestion_locked(limit_per_feed=None, skip_timestamp_gate=Fal
     fatal_error = ""
     try:
         for allocation in allocations:
+            if budget_reached:
+                break
             feed = allocation.source_feed
             channel_id = allocation.channel_id
             touched_channels.add(channel_id)
@@ -780,7 +794,12 @@ def _run_automated_ingestion_locked(limit_per_feed=None, skip_timestamp_gate=Fal
                     )
                     continue
 
+                if budget_reached or total_fetches >= max_total_fetches or now_utc() >= run_deadline:
+                    budget_reached = True
+                    break
+
                 fetched = fetcher.fetch(source_url)
+                total_fetches += 1
                 if fetched.status != "ok" or not fetched.text:
                     fetch_failures += 1
                     failures.append(
@@ -809,6 +828,7 @@ def _run_automated_ingestion_locked(limit_per_feed=None, skip_timestamp_gate=Fal
                             raw_excerpt=strip_html(entry_summary)[:2000],
                             source_full_article=fetched.text,
                             internal_content=fetched.text,
+                            image_url=fetched.image_url,
                             short_headline=title[:160],
                             published_at=published_at,
                             status="approved",
@@ -867,6 +887,16 @@ def _run_automated_ingestion_locked(limit_per_feed=None, skip_timestamp_gate=Fal
                         }
                     )
 
+        if budget_reached:
+            events.append(
+                {
+                    "event": "run_budget_reached",
+                    "timestamp_utc": now_app_timezone().isoformat(),
+                    "total_fetches": total_fetches,
+                    "max_total_fetches": max_total_fetches,
+                }
+            )
+
     except Exception as exc:
         fatal_error = str(exc)
         current_app.logger.exception("Automated ingestion failed during run")
@@ -886,6 +916,11 @@ def _run_automated_ingestion_locked(limit_per_feed=None, skip_timestamp_gate=Fal
         f"Skipped duplicates: {duplicates_skipped}. "
         f"Skipped due full-article fetch failures: {fetch_failures}."
     )
+    if budget_reached:
+        summary = (
+            f"{summary} Stopped early at run budget "
+            f"(processed {total_fetches} fetches) to keep the server responsive."
+        )
     if fatal_error:
         summary = f"{summary} Fatal error: {fatal_error}"
     _upsert_run_meta("automated_last_run_summary", summary)
@@ -898,6 +933,8 @@ def _run_automated_ingestion_locked(limit_per_feed=None, skip_timestamp_gate=Fal
         "fetch_failures": fetch_failures,
         "processed_channels": len(touched_channels),
         "processed_feeds": processed_feeds,
+        "total_fetches": total_fetches,
+        "budget_reached": budget_reached,
         "fatal_error": fatal_error,
     }
     run_payload["run_finished_utc"] = now_app_timezone().isoformat()
