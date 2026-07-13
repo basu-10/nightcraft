@@ -1,76 +1,225 @@
 {% extends "base.html" %}
 
-{% block title %}Nightcraft Studio Projects{% endblock %}
+{% block title %}Alfred - Plan. Orchestrate. Get things done.{% endblock %}
 
-{% block description %}Landing portal for DevRadio, NoteStack, Butler, and experimental apps.{% endblock %}
+{% block description %}Alfred is your local AI-powered planner that orchestrates tools across your Library, Web, and Editor—so you can focus on outcomes, not context switching.{% endblock %}
 
 {% block content %}
-<section class="hero-grid">
-    <div>
-        <p class="section-label">/ INDEX</p>
-        {% if shared_user %}
-        <p class="welcome">Hi, {{ shared_user.username }} welcome</p>
-        {% endif %}
-        <h1>NightCraft Studio</h1>
-        <p class="hero-rule">-</p>
-        <p class="hero-text">Thoughtfully crafted software that respects its users.</p>
-        <p class="hero-text">An independent software studio</p>
-        <div class="hero-links" aria-label="Explore links">
-            <a href="{{ url_for('main.dev_profile') }}">Dev Profile</a>
-            <a href="{{ url_for('main.about') }}">About Nightcraft</a>
-            <a href="{{ url_for('main.next_updates') }}">Life Updates</a>
+<section class="alfred-hero">
+    <div class="alfred-hero-inner">
+        <div class="alfred-hero-content">
+            <span class="alfred-eyebrow">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 3z"/>
+                    <path d="M17 4a2 2 0 0 0 2 2 2 2 0 0 0-2 2 2 2 0 0 0-2-2 2 2 0 0 0 2-2"/>
+                </svg>
+                Your intelligent workspace
+            </span>
+            <h1>Plan. Orchestrate.<br>Get things done.</h1>
+            <p class="alfred-hero-desc">Alfred is your local AI-powered planner that orchestrates tools across your Library, Web, and Editor—so you can focus on outcomes, not context switching.</p>
+            <div class="alfred-hero-actions">
+                <a href="/alfred" class="alfred-btn-primary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Download Alfred
+                </a>
+                <a href="#features" class="alfred-btn-outline">Explore Features</a>
+            </div>
+            <div class="alfred-hero-badges">
+                <span class="alfred-badge">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    Local First
+                </span>
+                <span class="alfred-badge">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Privacy Focused
+                </span>
+                <span class="alfred-badge">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+                    </svg>
+                    No Cloud Required
+                </span>
+            </div>
         </div>
-    </div>
-
-    <aside class="philosophy" aria-label="Philosophy">
-        <p class="philosophy-title">PHILOSOPHY</p>
-        <ul>
-            <li>
-                <span aria-hidden="true">[+]</span>
-                <span>Software should outlive trends</span>
-            </li>
-            <li>
-                <span aria-hidden="true">[o]</span>
-                <span>Own your data</span>
-            </li>
-            <li>
-                <span aria-hidden="true">[#]</span>
-                <span>Build for decades, not quarters</span>
-            </li>
-            <li>
-                <span aria-hidden="true">[*]</span>
-                <span>Stability is our best feature</span>
-            </li>
-        </ul>
-    </aside>
-</section>
-
-<section class="registry" aria-label="PORTFOLIO PRODUCTS">
-    <div class="registry-head">
-        <p class="section-label">/ PORTFOLIO PRODUCTS</p>
-        <a href="{{ url_for('main.experimental_apps') }}">Experimental apps <span aria-hidden="true">-></span></a>
-    </div>
-    <div class="registry-table">
-        {% for card in cards %}
-        <a class="registry-row" href="{{ card.url }}" style="--stagger: {{ loop.index0 }}">
-            <div class="product-main">
-                <div class="product-icon">{{ card.name[0] }}</div>
-                <div>
-                    <h2>{{ card.name }}</h2>
-                    <p>{{ card.tagline }}</p>
+        <div class="alfred-hero-visual">
+            <div class="alfred-mockup">
+                <div class="alfred-mockup-header">
+                    <div class="alfred-mockup-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                    <div class="alfred-mockup-title">Alfred Workspace</div>
+                </div>
+                <div class="alfred-mockup-body">
+                    <div class="alfred-mockup-sidebar">
+                        <div class="alfred-mockup-sidebar-item active">Planner (Alfred)</div>
+                        <div class="alfred-mockup-sidebar-item">Home</div>
+                        <div class="alfred-mockup-sidebar-item">Library</div>
+                        <div class="alfred-mockup-sidebar-item">Web</div>
+                        <div class="alfred-mockup-sidebar-item">Editor</div>
+                    </div>
+                    <div class="alfred-mockup-main">
+                        <div class="alfred-mockup-search">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <span>Search Alfred (Ctrl + K)</span>
+                        </div>
+                        <div class="alfred-mockup-prompt">What do you want to accomplish?</div>
+                        <div class="alfred-mockup-actions">
+                            <button>Attach Files</button>
+                            <button>Use Library</button>
+                            <button>Search Web</button>
+                            <button class="alfred-mockup-play">▶</button>
+                        </div>
+                        <div class="alfred-mockup-plans">
+                            <div class="alfred-mockup-plan">AI in Healthcare: Current Trends and Future Outlook</div>
+                            <div class="alfred-mockup-plan">Investment Thesis: Renewable Energy Sector</div>
+                            <div class="alfred-mockup-plan">Transformer Architecture Research Summary</div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <p class="product-description">{{ card.description }}</p>
-            <div class="product-meta">
-                <p>
-                    <span class="status-dot{% if card.status == 'In Development' %} is-building{% endif %}"></span>
-                    {{ card.status }}
-                </p>
-                <small>{{ card.stack }}</small>
+        </div>
+    </div>
+</section>
+
+<section id="features" class="alfred-features">
+    <div class="alfred-features-inner">
+        <div class="alfred-feature-card">
+            <div class="alfred-feature-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
             </div>
-            <span class="row-arrow" aria-hidden="true">-></span>
+            <h3>Orchestrate with Intelligence</h3>
+            <p>Break complex goals into actionable steps and let Alfred coordinate the right tools.</p>
+        </div>
+        <div class="alfred-feature-card">
+            <div class="alfred-feature-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+                </svg>
+            </div>
+            <h3>Use Your Knowledge</h3>
+            <p>Seamlessly leverage your Library, notes, and saved content in every plan.</p>
+        </div>
+        <div class="alfred-feature-card">
+            <div class="alfred-feature-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="2" y1="12" x2="22" y2="12"/>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+            </div>
+            <h3>Search Without Switching</h3>
+            <p>Bring live information from the web without leaving your workspace.</p>
+        </div>
+        <div class="alfred-feature-card">
+            <div class="alfred-feature-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9"/>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+            </div>
+            <h3>Create and Refine</h3>
+            <p>Draft, edit, and export reports and documents—end to end.</p>
+        </div>
+    </div>
+</section>
+
+<section class="alfred-manifesto">
+    <div class="alfred-manifesto-inner">
+        <h2>Built for deep work. Designed for you.</h2>
+        <p class="alfred-manifesto-sub">Alfred stays local, respects your data, and helps you focus on what matters.</p>
+    </div>
+</section>
+
+<section class="alfred-values">
+    <div class="alfred-values-inner">
+        <div class="alfred-value-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            <div>
+                <strong>Local First</strong>
+                <span>All data stays on your device.</span>
+            </div>
+        </div>
+        <div class="alfred-value-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <div>
+                <strong>Privacy Focused</strong>
+                <span>No telemetry. No tracking.</span>
+            </div>
+        </div>
+        <div class="alfred-value-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+            </svg>
+            <div>
+                <strong>Offline Ready</strong>
+                <span>Works without the internet.</span>
+            </div>
+        </div>
+        <div class="alfred-value-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446A9 9 0 1 1 12 3z"/>
+                <path d="M17 4a2 2 0 0 0 2 2 2 2 0 0 0-2 2 2 2 0 0 0-2-2 2 2 0 0 0 2-2"/>
+            </svg>
+            <div>
+                <strong>Open & Extensible</strong>
+                <span>Plugins and connectors.</span>
+            </div>
+        </div>
+        <div class="alfred-value-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <div>
+                <strong>Secure by Design</strong>
+                <span>Your data, always yours.</span>
+            </div>
+        </div>
+        <div class="alfred-value-item">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            <div>
+                <strong>Lightweight</strong>
+                <span>Fast, responsive, reliable.</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="alfred-cta">
+    <div class="alfred-cta-inner">
+        <h2>Ready to make Alfred your second brain?</h2>
+        <p>Download now and take control of your work.</p>
+        <a href="/alfred" class="alfred-btn-primary alfred-btn-large">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download Alfred
         </a>
-        {% endfor %}
     </div>
 </section>
 {% endblock %}

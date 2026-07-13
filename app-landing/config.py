@@ -43,7 +43,7 @@ class Config:
     SEEKSAGE_URL: str = os.environ.get("LANDING_SEEKSAGE_URL", "/seeksage")
     GAME_URL: str = os.environ.get("LANDING_GAME_URL", "/game")
     NOTESTACK_URL: str = os.environ.get("LANDING_NOTESTACK_URL", "/notestack")
-    BUTLER_URL: str = os.environ.get("LANDING_BUTLER_URL", "/butler")
+    ALFRED_URL: str = os.environ.get("LANDING_ALFRED_URL", "/alfred")
     TINYXL_URL: str = os.environ.get("LANDING_TINYXL_URL", "/tinyxl")
     TEXTTRACE_URL: str = os.environ.get("LANDING_TEXTTRACE_URL", "/textrace")
     GREENPLEDGE_URL: str = os.environ.get("LANDING_GREENPLEDGE_URL", "/green-pledge")

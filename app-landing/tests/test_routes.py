@@ -10,27 +10,23 @@ def _client():
     return app.test_client()
 
 
-def test_root_route_renders_product_cards_and_links():
+def test_root_route_renders_alfred_landing_page():
     client = _client()
 
     response = client.get("/")
 
     assert response.status_code == 200
     html = response.get_data(as_text=True)
-    assert "DevRadio" in html
-    assert "Butler" in html
-    assert "NoteStack" in html
-    assert "Sign In" in html
-    assert "Sign Up" in html
-    assert '/auth/login?next=%2F' in html
-    assert 'href="/notestack/app"' in html
-    assert 'href="/butler"' in html
-    assert 'href="/experimental"' in html
-    assert "SeekSage" not in html
-    assert "NEERA" not in html
+    assert "Alfred" in html
+    assert "Plan. Orchestrate." in html
+    assert "Get things done." in html
+    assert "Download Alfred" in html
+    assert "Explore Features" in html
+    assert "Your intelligent workspace" in html
+    assert 'href="/alfred"' in html
 
 
-def test_root_route_admin_link_uses_platform_admin_path_for_admin_user():
+def test_root_route_shows_auth_links():
     app = create_app()
     app.config.update(TESTING=True)
 
@@ -40,23 +36,7 @@ def test_root_route_admin_link_uses_platform_admin_path_for_admin_user():
 
     assert response.status_code == 200
     html = response.get_data(as_text=True)
-    assert 'href="/platform-admin"' in html
-
-
-def test_root_route_shows_welcome_and_logout_when_shared_auth_is_present():
-    app = create_app()
-    app.config.update(TESTING=True)
-
-    with patch("landing.routes._fetch_shared_auth_user", return_value={"username": "seedadmin", "is_admin": True}):
-        client = app.test_client()
-        response = client.get("/")
-
-    assert response.status_code == 200
-    html = response.get_data(as_text=True)
-    assert "Hi, seedadmin welcome" in html
-    assert "Sign Out" in html
-    assert "Sign Up" not in html
-    assert "Admin Dashboard" in html
+    assert "Log in" in html
 
 
 def test_healthz_route_returns_expected_payload():

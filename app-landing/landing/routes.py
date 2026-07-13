@@ -159,11 +159,11 @@ def home():
             "stack": "Python, RSS, TTS, Queue",
         },
         {
-            "name": "Butler",
-            "tagline": "An AI assistant that does the heavy lifting from one studio.",
-            "description": "Search the web, run RAG over your docs, and build presentations all from a single studio.",
-            "url": current_app.config["BUTLER_URL"],
-            "status": "Not Built",
+            "name": "Alfred",
+            "tagline": "Your local AI-powered planner that orchestrates tools across your Library, Web, and Editor.",
+            "description": "Plan, orchestrate, and get things done with an intelligent workspace that helps you focus on outcomes, not context switching.",
+            "url": current_app.config["ALFRED_URL"],
+            "status": "Active",
             "stack": "Python, LLM, RAG",
         },
     ]
