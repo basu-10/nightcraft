@@ -25,8 +25,11 @@ ENGINE_FOR_SUFFIX = {
 # Configuration
 # Runtime data (uploads + SQLite) lives outside the source checkout by default,
 # mirroring the rest of the Nightcraft stack. Override via env if needed.
+# TINYXL_UPLOAD_DIR and TINYXL_DB_DIR are DIRECTORIES; the SQLite filename is
+# appended to the DB directory.
 UPLOAD_FOLDER = Path(os.environ.get("TINYXL_UPLOAD_DIR", str(Path(__file__).parent / "uploads")))
-DB_PATH = Path(os.environ.get("TINYXL_DB_DIR", str(Path(__file__).parent / "db" / "excel_reader_state.sqlite3")))
+DB_DIR = Path(os.environ.get("TINYXL_DB_DIR", str(Path(__file__).parent / "db")))
+DB_PATH = DB_DIR / "excel_reader_state.sqlite3"
 ALLOWED_EXTENSIONS = {".xlsx", ".xls", ".xlsb", ".xlsm", ".csv", ".txl"}
 
 app = Flask(__name__)
