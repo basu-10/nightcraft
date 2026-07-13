@@ -1,1098 +1,689 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TextTrace — Semantic search that runs on your machine</title>
-<style>
-  /* ─── Reset & Base ─── */
-  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-  :root {
-    --bg:          #F7F7FA;
-    --bg-raised:   #FFFFFF;
-    --bg-sunken:   #EFEFF3;
-    --bg-deep:     #E4E4EA;
-    --surface:     #FBFBFD;
-    --border:      #E1E1E8;
-    --border-light:#ECECF1;
-    --text-primary:#18181B;
-    --text-secondary:#5B5B66;
-    --text-tertiary:#9A9AA6;
-    --accent:      #5B5BD6;
-    --accent-hover:#4A4AC0;
-    --accent-light:#ECECFB;
-    --accent-muted:rgba(91,91,214,0.08);
-    --accent-2:    #0EA5A4;
-    --shadow-neu:  6px 6px 14px rgba(0,0,0,0.05), -6px -6px 14px rgba(255,255,255,0.9);
-    --shadow-neu-sm:3px 3px 8px rgba(0,0,0,0.04), -3px -3px 8px rgba(255,255,255,0.8);
-    --shadow-neu-inset:inset 2px 2px 6px rgba(0,0,0,0.04), inset -2px -2px 6px rgba(255,255,255,0.8);
-    --max-w:       1200px;
-    --font-display:'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
-    --font-body:   -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-    --font-mono:   'SF Mono', 'Fira Code', 'Consolas', monospace;
-  }
-
-  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-
-  body {
-    font-family: var(--font-body);
-    background: var(--bg);
-    color: var(--text-primary);
-    line-height: 1.65;
-    font-size: 16px;
-  }
-
-  a { color: inherit; text-decoration: none; }
-  img { display: block; max-width: 100%; }
-  button { font-family: inherit; cursor: pointer; border: none; background: none; }
-  code, .mono { font-family: var(--font-mono); }
-
-  .container { max-width: var(--max-w); margin: 0 auto; padding: 0 40px; }
-
-  @media (max-width: 768px) {
-    .container { padding: 0 20px; }
-  }
-
-  /* ─── Navigation ─── */
-  nav {
-    position: sticky; top: 0; z-index: 100;
-    background: rgba(247,247,250,0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-light);
-  }
-
-  .nav-inner {
-    max-width: var(--max-w); margin: 0 auto; padding: 0 40px;
-    display: flex; align-items: center; justify-content: space-between;
-    height: 60px;
-  }
-
-  .nav-logo {
-    font-family: var(--font-display);
-    font-size: 20px; font-weight: 700;
-    letter-spacing: -0.02em;
-    color: var(--text-primary);
-    display: inline-flex; align-items: center; gap: 8px;
-  }
-
-  .nav-logo svg { color: var(--accent); }
-  .nav-logo span { color: var(--accent); }
-
-  .nav-links { display: flex; align-items: center; gap: 32px; }
-
-  .nav-links a {
-    font-size: 13.5px; font-weight: 450;
-    color: var(--text-secondary);
-    transition: color 0.2s;
-    letter-spacing: 0.01em;
-  }
-
-  .nav-links a:hover { color: var(--text-primary); }
-
-  .nav-cta {
-    font-size: 13px; font-weight: 500;
-    padding: 7px 18px; border-radius: 6px;
-    background: var(--text-primary); color: var(--bg);
-    transition: background 0.2s, transform 0.15s;
-  }
-
-  .nav-cta:hover { background: #2e2e34; transform: translateY(-1px); }
-
-  @media (max-width: 768px) {
-    .nav-inner { padding: 0 20px; }
-    .nav-links { display: none; }
-  }
-
-  /* ─── Section Spacing ─── */
-  section { padding: 120px 0; }
-
-  @media (max-width: 768px) {
-    section { padding: 72px 0; }
-  }
-
-  .section-label {
-    font-size: 11.5px; font-weight: 600;
-    letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--text-tertiary);
-    margin-bottom: 16px;
-    font-family: var(--font-body);
-  }
-
-  .section-title {
-    font-family: var(--font-display);
-    font-size: 36px; font-weight: 500;
-    line-height: 1.2; letter-spacing: -0.02em;
-    color: var(--text-primary);
-    margin-bottom: 20px;
-  }
-
-  .section-subtitle {
-    font-size: 17px; line-height: 1.7;
-    color: var(--text-secondary);
-    max-width: 560px;
-  }
-
-  @media (max-width: 768px) {
-    .section-title { font-size: 28px; }
-    .section-subtitle { font-size: 15px; }
-  }
-
-  /* ─── Hero ─── */
-  .hero { padding: 140px 0 100px; text-align: center; }
-
-  @media (max-width: 768px) {
-    .hero { padding: 100px 0 64px; }
-  }
-
-  .hero-badge {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-size: 12px; font-weight: 500;
-    color: var(--accent);
-    background: var(--accent-muted);
-    border: 1px solid rgba(91,91,214,0.14);
-    padding: 6px 16px; border-radius: 100px;
-    margin-bottom: 32px;
-    letter-spacing: 0.02em;
-  }
-
-  .hero-badge::before {
-    content: '';
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--accent);
-    display: inline-block;
-  }
-
-  .hero h1 {
-    font-family: var(--font-display);
-    font-size: 68px; font-weight: 500;
-    line-height: 1.06; letter-spacing: -0.035em;
-    color: var(--text-primary);
-    margin-bottom: 24px;
-  }
-
-  .hero h1 em {
-    font-style: normal;
-    background: linear-gradient(120deg, var(--accent), var(--accent-2));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  @media (max-width: 768px) {
-    .hero h1 { font-size: 40px; letter-spacing: -0.025em; }
-  }
-
-  .hero-tagline {
-    font-size: 19px; line-height: 1.7;
-    color: var(--text-secondary);
-    max-width: 560px; margin: 0 auto 44px;
-    font-weight: 400;
-  }
-
-  @media (max-width: 768px) {
-    .hero-tagline { font-size: 16px; margin-bottom: 32px; }
-  }
-
-  .hero-actions {
-    display: flex; align-items: center; justify-content: center;
-    gap: 14px; flex-wrap: wrap;
-    margin-bottom: 80px;
-  }
-
-  @media (max-width: 768px) {
-    .hero-actions { margin-bottom: 56px; }
-  }
-
-  .btn-primary {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-size: 14px; font-weight: 500;
-    padding: 12px 28px; border-radius: 8px;
-    background: var(--accent); color: #fff;
-    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-    box-shadow: 0 1px 3px rgba(91,91,214,0.2);
-  }
-
-  .btn-primary:hover {
-    background: var(--accent-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(91,91,214,0.25);
-  }
-
-  .btn-secondary {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-size: 14px; font-weight: 500;
-    padding: 12px 28px; border-radius: 8px;
-    background: var(--bg-raised);
-    color: var(--text-secondary);
-    border: 1px solid var(--border);
-    transition: all 0.2s;
-    box-shadow: var(--shadow-neu-sm);
-  }
-
-  .btn-secondary:hover {
-    color: var(--text-primary);
-    border-color: #c8c8d4;
-    transform: translateY(-1px);
-  }
-
-  .btn-secondary svg { transition: transform 0.2s; }
-  .btn-secondary:hover svg { transform: translateX(3px); }
-
-  /* ─── App Preview (Hero) ─── */
-  .app-preview {
-    max-width: 1000px; margin: 0 auto;
-    background: var(--bg-raised);
-    border-radius: 16px;
-    box-shadow: var(--shadow-neu), 0 20px 60px rgba(0,0,0,0.04);
-    border: 1px solid var(--border-light);
-    overflow: hidden;
-    position: relative;
-  }
-
-  .app-preview-bar {
-    display: flex; align-items: center; gap: 8px;
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--border-light);
-    background: var(--surface);
-  }
-
-  .app-dot {
-    width: 10px; height: 10px; border-radius: 50%;
-    background: var(--bg-deep);
-    border: 1px solid var(--border);
-  }
-
-  .app-dot:nth-child(1) { background: #d4a0a0; border-color: #c49090; }
-  .app-dot:nth-child(2) { background: #d4c8a0; border-color: #c4b890; }
-  .app-dot:nth-child(3) { background: #a0c4a0; border-color: #90b490; }
-
-  .app-preview-url {
-    flex: 1; text-align: center;
-    font-size: 12px; color: var(--text-tertiary);
-    font-family: var(--font-mono);
-    letter-spacing: 0.02em;
-  }
-
-  .app-preview-body {
-    display: grid;
-    grid-template-columns: 200px 1fr;
-    min-height: 440px;
-  }
-
-  @media (max-width: 768px) {
-    .app-preview-body { grid-template-columns: 1fr; }
-    .app-sidebar { display: none; }
-  }
-
-  .app-sidebar {
-    border-right: 1px solid var(--border-light);
-    padding: 20px 0;
-    background: var(--surface);
-  }
-
-  .app-sidebar-section {
-    padding: 16px 20px 6px;
-    font-size: 10.5px; font-weight: 600;
-    letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--text-tertiary);
-  }
-
-  .app-sidebar-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 9px 20px;
-    font-size: 13px; color: var(--text-secondary);
-    transition: all 0.15s;
-    cursor: default;
-  }
-
-  .app-sidebar-item.active {
-    background: var(--accent-muted);
-    color: var(--accent);
-    font-weight: 500;
-  }
-
-  .app-sidebar-icon {
-    width: 16px; height: 16px;
-    border-radius: 3px;
-    background: var(--bg-deep);
-    flex-shrink: 0;
-  }
-
-  .app-sidebar-item.active .app-sidebar-icon {
-    background: var(--accent);
-    opacity: 0.5;
-  }
-
-  .app-content { padding: 28px 36px; }
-
-  @media (max-width: 768px) {
-    .app-content { padding: 24px 20px; }
-  }
-
-  .search-shell {
-    display: flex; align-items: center; gap: 12px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 0 18px;
-    height: 52px;
-    margin-bottom: 28px;
-    box-shadow: var(--shadow-neu-inset);
-  }
-
-  .search-shell svg { color: var(--text-tertiary); flex-shrink: 0; }
-
-  .search-shell .query {
-    flex: 1; font-size: 15px; color: var(--text-primary);
-  }
-
-  .search-shell .query .caret {
-    display: inline-block; width: 2px; height: 1.1em;
-    background: var(--accent); margin-left: 2px;
-    vertical-align: text-bottom;
-    animation: blink 1.1s step-end infinite;
-  }
-
-  @keyframes blink { 50% { opacity: 0; } }
-
-  .search-shell .tag {
-    font-size: 11px; font-weight: 600;
-    color: var(--accent);
-    background: var(--accent-muted);
-    border-radius: 5px;
-    padding: 3px 10px;
-    font-family: var(--font-mono);
-  }
-
-  .result-row {
-    display: grid;
-    grid-template-columns: 56px 1fr;
-    gap: 16px;
-    align-items: start;
-    padding: 16px 0;
-    border-bottom: 1px solid var(--border-light);
-  }
-
-  .result-row:last-child { border-bottom: none; }
-
-  .result-score {
-    display: flex; flex-direction: column; align-items: center;
-    gap: 6px;
-  }
-
-  .score-ring {
-    width: 44px; height: 44px; border-radius: 50%;
-    background: conic-gradient(var(--accent) calc(var(--p) * 1%), var(--bg-deep) 0);
-    display: flex; align-items: center; justify-content: center;
-    position: relative;
-  }
-
-  .score-ring::before {
-    content: '';
-    position: absolute; inset: 4px;
-    border-radius: 50%;
-    background: var(--bg-raised);
-  }
-
-  .score-ring span {
-    position: relative;
-    font-size: 12px; font-weight: 600;
-    color: var(--accent);
-    font-family: var(--font-mono);
-  }
-
-  .result-body h3 {
-    font-family: var(--font-display);
-    font-size: 16px; font-weight: 500;
-    letter-spacing: -0.01em;
-    margin-bottom: 6px;
-    color: var(--text-primary);
-  }
-
-  .result-body h3 mark {
-    background: var(--accent-muted);
-    color: var(--accent);
-    font-weight: 600;
-    border-radius: 2px;
-    padding: 0 2px;
-  }
-
-  .result-body p {
-    font-size: 13px; line-height: 1.6;
-    color: var(--text-tertiary);
-  }
-
-  .result-meta {
-    display: flex; gap: 10px; margin-top: 8px;
-    font-size: 11.5px; color: var(--text-tertiary);
-    font-family: var(--font-mono);
-  }
-
-  /* ─── Philosophy ─── */
-  .philosophy { background: var(--bg-raised); border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); }
-
-  .philosophy-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
-    margin-top: 64px;
-    background: var(--border-light);
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow: var(--shadow-neu);
-  }
-
-  @media (max-width: 900px) {
-    .philosophy-grid { grid-template-columns: 1fr; }
-  }
-
-  .philosophy-card {
-    background: var(--bg-raised);
-    padding: 40px 32px;
-    display: flex; flex-direction: column; gap: 16px;
-    transition: background 0.3s;
-  }
-
-  .philosophy-card:hover { background: var(--surface); }
-
-  .philosophy-numeral {
-    font-family: var(--font-display);
-    font-size: 30px; font-weight: 500;
-    color: var(--accent);
-    opacity: 0.5;
-    line-height: 1;
-  }
-
-  .philosophy-card h3 {
-    font-family: var(--font-display);
-    font-size: 18px; font-weight: 500;
-    line-height: 1.35;
-    color: var(--text-primary);
-    letter-spacing: -0.01em;
-  }
-
-  .philosophy-card p {
-    font-size: 13.5px; line-height: 1.7;
-    color: var(--text-secondary);
-  }
-
-  /* ─── How it works ─── */
-  .how { background: var(--bg); }
-
-  .pipeline {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-top: 64px;
-  }
-
-  @media (max-width: 900px) {
-    .pipeline { grid-template-columns: repeat(2, 1fr); }
-  }
-
-  @media (max-width: 540px) {
-    .pipeline { grid-template-columns: 1fr; }
-  }
-
-  .pipeline-step {
-    background: var(--bg-raised);
-    border: 1px solid var(--border-light);
-    border-radius: 14px;
-    padding: 28px 24px;
-    box-shadow: var(--shadow-neu-sm);
-    transition: all 0.3s;
-    display: flex; flex-direction: column; gap: 12px;
-  }
-
-  .pipeline-step:hover {
-    border-color: var(--border);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-neu);
-  }
-
-  .pipeline-step .step-num {
-    font-family: var(--font-mono);
-    font-size: 12px; font-weight: 600;
-    color: var(--accent);
-    background: var(--accent-muted);
-    border-radius: 5px;
-    padding: 3px 9px;
-    align-self: flex-start;
-  }
-
-  .pipeline-step h3 {
-    font-family: var(--font-display);
-    font-size: 16px; font-weight: 500;
-    color: var(--text-primary);
-  }
-
-  .pipeline-step p {
-    font-size: 13px; line-height: 1.65;
-    color: var(--text-secondary);
-  }
-
-  /* ─── Features ─── */
-  .features-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin-top: 64px;
-  }
-
-  @media (max-width: 900px) {
-    .features-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-
-  @media (max-width: 540px) {
-    .features-grid { grid-template-columns: 1fr; }
-  }
-
-  .feature-card {
-    background: var(--bg-raised);
-    border: 1px solid var(--border-light);
-    border-radius: 14px;
-    padding: 36px 32px;
-    box-shadow: var(--shadow-neu-sm);
-    transition: all 0.3s;
-    display: flex; flex-direction: column; gap: 14px;
-  }
-
-  .feature-card:hover {
-    border-color: var(--border);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-neu);
-  }
-
-  .feature-icon {
-    width: 36px; height: 36px;
-    border-radius: 8px;
-    background: var(--bg-sunken);
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: var(--shadow-neu-inset);
-  }
-
-  .feature-icon svg {
-    width: 16px; height: 16px;
-    stroke: var(--text-secondary);
-    fill: none;
-    stroke-width: 1.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .feature-card h3 {
-    font-family: var(--font-display);
-    font-size: 17px; font-weight: 500;
-    letter-spacing: -0.01em;
-    color: var(--text-primary);
-  }
-
-  .feature-card p {
-    font-size: 13.5px; line-height: 1.7;
-    color: var(--text-secondary);
-  }
-
-  /* ─── Platforms / Releases ─── */
-  .releases { background: var(--bg-raised); border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); }
-
-  .platform-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    margin-top: 64px;
-  }
-
-  @media (max-width: 900px) {
-    .platform-grid { grid-template-columns: 1fr; }
-  }
-
-  .platform-card {
-    background: var(--bg);
-    border: 1px solid var(--border-light);
-    border-radius: 14px;
-    padding: 32px 28px;
-    box-shadow: var(--shadow-neu-sm);
-    transition: all 0.3s;
-    display: flex; flex-direction: column; gap: 14px;
-    cursor: default;
-  }
-
-  .platform-card:hover {
-    border-color: var(--border);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-neu);
-  }
-
-  .platform-card .os {
-    display: flex; align-items: center; gap: 12px;
-  }
-
-  .platform-card .os svg { color: var(--accent); }
-
-  .platform-card h3 {
-    font-family: var(--font-display);
-    font-size: 18px; font-weight: 500;
-    color: var(--text-primary);
-  }
-
-  .platform-card .arch {
-    font-size: 12px; color: var(--text-tertiary);
-    font-family: var(--font-mono);
-  }
-
-  .platform-card .dlink {
-    margin-top: 6px;
-    font-size: 13.5px; font-weight: 500;
-    color: var(--accent);
-    display: inline-flex; align-items: center; gap: 6px;
-  }
-
-  /* ─── CTA Banner ─── */
-  .cta-banner { text-align: center; padding: 120px 0; }
-
-  .cta-banner h2 {
-    font-family: var(--font-display);
-    font-size: 40px; font-weight: 500;
-    line-height: 1.2; letter-spacing: -0.03em;
-    margin-bottom: 16px;
-  }
-
-  .cta-banner h2 em {
-    font-style: normal;
-    background: linear-gradient(120deg, var(--accent), var(--accent-2));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  @media (max-width: 768px) {
-    .cta-banner h2 { font-size: 28px; }
-  }
-
-  .cta-banner p {
-    font-size: 17px; color: var(--text-secondary);
-    margin-bottom: 36px;
-    max-width: 480px;
-    margin-left: auto; margin-right: auto;
-    line-height: 1.7;
-  }
-
-  /* ─── Footer ─── */
-  footer {
-    border-top: 1px solid var(--border-light);
-    padding: 64px 0;
-    background: var(--bg-raised);
-  }
-
-  .footer-grid {
-    display: grid;
-    grid-template-columns: 2fr repeat(3, 1fr);
-    gap: 48px;
-  }
-
-  @media (max-width: 768px) {
-    .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
-    .footer-brand { grid-column: span 2; }
-  }
-
-  @media (max-width: 480px) {
-    .footer-grid { grid-template-columns: 1fr; }
-    .footer-brand { grid-column: span 1; }
-  }
-
-  .footer-brand-name {
-    font-family: var(--font-display);
-    font-size: 22px; font-weight: 700;
-    margin-bottom: 10px;
-    letter-spacing: -0.02em;
-  }
-
-  .footer-brand-name span { color: var(--accent); }
-
-  .footer-brand p {
-    font-size: 13.5px; color: var(--text-secondary);
-    line-height: 1.7;
-    max-width: 280px;
-  }
-
-  .footer-col h4 {
-    font-size: 11px; font-weight: 600;
-    letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--text-tertiary);
-    margin-bottom: 16px;
-  }
-
-  .footer-col a {
-    display: block;
-    font-size: 13.5px; color: var(--text-secondary);
-    padding: 5px 0;
-    transition: color 0.15s;
-  }
-
-  .footer-col a:hover { color: var(--text-primary); }
-
-  .footer-bottom {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-top: 48px;
-    padding-top: 24px;
-    border-top: 1px solid var(--border-light);
-    font-size: 12px; color: var(--text-tertiary);
-  }
-
-  @media (max-width: 540px) {
-    .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
-  }
-
-  .footer-bottom-links { display: flex; gap: 20px; }
-  .footer-bottom-links a { transition: color 0.15s; }
-  .footer-bottom-links a:hover { color: var(--text-primary); }
-
-  /* ─── Misc ─── */
-  .text-center { text-align: center; }
-  .mx-auto { margin-left: auto; margin-right: auto; }
-
-  .divider {
-    width: 40px; height: 1px;
-    background: var(--border);
-    margin: 0 auto;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TexTrace — Local Semantic Search</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Newsreader', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #020202; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    ::selection { background: rgba(56,189,248,0.3); color: #7dd3fc; }
+
+    @keyframes clip-reveal-up {
+      0% { clip-path: inset(100% 0 0 0); transform: translateY(40px); }
+      100% { clip-path: inset(0 0 0 0); transform: translateY(0); }
+    }
+    .clip-reveal { animation: clip-reveal-up 1.2s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .clip-delay-1 { animation-delay: 100ms; }
+    .clip-delay-2 { animation-delay: 200ms; }
+    .clip-delay-3 { animation-delay: 300ms; }
+    .clip-delay-5 { animation-delay: 500ms; }
+
+    .reveal-on-scroll {
+      opacity: 0; transform: translateY(30px);
+      transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal-on-scroll.visible { opacity: 1; transform: translateY(0); }
+
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    .float { animation: float 6s ease-in-out infinite; }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(16,185,129,0.15); }
+      50% { box-shadow: 0 0 40px rgba(16,185,129,0.3); }
+    }
+    .pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+
+    @keyframes beam {
+      0% { stroke-dashoffset: 1000; }
+      100% { stroke-dashoffset: 0; }
+    }
+
+    .gradient-text {
+      background: linear-gradient(180deg, #FFFFFF 0%, rgba(255,255,255,0.6) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .border-gradient {
+      border: 1px solid transparent;
+      background-clip: padding-box;
+      position: relative;
+    }
+    .border-gradient::before {
+      content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
+    }
+
+    .terminal-line { opacity: 0; animation: type-in 0.4s ease forwards; }
+    @keyframes type-in { to { opacity: 1; } }
+
+    .search-demo-input:focus { outline: none; box-shadow: 0 0 0 2px rgba(16,185,129,0.4); }
+
+    /* Mobile menu */
+    .mobile-menu { transform: translateY(-100%); transition: transform 0.4s cubic-bezier(0.16,1,0.3,1); }
+    .mobile-menu.open { transform: translateY(0); }
+  </style>
 </head>
-<body>
+<body class="bg-[#020202] text-white font-sans antialiased overflow-x-hidden">
 
-<!-- ─── Navigation ─── -->
-<nav>
-  <div class="nav-inner">
-    <a href="#" class="nav-logo">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><circle cx="11" cy="11" r="2.5"/></svg>
-      Text<span>Trace</span>
-    </a>
-    <div class="nav-links">
-      <a href="#how">How it works</a>
-      <a href="#philosophy">Principles</a>
-      <a href="#features">Features</a>
-      <a href="#download">Download</a>
-      <a href="{{ texttrace_download_url }}" class="nav-cta">Get TextTrace</a>
-    </div>
+  <!-- Background decorations -->
+  <div class="fixed inset-0 z-0 pointer-events-none">
+    <div class="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-emerald-500/[0.03] rounded-full blur-[100px]"></div>
+    <div class="absolute bottom-[-200px] right-[-200px] w-[600px] h-[600px] bg-sky-500/[0.02] rounded-full blur-[120px]"></div>
   </div>
-</nav>
 
-<!-- ─── Hero ─── -->
-<section class="hero">
-  <div class="container">
-    <div class="hero-badge">Local-First &middot; On-Device Embeddings</div>
-    <h1>Search your words<br>the way <em>you think</em></h1>
-    <p class="hero-tagline">TextTrace is a desktop semantic search app that runs a small embedding model on your machine, so you can find meaning — not just keywords — across your notes, docs, and files.</p>
-    <div class="hero-actions">
-      <a href="{{ texttrace_download_url }}" class="btn-primary">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Download for Desktop
+  <!-- Vertical grid lines -->
+  <div class="fixed inset-0 z-0 pointer-events-none max-w-7xl mx-auto flex justify-between px-4 md:px-12">
+    <div class="w-px h-full bg-white/[0.03]"></div>
+    <div class="w-px h-full bg-white/[0.03] hidden md:block"></div>
+    <div class="w-px h-full bg-white/[0.03] hidden md:block"></div>
+    <div class="w-px h-full bg-white/[0.03]"></div>
+  </div>
+
+  <!-- NAV -->
+  <nav class="fixed top-0 left-0 right-0 z-50 h-16 flex items-center px-6 backdrop-blur-xl bg-[#020202]/80 border-b border-white/[0.05]">
+    <div class="max-w-7xl w-full mx-auto flex items-center justify-between">
+      <a href="#" class="flex items-center gap-2.5 group">
+        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors duration-500">
+          <span class="iconify text-emerald-400 text-sm" data-icon="ph:tree-structure-fill"></span>
+        </div>
+        <span class="font-semibold text-white tracking-tight">TexTrace</span>
       </a>
-      <a href="{{ texttrace_github_url }}" class="btn-secondary">
-        View on GitHub
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-      </a>
-    </div>
 
-    <!-- Hero App Preview -->
-    <div class="app-preview">
-      <div class="app-preview-bar">
-        <div class="app-dot"></div>
-        <div class="app-dot"></div>
-        <div class="app-dot"></div>
-        <span class="app-preview-url">texttrace://search?index=local-notes</span>
+      <!-- Desktop nav -->
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#features" class="text-sm text-white/60 hover:text-white transition-colors duration-300">Features</a>
+        <a href="#how-it-works" class="text-sm text-white/60 hover:text-white transition-colors duration-300">How It Works</a>
+        <a href="#power-users" class="text-sm text-white/60 hover:text-white transition-colors duration-300">Advanced</a>
       </div>
-      <div class="app-preview-body">
-        <div class="app-sidebar">
-          <div class="app-sidebar-section">Indexes</div>
-          <div class="app-sidebar-item active">
-            <div class="app-sidebar-icon"></div>
-            Local Notes
-          </div>
-          <div class="app-sidebar-item">
-            <div class="app-sidebar-icon"></div>
-            Research PDFs
-          </div>
-          <div class="app-sidebar-item">
-            <div class="app-sidebar-icon"></div>
-            Code Snippets
-          </div>
-          <div class="app-sidebar-section">Model</div>
-          <div class="app-sidebar-item">
-            <div class="app-sidebar-icon"></div>
-            all-MiniLM-L6-v2
-          </div>
-          <div class="app-sidebar-item">
-            <div class="app-sidebar-icon"></div>
-            Device: CPU
-          </div>
-        </div>
-        <div class="app-content">
-          <div class="search-shell">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <span class="query">meetings where we decided to drop the cache<span class="caret"></span></span>
-            <span class="tag">semantic</span>
-          </div>
 
-          <div class="result-row">
-            <div class="result-score">
-              <div class="score-ring" style="--p:94;"><span>0.94</span></div>
-            </div>
-            <div class="result-body">
-              <h3>Retrospective notes — Q1 planning</h3>
-              <p>We agreed the in-memory <mark>cache</mark> added more complexity than value, and the team <mark>decided</mark> to remove it before the next release. Follow-up owned by platform.</p>
-              <div class="result-meta"><span>Local Notes</span><span>·</span><span>2 min ago</span></div>
-            </div>
-          </div>
-
-          <div class="result-row">
-            <div class="result-score">
-              <div class="score-ring" style="--p:88;"><span>0.88</span></div>
-            </div>
-            <div class="result-body">
-              <h3>Standup — March 12</h3>
-              <p>Short discussion on the tradeoffs of the <mark>cache</mark> layer; consensus to retire it. No objection raised in the <mark>meeting</mark>.</p>
-              <div class="result-meta"><span>Local Notes</span><span>·</span><span>Mar 12</span></div>
-            </div>
-          </div>
-
-          <div class="result-row">
-            <div class="result-score">
-              <div class="score-ring" style="--p:81;"><span>0.81</span></div>
-            </div>
-            <div class="result-body">
-              <h3>Design doc: caching strategy (draft)</h3>
-              <p>Earlier proposal to keep a read-through <mark>cache</mark>. Superseded by the later decision to drop it — useful only as historical context.</p>
-              <div class="result-meta"><span>Research PDFs</span><span>·</span><span>Jan 28</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── Principles ─── -->
-<section class="philosophy" id="philosophy">
-  <div class="container text-center">
-    <div class="section-label">Principles</div>
-    <h2 class="section-title mx-auto" style="max-width:620px;">Search that respects<br>where your data lives</h2>
-    <p class="section-subtitle mx-auto">TextTrace is built around a few firm beliefs about personal search and the machines it runs on.</p>
-
-    <div class="philosophy-grid">
-      <div class="philosophy-card">
-        <div class="philosophy-numeral">01</div>
-        <h3>Runs On Your Machine</h3>
-        <p>Embeddings are computed locally with a small model. Nothing leaves your device — no API calls, no cloud round-trips, no accounts.</p>
-      </div>
-      <div class="philosophy-card">
-        <div class="philosophy-numeral">02</div>
-        <h3>Meaning, Not Matching</h3>
-        <p>Vector search ranks by similarity of meaning. Ask in your own words and find the paragraph that says it differently.</p>
-      </div>
-      <div class="philosophy-card">
-        <div class="philosophy-numeral">03</div>
-        <h3>Portable Indexes</h3>
-        <p>Your index is a folder of plain vectors and metadata. Back it up, move it, inspect it — no proprietary lock-in.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── How it works ─── -->
-<section class="how" id="how">
-  <div class="container">
-    <div class="section-label">How it works</div>
-    <h2 class="section-title">From text to traceable meaning</h2>
-    <p class="section-subtitle">Four quiet steps, all of them offline.</p>
-
-    <div class="pipeline">
-      <div class="pipeline-step">
-        <span class="step-num">01</span>
-        <h3>Index</h3>
-        <p>Point TextTrace at a folder of notes, PDFs, or code. It reads them in the background and chunks them into passages.</p>
-      </div>
-      <div class="pipeline-step">
-        <span class="step-num">02</span>
-        <h3>Embed</h3>
-        <p>A small on-device model turns each passage into a vector. The work happens on your CPU — no network required.</p>
-      </div>
-      <div class="pipeline-step">
-        <span class="step-num">03</span>
-        <h3>Store</h3>
-        <p>Vectors and metadata land in a local, portable index you own. Re-index incrementally as files change.</p>
-      </div>
-      <div class="pipeline-step">
-        <span class="step-num">04</span>
-        <h3>Retrieve</h3>
-        <p>Type a question. TextTrace returns the closest passages with similarity scores, so you can trust the ranking.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── Features ─── -->
-<section id="features">
-  <div class="container">
-    <div class="section-label">Features</div>
-    <h2 class="section-title">What's under the hood</h2>
-    <p class="section-subtitle">Focused on the essentials of fast, private, semantic search.</p>
-
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </div>
-        <h3>Semantic Search</h3>
-        <p>Find passages by intent, not exact keywords. Relevance is scored by vector similarity, shown as a clear percentage.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        </div>
-        <h3>Local Embeddings</h3>
-        <p>A compact model runs entirely on-device. No API keys, no usage limits, no data sent anywhere.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
-        <h3>Private by Design</h3>
-        <p>Your files never leave the machine. Search history stays local and is cleared on demand.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-        </div>
-        <h3>Multiple Indexes</h3>
-        <p>Keep separate indexes for notes, research, and code. Switch contexts without mixing results.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        </div>
-        <h3>PDF &amp; Plain Text</h3>
-        <p>Index Markdown, plain text, and PDFs out of the box. More formats arrive as the app matures.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">
-          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        </div>
-        <h3>Portable Output</h3>
-        <p>Export results and indexes as standard files. Your data stays usable even if you stop using the app.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─── Platforms / Releases ─── -->
-<section class="releases" id="download">
-  <div class="container">
-    <div class="text-center">
-      <div class="section-label">Download</div>
-      <h2 class="section-title mx-auto" style="max-width:520px;">Pick your platform</h2>
-      <p class="section-subtitle mx-auto">TextTrace is a desktop app distributed through GitHub releases. Download the build for your OS and run it locally.</p>
-    </div>
-
-    <div class="platform-grid">
-      <div class="platform-card">
-        <div class="os">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          <h3>macOS</h3>
-        </div>
-        <div class="arch mono">Universal · Apple Silicon &amp; Intel</div>
-        <a href="{{ texttrace_download_url }}" class="dlink">
-          Download .dmg
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      <div class="hidden md:flex items-center gap-3">
+        <a href="#" class="text-sm text-white/60 hover:text-white transition-colors duration-300 px-3 py-2">Docs</a>
+        <a href="#download" class="text-sm font-medium bg-white text-black px-5 py-2 rounded-full hover:bg-emerald-50 transition-all duration-300 hover:shadow-[0_0_30px_-5px_#10b981]">
+          Download
         </a>
       </div>
-      <div class="platform-card">
-        <div class="os">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18v10H3z"/><path d="M7 20h10"/><path d="M12 15v5"/></svg>
-          <h3>Windows</h3>
-        </div>
-        <div class="arch mono">x64 · Windows 10 &amp; 11</div>
-        <a href="{{ texttrace_download_url }}" class="dlink">
-          Download .exe
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+
+      <!-- Mobile burger -->
+      <button id="menuBtn" class="md:hidden w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/5 transition-colors">
+        <span class="iconify text-xl" data-icon="ph:list-bold"></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile menu -->
+  <div id="mobileMenu" class="mobile-menu fixed inset-0 z-40 bg-[#020202]/98 backdrop-blur-xl pt-20 px-6">
+    <div class="flex flex-col gap-6 pt-8">
+      <a href="#features" class="text-2xl font-light text-white/80 hover:text-white transition-colors mobile-link">Features</a>
+      <a href="#how-it-works" class="text-2xl font-light text-white/80 hover:text-white transition-colors mobile-link">How It Works</a>
+      <a href="#power-users" class="text-2xl font-light text-white/80 hover:text-white transition-colors mobile-link">Advanced</a>
+      <a href="#" class="text-2xl font-light text-white/80 hover:text-white transition-colors">Docs</a>
+      <div class="pt-6 border-t border-white/10">
+        <a href="#download" class="inline-block text-sm font-medium bg-white text-black px-8 py-3 rounded-full">Download</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <section class="relative z-10 min-h-screen flex flex-col items-center justify-center pt-24 pb-20 px-6">
+    <div class="max-w-7xl mx-auto w-full text-center">
+
+      <!-- Badge -->
+      <div class="clip-reveal clip-delay-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/[0.03] mb-8">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" style="box-shadow: 0 0 10px rgba(16,185,129,0.5)"></span>
+        <span class="text-xs font-medium text-white/70 uppercase tracking-wide">100% Local · No Cloud · No Tracking</span>
+      </div>
+
+      <!-- Headline -->
+      <h1 class="clip-reveal clip-delay-2 font-serif font-light text-5xl md:text-7xl lg:text-8xl tracking-tighter leading-[1.05] mb-6">
+        <span class="gradient-text">Search your files</span><br>
+        <span class="gradient-text">with </span><span class="text-emerald-400 font-serif" style="text-shadow: 0 0 25px rgba(16,185,129,0.4)">meaning</span>
+      </h1>
+
+      <!-- Sub -->
+      <p class="clip-reveal clip-delay-3 text-base md:text-xl text-white/50 max-w-2xl mx-auto mb-10 leading-relaxed font-light">
+        A local-first semantic search app powered by an on-device embedding model. Your text, your searches — your device. Better than your OS default search.
+      </p>
+
+      <!-- CTA row -->
+      <div class="clip-reveal clip-delay-5 flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+        <a href="#download" class="group inline-flex items-center gap-2 bg-white text-black font-medium text-sm px-8 py-3.5 rounded-full hover:bg-emerald-50 transition-all duration-300 hover:shadow-[0_0_40px_-5px_#10b981]">
+          <span class="iconify text-base" data-icon="ph:download-simple-bold"></span>
+          Download for Free
+          <span class="iconify text-xs group-hover:translate-x-0.5 transition-transform" data-icon="ph:arrow-right-bold"></span>
+        </a>
+        <a href="#how-it-works" class="group inline-flex items-center gap-2 text-sm text-white/60 hover:text-white px-6 py-3.5 rounded-full border border-white/10 hover:border-white/20 transition-all duration-300">
+          <span class="iconify text-base" data-icon="ph:play-circle"></span>
+          See how it works
         </a>
       </div>
-      <div class="platform-card">
-        <div class="os">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M3 12h18"/></svg>
-          <h3>Linux</h3>
+
+      <!-- Hero visual: Search demo -->
+      <div class="clip-reveal clip-delay-5 max-w-2xl mx-auto">
+        <div class="border-gradient rounded-2xl bg-white/[0.02] backdrop-blur-md p-1 pulse-glow">
+          <div class="bg-[#0a0a0a] rounded-xl overflow-hidden">
+            <!-- Title bar -->
+            <div class="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
+              <div class="flex gap-1.5">
+                <div class="w-3 h-3 rounded-full bg-white/10"></div>
+                <div class="w-3 h-3 rounded-full bg-white/10"></div>
+                <div class="w-3 h-3 rounded-full bg-white/10"></div>
+              </div>
+              <div class="flex-1 text-center">
+                <span class="text-[11px] text-white/30 font-mono">TexTrace — Search</span>
+              </div>
+            </div>
+            <!-- Search bar -->
+            <div class="p-4">
+              <div class="flex items-center gap-3 bg-white/[0.04] rounded-xl px-4 py-3 border border-white/[0.06]">
+                <span class="iconify text-emerald-400/60 text-lg" data-icon="ph:magnifying-glass"></span>
+                <span class="text-sm text-white/40 font-light">the meeting notes about Q4 revenue projections...</span>
+                <span class="ml-auto text-[10px] text-white/20 border border-white/10 rounded px-1.5 py-0.5 font-mono">⌘K</span>
+              </div>
+            </div>
+            <!-- Results -->
+            <div class="px-4 pb-4 space-y-1">
+              <div class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-emerald-500/[0.06] border border-emerald-500/10">
+                <span class="iconify text-emerald-400 text-sm" data-icon="ph:file-text"></span>
+                <div class="text-left flex-1 min-w-0">
+                  <p class="text-xs text-white/80 truncate">Q4-2024-revenue-projections.md</p>
+                  <p class="text-[10px] text-white/30 truncate">...meeting notes from Nov 12 discussing Q4 targets...</p>
+                </div>
+                <span class="text-[10px] text-emerald-400/60 font-mono shrink-0">98%</span>
+              </div>
+              <div class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.02] transition-colors">
+                <span class="iconify text-white/20 text-sm" data-icon="ph:file-text"></span>
+                <div class="text-left flex-1 min-w-0">
+                  <p class="text-xs text-white/60 truncate">board-meeting-summary.txt</p>
+                  <p class="text-[10px] text-white/25 truncate">...revenue projections were revised upward...</p>
+                </div>
+                <span class="text-[10px] text-white/20 font-mono shrink-0">82%</span>
+              </div>
+              <div class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.02] transition-colors">
+                <span class="iconify text-white/20 text-sm" data-icon="ph:file-text"></span>
+                <div class="text-left flex-1 min-w-0">
+                  <p class="text-xs text-white/60 truncate">finance-notes-q4.docx</p>
+                  <p class="text-[10px] text-white/25 truncate">...projected revenue based on current pipeline...</p>
+                </div>
+                <span class="text-[10px] text-white/20 font-mono shrink-0">74%</span>
+              </div>
+            </div>
+            <!-- Status bar -->
+            <div class="flex items-center justify-between px-4 py-2 border-t border-white/[0.06] bg-white/[0.01]">
+              <div class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span class="text-[10px] text-white/30 font-mono">Model: all-MiniLM-L6-v2 · 3 dirs indexed</span>
+              </div>
+              <span class="text-[10px] text-white/20 font-mono">0.042s</span>
+            </div>
+          </div>
         </div>
-        <div class="arch mono">x64 · AppImage &amp; .deb</div>
-        <a href="{{ texttrace_download_url }}" class="dlink">
-          Download AppImage
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-        </a>
       </div>
-    </div>
-  </div>
-</section>
 
-<!-- ─── CTA Banner ─── -->
-<section class="cta-banner">
-  <div class="container">
-    <div class="divider" style="margin-bottom:48px;"></div>
-    <h2>Find the sentence you<br><em>half-remember</em></h2>
-    <p>TextTrace is free and open source. Grab a build, point it at your notes, and search by meaning — entirely on your own machine.</p>
-    <div class="hero-actions">
-      <a href="{{ texttrace_github_url }}" class="btn-primary">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
-        View on GitHub
-      </a>
-      <a href="{{ texttrace_github_url }}" class="btn-secondary">
-        Read the Docs
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-      </a>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ─── Footer ─── -->
-<footer>
-  <div class="container">
-    <div class="footer-grid">
-      <div class="footer-brand">
-        <div class="footer-brand-name">Text<span>Trace</span></div>
-        <p>Local-first semantic search for your notes, documents, and code. Built to keep your data on your machine.</p>
-      </div>
-      <div class="footer-col">
-        <h4>Product</h4>
-        <a href="#features">Features</a>
-        <a href="#how">How it works</a>
-        <a href="#download">Download</a>
-        <a href="#">Changelog</a>
-      </div>
-      <div class="footer-col">
-        <h4>Resources</h4>
-        <a href="#">Documentation</a>
-        <a href="#">Model Notes</a>
-        <a href="#">Build from Source</a>
-        <a href="#">License</a>
-      </div>
-      <div class="footer-col">
-        <h4>Community</h4>
-        <a href="{{ texttrace_github_url }}">GitHub</a>
-        <a href="{{ texttrace_github_url }}">Issues</a>
-        <a href="{{ texttrace_github_url }}">Discussions</a>
-        <a href="{{ texttrace_github_url }}">Contributing</a>
+  <!-- LOGOS / TRUST BAR -->
+  <section class="relative z-10 py-16 px-6 border-y border-white/[0.05]">
+    <div class="max-w-7xl mx-auto text-center">
+      <p class="text-xs text-white/30 uppercase tracking-widest mb-8">Supports all common file formats</p>
+      <div class="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
+        <span class="text-sm text-white/20 font-mono hover:text-white/40 transition-colors cursor-default">.txt</span>
+        <span class="text-sm text-white/20 font-mono hover:text-white/40 transition-colors cursor-default">.md</span>
+        <span class="text-sm text-white/20 font-mono hover:text-white/40 transition-colors cursor-default">.pdf</span>
+        <span class="text-sm text-white/20 font-mono hover:text-white/40 transition-colors cursor-default">.docx</span>
+        <span class="text-sm text-white/20 font-mono hover:text-white/40 transition-colors cursor-default">.json</span>
+        <span class="text-sm text-white/20 font-mono hover:text-white/40 transition-colors cursor-default">.csv</span>
+        <span class="text-sm text-white/20 font-mono hover:text-white/40 transition-colors cursor-default">.py</span>
+        <span class="text-sm text-white/20 font-mono hover:text-white/40 transition-colors cursor-default">.js</span>
+        <span class="text-sm text-white/20 font-mono hover:text-white/40 transition-colors cursor-default">.rs</span>
+        <span class="text-sm text-white/20 font-mono hover:text-white/40 transition-colors cursor-default">+more</span>
       </div>
     </div>
-    <div class="footer-bottom">
-      <span>&copy; 2026 TextTrace Contributors. Open source.</span>
-      <div class="footer-bottom-links">
-        <a href="#">Privacy</a>
-        <a href="#">Terms</a>
-        <a href="#">Status</a>
-      </div>
-    </div>
-  </div>
-</footer>
+  </section>
 
+  <!-- FEATURES -->
+  <section id="features" class="relative z-10 py-32 px-6">
+    <div class="max-w-7xl mx-auto">
+
+      <div class="text-center mb-20 reveal-on-scroll">
+        <p class="text-xs font-medium text-emerald-400 uppercase tracking-widest mb-4">Features</p>
+        <h2 class="font-serif font-light text-3xl md:text-5xl tracking-tight gradient-text mb-4">Everything stays on your machine</h2>
+        <p class="text-white/40 text-base md:text-lg max-w-xl mx-auto font-light">No data leaves your device. No API calls. No accounts. Just fast, private, semantic search.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Feature 1 -->
+        <div class="reveal-on-scroll group border-gradient rounded-3xl bg-white/[0.02] p-8 hover:bg-white/[0.04] transition-all duration-500">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-500">
+            <span class="iconify text-emerald-400 text-xl" data-icon="ph:cpu-fill"></span>
+          </div>
+          <h3 class="text-lg font-medium mb-3">On-Device Embeddings</h3>
+          <p class="text-sm text-white/40 leading-relaxed font-light">Runs a real embedding model locally using your CPU/GPU. No server round-trips, no latency from the cloud.</p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="reveal-on-scroll group border-gradient rounded-3xl bg-white/[0.02] p-8 hover:bg-white/[0.04] transition-all duration-500" style="transition-delay: 100ms;">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-500">
+            <span class="iconify text-emerald-400 text-xl" data-icon="ph:shield-check-fill"></span>
+          </div>
+          <h3 class="text-lg font-medium mb-3">Zero Data Leakage</h3>
+          <p class="text-sm text-white/40 leading-relaxed font-light">Your files are never uploaded, logged, or shared. TexTrace has no network access — by design.</p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="reveal-on-scroll group border-gradient rounded-3xl bg-white/[0.02] p-8 hover:bg-white/[0.04] transition-all duration-500" style="transition-delay: 200ms;">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-500">
+            <span class="iconify text-emerald-400 text-xl" data-icon="ph:brain-fill"></span>
+          </div>
+          <h3 class="text-lg font-medium mb-3">Semantic Understanding</h3>
+          <p class="text-sm text-white/40 leading-relaxed font-light">Search by meaning, not just keywords. "meeting about budget cuts" finds the right file even if those exact words aren't in it.</p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="reveal-on-scroll group border-gradient rounded-3xl bg-white/[0.02] p-8 hover:bg-white/[0.04] transition-all duration-500">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-500">
+            <span class="iconify text-emerald-400 text-xl" data-icon="ph:folder-open-fill"></span>
+          </div>
+          <h3 class="text-lg font-medium mb-3">Set & Forget Directories</h3>
+          <p class="text-sm text-white/40 leading-relaxed font-light">Point TexTrace at your folders once. It watches for changes and keeps the index updated automatically in the background.</p>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="reveal-on-scroll group border-gradient rounded-3xl bg-white/[0.02] p-8 hover:bg-white/[0.04] transition-all duration-500" style="transition-delay: 100ms;">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-500">
+            <span class="iconify text-emerald-400 text-xl" data-icon="ph:lightning-fill"></span>
+          </div>
+          <h3 class="text-lg font-medium mb-3">Instant Results</h3>
+          <p class="text-sm text-white/40 leading-relaxed font-light">Vectorized search returns results in milliseconds, even across thousands of files. Sub-50ms typical query time.</p>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="reveal-on-scroll group border-gradient rounded-3xl bg-white/[0.02] p-8 hover:bg-white/[0.04] transition-all duration-500" style="transition-delay: 200ms;">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-500">
+            <span class="iconify text-emerald-400 text-xl" data-icon="ph:command-fill"></span>
+          </div>
+          <h3 class="text-lg font-medium mb-3">Global Hotkey</h3>
+          <p class="text-sm text-white/40 leading-relaxed font-light">Summon TexTrace from anywhere with ⌘K. Search, hit enter, and you're in the file. Feels like it's built into your OS.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how-it-works" class="relative z-10 py-32 px-6">
+    <div class="max-w-7xl mx-auto">
+
+      <div class="text-center mb-20 reveal-on-scroll">
+        <p class="text-xs font-medium text-emerald-400 uppercase tracking-widest mb-4">How It Works</p>
+        <h2 class="font-serif font-light text-3xl md:text-5xl tracking-tight gradient-text mb-4">Three steps. That's it.</h2>
+        <p class="text-white/40 text-base md:text-lg max-w-xl mx-auto font-light">No configuration files. No API keys. No cloud accounts.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6">
+        <!-- Step 1 -->
+        <div class="reveal-on-scroll relative">
+          <div class="border-gradient rounded-3xl bg-white/[0.02] p-8 h-full">
+            <div class="text-6xl font-serif font-light text-white/[0.06] mb-4">01</div>
+            <div class="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center mb-5">
+              <span class="iconify text-white/60" data-icon="ph:download-simple-bold"></span>
+            </div>
+            <h3 class="text-lg font-medium mb-2">Download & Install</h3>
+            <p class="text-sm text-white/40 leading-relaxed font-light">One binary, no dependencies. Available for macOS, Windows, and Linux. Drag to Applications, done.</p>
+          </div>
+          <!-- Connector -->
+          <div class="hidden md:block absolute top-1/2 -right-3 w-6 text-white/[0.08]">
+            <span class="iconify text-2xl" data-icon="ph:arrow-right-bold"></span>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="reveal-on-scroll relative" style="transition-delay: 150ms;">
+          <div class="border-gradient rounded-3xl bg-white/[0.02] p-8 h-full">
+            <div class="text-6xl font-serif font-light text-white/[0.06] mb-4">02</div>
+            <div class="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center mb-5">
+              <span class="iconify text-white/60" data-icon="ph:folders-bold"></span>
+            </div>
+            <h3 class="text-lg font-medium mb-2">Add Directories</h3>
+            <p class="text-sm text-white/40 leading-relaxed font-light">Select the folders you want indexed — documents, code, notes, whatever. TexTrace builds the vector index locally.</p>
+          </div>
+          <div class="hidden md:block absolute top-1/2 -right-3 w-6 text-white/[0.08]">
+            <span class="iconify text-2xl" data-icon="ph:arrow-right-bold"></span>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="reveal-on-scroll" style="transition-delay: 300ms;">
+          <div class="border-gradient rounded-3xl bg-emerald-500/[0.04] border-emerald-500/10 p-8 h-full" style="border: 1px solid rgba(16,185,129,0.15);">
+            <div class="text-6xl font-serif font-light text-emerald-500/[0.12] mb-4">03</div>
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-5">
+              <span class="iconify text-emerald-400" data-icon="ph:magnifying-glass-bold"></span>
+            </div>
+            <h3 class="text-lg font-medium mb-2">Search Naturally</h3>
+            <p class="text-sm text-white/40 leading-relaxed font-light">Type what you mean, not what you remember. Hit ⌘K anytime — results appear before you finish typing.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPARISON -->
+  <section class="relative z-10 py-32 px-6 border-y border-white/[0.05]">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-16 reveal-on-scroll">
+        <p class="text-xs font-medium text-emerald-400 uppercase tracking-widest mb-4">Why TexTrace</p>
+        <h2 class="font-serif font-light text-3xl md:text-5xl tracking-tight gradient-text">Better than what you're using</h2>
+      </div>
+
+      <div class="reveal-on-scroll border-gradient rounded-2xl bg-white/[0.02] overflow-hidden">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-white/[0.06]">
+              <th class="text-left text-xs text-white/30 uppercase tracking-wider font-medium px-6 py-4">Feature</th>
+              <th class="text-center text-xs text-white/30 uppercase tracking-wider font-medium px-4 py-4">OS Search</th>
+              <th class="text-center text-xs text-emerald-400 uppercase tracking-wider font-medium px-4 py-4">TexTrace</th>
+            </tr>
+          </thead>
+          <tbody class="text-white/50">
+            <tr class="border-b border-white/[0.04]">
+              <td class="px-6 py-3.5 text-white/60">Semantic search</td>
+              <td class="px-4 py-3.5 text-center"><span class="iconify text-white/15 text-lg inline-block" data-icon="ph:x-bold"></span></td>
+              <td class="px-4 py-3.5 text-center"><span class="iconify text-emerald-400 text-lg inline-block" data-icon="ph:check-bold"></span></td>
+            </tr>
+            <tr class="border-b border-white/[0.04]">
+              <td class="px-6 py-3.5 text-white/60">Works offline</td>
+              <td class="px-4 py-3.5 text-center"><span class="iconify text-emerald-400/40 text-lg inline-block" data-icon="ph:check-bold"></span></td>
+              <td class="px-4 py-3.5 text-center"><span class="iconify text-emerald-400 text-lg inline-block" data-icon="ph:check-bold"></span></td>
+            </tr>
+            <tr class="border-b border-white/[0.04]">
+              <td class="px-6 py-3.5 text-white/60">No data sent to cloud</td>
+              <td class="px-4 py-3.5 text-center"><span class="iconify text-white/15 text-lg inline-block" data-icon="ph:x-bold"></span></td>
+              <td class="px-4 py-3.5 text-center"><span class="iconify text-emerald-400 text-lg inline-block" data-icon="ph:check-bold"></span></td>
+            </tr>
+            <tr class="border-b border-white/[0.04]">
+              <td class="px-6 py-3.5 text-white/60">Understands context & meaning</td>
+              <td class="px-4 py-3.5 text-center"><span class="iconify text-white/15 text-lg inline-block" data-icon="ph:x-bold"></span></td>
+              <td class="px-4 py-3.5 text-center"><span class="iconify text-emerald-400 text-lg inline-block" data-icon="ph:check-bold"></span></td>
+            </tr>
+            <tr class="border-b border-white/[0.04]">
+              <td class="px-6 py-3.5 text-white/60">Search inside code & documents</td>
+              <td class="px-4 py-3.5 text-center"><span class="iconify text-white/15 text-lg inline-block" data-icon="ph:x-bold"></span></td>
+              <td class="px-4 py-3.5 text-center"><span class="iconify text-emerald-400 text-lg inline-block" data-icon="ph:check-bold"></span></td>
+            </tr>
+            <tr>
+              <td class="px-6 py-3.5 text-white/60">Customizable models</td>
+              <td class="px-4 py-3.5 text-center"><span class="iconify text-white/15 text-lg inline-block" data-icon="ph:x-bold"></span></td>
+              <td class="px-4 py-3.5 text-center"><span class="iconify text-emerald-400 text-lg inline-block" data-icon="ph:check-bold"></span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- POWER USERS -->
+  <section id="power-users" class="relative z-10 py-32 px-6">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+
+        <div class="reveal-on-scroll">
+          <p class="text-xs font-medium text-emerald-400 uppercase tracking-widest mb-4">For Power Users</p>
+          <h2 class="font-serif font-light text-3xl md:text-5xl tracking-tight gradient-text mb-6">Tune it your way</h2>
+          <p class="text-white/40 text-base md:text-lg leading-relaxed font-light mb-8">
+            Don't like the default model? Swap it out. Want to adjust chunk size, overlap, or similarity thresholds? Go ahead. TexTrace gives you full control over the embedding pipeline — no locked-in defaults.
+          </p>
+          <ul class="space-y-4">
+            <li class="flex items-start gap-3">
+              <span class="iconify text-emerald-400 text-lg mt-0.5 shrink-0" data-icon="ph:check-circle-fill"></span>
+              <span class="text-sm text-white/60 font-light">Swap embedding models (ONNX, GGUF, custom-trained)</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="iconify text-emerald-400 text-lg mt-0.5 shrink-0" data-icon="ph:check-circle-fill"></span>
+              <span class="text-sm text-white/60 font-light">Adjust chunk size, overlap, and splitting strategy</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="iconify text-emerald-400 text-lg mt-0.5 shrink-0" data-icon="ph:check-circle-fill"></span>
+              <span class="text-sm text-white/60 font-light">Configure similarity thresholds and result count</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="iconify text-emerald-400 text-lg mt-0.5 shrink-0" data-icon="ph:check-circle-fill"></span>
+              <span class="text-sm text-white/60 font-light">Export and import vector indices for backup</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="iconify text-emerald-400 text-lg mt-0.5 shrink-0" data-icon="ph:check-circle-fill"></span>
+              <span class="text-sm text-white/60 font-light">CLI interface for scripting and automation</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Code/config panel -->
+        <div class="reveal-on-scroll" style="transition-delay: 200ms;">
+          <div class="border-gradient rounded-2xl bg-white/[0.02] overflow-hidden">
+            <div class="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
+              <div class="flex gap-1.5">
+                <div class="w-3 h-3 rounded-full bg-white/10"></div>
+                <div class="w-3 h-3 rounded-full bg-white/10"></div>
+                <div class="w-3 h-3 rounded-full bg-white/10"></div>
+              </div>
+              <span class="text-[11px] text-white/30 font-mono ml-2">textrace.config.toml</span>
+            </div>
+            <div class="p-5 font-mono text-[13px] leading-6 overflow-x-auto">
+              <div><span class="text-white/20"># Embedding model configuration</span></div>
+              <div><span class="text-emerald-400">[model]</span></div>
+              <div><span class="text-white/50">name</span> <span class="text-white/20">=</span> <span class="text-sky-300">"all-MiniLM-L6-v2"</span></div>
+              <div><span class="text-white/50">backend</span> <span class="text-white/20">=</span> <span class="text-sky-300">"onnx"</span></div>
+              <div><span class="text-white/50">dimensions</span> <span class="text-white/20">=</span> <span class="text-amber-300">384</span></div>
+              <div>&nbsp;</div>
+              <div><span class="text-emerald-400">[indexing]</span></div>
+              <div><span class="text-white/50">chunk_size</span> <span class="text-white/20">=</span> <span class="text-amber-300">512</span></div>
+              <div><span class="text-white/50">chunk_overlap</span> <span class="text-white/20">=</span> <span class="text-amber-300">64</span></div>
+              <div><span class="text-white/50">splitter</span> <span class="text-white/20">=</span> <span class="text-sky-300">"recursive_text"</span></div>
+              <div>&nbsp;</div>
+              <div><span class="text-emerald-400">[search]</span></div>
+              <div><span class="text-white/50">top_k</span> <span class="text-white/20">=</span> <span class="text-amber-300">10</span></div>
+              <div><span class="text-white/50">similarity_threshold</span> <span class="text-white/20">=</span> <span class="text-amber-300">0.65</span></div>
+              <div><span class="text-white/50">rerank</span> <span class="text-white/20">=</span> <span class="text-sky-300">true</span></div>
+              <div>&nbsp;</div>
+              <div><span class="text-emerald-400">[directories]</span></div>
+              <div><span class="text-white/50">paths</span> <span class="text-white/20">=</span> <span class="text-white/20">[</span></div>
+              <div>&nbsp;&nbsp;<span class="text-sky-300">"~/Documents"</span><span class="text-white/20">,</span></div>
+              <div>&nbsp;&nbsp;<span class="text-sky-300">"~/Projects"</span><span class="text-white/20">,</span></div>
+              <div>&nbsp;&nbsp;<span class="text-sky-300">"~/Notes"</span></div>
+              <div><span class="text-white/20">]</span></div>
+              <div><span class="text-white/50">watch</span> <span class="text-white/20">=</span> <span class="text-sky-300">true</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIAL / SOCIAL PROOF -->
+  <section class="relative z-10 py-24 px-6 border-y border-white/[0.05]">
+    <div class="max-w-4xl mx-auto text-center reveal-on-scroll">
+      <span class="iconify text-3xl text-white/10 mb-6 inline-block" data-icon="ph:quotes-fill"></span>
+      <blockquote class="font-serif font-light text-2xl md:text-3xl text-white/80 leading-snug tracking-tight mb-8">
+        I pointed it at my entire Obsidian vault and it finds things I'd never locate with Cmd+F. It's like having a librarian who actually read everything.
+      </blockquote>
+      <div class="flex items-center justify-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+          <span class="text-sm font-medium text-white/60">JK</span>
+        </div>
+        <div class="text-left">
+          <p class="text-sm text-white/60">James K.</p>
+          <p class="text-xs text-white/30">Software Engineer</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA / DOWNLOAD -->
+  <section id="download" class="relative z-10 py-32 px-6">
+    <div class="max-w-7xl mx-auto">
+      <div class="reveal-on-scroll border-gradient rounded-3xl bg-white/[0.02] text-center py-20 px-6 md:px-16 relative overflow-hidden">
+        <!-- Glow -->
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-emerald-500/[0.06] rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div class="relative z-10">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/[0.05] mb-6">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" style="box-shadow: 0 0 10px rgba(16,185,129,0.5)"></span>
+            <span class="text-[11px] text-emerald-400/80 font-medium uppercase tracking-wider">Free & Open Source</span>
+          </div>
+
+          <h2 class="font-serif font-light text-3xl md:text-5xl lg:text-6xl tracking-tight gradient-text mb-6">
+            Ready to find<br>what you're looking for?
+          </h2>
+          <p class="text-white/40 text-base md:text-lg max-w-lg mx-auto font-light mb-10">
+            Download TexTrace and set it up in under a minute. No account needed, no credit card, no nonsense.
+          </p>
+
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+            <button class="group inline-flex items-center gap-2.5 bg-white text-black font-medium text-sm px-8 py-4 rounded-full hover:bg-emerald-50 transition-all duration-300 hover:shadow-[0_0_50px_-5px_#10b981]">
+              <span class="iconify text-lg" data-icon="ph:apple-logo-fill"></span>
+              Download for macOS
+              <span class="iconify text-xs opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" data-icon="ph:arrow-right-bold"></span>
+            </button>
+            <button class="group inline-flex items-center gap-2.5 text-sm text-white/60 hover:text-white px-8 py-4 rounded-full border border-white/10 hover:border-white/20 transition-all duration-300">
+              <span class="iconify text-lg" data-icon="ph:windows-logo-fill"></span>
+              Windows
+            </button>
+            <button class="group inline-flex items-center gap-2.5 text-sm text-white/60 hover:text-white px-8 py-4 rounded-full border border-white/10 hover:border-white/20 transition-all duration-300">
+              <span class="iconify text-lg" data-icon="ph:linux-logo-fill"></span>
+              Linux
+            </button>
+          </div>
+
+          <p class="text-xs text-white/20 font-mono">v0.8.2 · 42MB · Universal Binary · MIT License</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="relative z-10 border-t border-white/[0.05] py-16 px-6">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+        <!-- Brand -->
+        <div class="md:col-span-1">
+          <a href="#" class="flex items-center gap-2.5 mb-4">
+            <div class="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+              <span class="iconify text-emerald-400 text-xs" data-icon="ph:tree-structure-fill"></span>
+            </div>
+            <span class="font-semibold text-white tracking-tight text-sm">TexTrace</span>
+          </a>
+          <p class="text-xs text-white/30 leading-relaxed font-light">Local-first semantic search. Your data never leaves your device.</p>
+        </div>
+
+        <!-- Product -->
+        <div>
+          <h4 class="text-xs font-medium text-white/50 uppercase tracking-wider mb-4">Product</h4>
+          <ul class="space-y-3">
+            <li><a href="#features" class="text-sm text-white/30 hover:text-white/70 transition-colors">Features</a></li>
+            <li><a href="#download" class="text-sm text-white/30 hover:text-white/70 transition-colors">Download</a></li>
+            <li><a href="#" class="text-sm text-white/30 hover:text-white/70 transition-colors">Changelog</a></li>
+            <li><a href="#" class="text-sm text-white/30 hover:text-white/70 transition-colors">Roadmap</a></li>
+          </ul>
+        </div>
+
+        <!-- Resources -->
+        <div>
+          <h4 class="text-xs font-medium text-white/50 uppercase tracking-wider mb-4">Resources</h4>
+          <ul class="space-y-3">
+            <li><a href="#" class="text-sm text-white/30 hover:text-white/70 transition-colors">Documentation</a></li>
+            <li><a href="#" class="text-sm text-white/30 hover:text-white/70 transition-colors">API Reference</a></li>
+            <li><a href="#" class="text-sm text-white/30 hover:text-white/70 transition-colors">Model Guide</a></li>
+            <li><a href="#" class="text-sm text-white/30 hover:text-white/70 transition-colors">FAQ</a></li>
+          </ul>
+        </div>
+
+        <!-- Community -->
+        <div>
+          <h4 class="text-xs font-medium text-white/50 uppercase tracking-wider mb-4">Community</h4>
+          <ul class="space-y-3">
+            <li><a href="#" class="text-sm text-white/30 hover:text-white/70 transition-colors flex items-center gap-2"><span class="iconify text-base" data-icon="mdi:github"></span>GitHub</a></li>
+            <li><a href="#" class="text-sm text-white/30 hover:text-white/70 transition-colors flex items-center gap-2"><span class="iconify text-base" data-icon="mdi:discord"></span>Discord</a></li>
+            <li><a href="#" class="text-sm text-white/30 hover:text-white/70 transition-colors flex items-center gap-2"><span class="iconify text-base" data-icon="mdi:twitter"></span>Twitter</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-white/[0.05]">
+        <p class="text-xs text-white/20 font-light">© 2025 TexTrace. MIT Licensed.</p>
+        <p class="text-xs text-white/20 font-light mt-2 md:mt-0">Built with care for people who care about their data.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+    document.querySelectorAll('.reveal-on-scroll').forEach(el => observer.observe(el));
+
+    // Mobile menu
+    const menuBtn = document.getElementById('menuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    let menuOpen = false;
+
+    menuBtn.addEventListener('click', () => {
+      menuOpen = !menuOpen;
+      mobileMenu.classList.toggle('open', menuOpen);
+      document.body.style.overflow = menuOpen ? 'hidden' : '';
+    });
+
+    document.querySelectorAll('.mobile-link').forEach(link => {
+      link.addEventListener('click', () => {
+        menuOpen = false;
+        mobileMenu.classList.remove('open');
+        document.body.style.overflow = '';
+      });
+    });
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // Nav background on scroll
+    const nav = document.querySelector('nav');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 50) {
+        nav.style.borderBottomColor = 'rgba(255,255,255,0.08)';
+      } else {
+        nav.style.borderBottomColor = 'rgba(255,255,255,0.05)';
+      }
+    });
+  </script>
 </body>
 </html>
