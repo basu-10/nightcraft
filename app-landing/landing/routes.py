@@ -357,19 +357,6 @@ def fossil_library():
         posts=_FOSSIL_POSTS,
         user=fossil_user,
         fossil_url=current_app.config["FOSSIL_URL"],
-        fossil_github_url=current_app.config["FOSSIL_GITHUB_URL"],
-        fossil_download_url=current_app.config["FOSSIL_DOWNLOAD_URL"],
-    )
-
-
-@main_bp.get("/app")
-def fossil_app():
-    fossil_user = session.get("fossil_user")
-    if not fossil_user:
-        return redirect(current_app.config["FOSSIL_URL"])
-    return render_template(
-        "fossil_dashboard.html",
-        user=fossil_user,
     )
 
 

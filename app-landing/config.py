@@ -50,8 +50,6 @@ class Config:
     SCRAPBOOK_URL: str = os.environ.get("LANDING_SCRAPBOOK_URL", "/scrapbook")
     MIOBOOK_URL: str = os.environ.get("LANDING_MIOBOOK_URL", "/miobook")
     FOSSIL_URL: str = os.environ.get("LANDING_FOSSIL_URL", "/fossil")
-    FOSSIL_GITHUB_URL: str = os.environ.get("LANDING_FOSSIL_GITHUB_URL", "")
-    FOSSIL_DOWNLOAD_URL: str = os.environ.get("LANDING_FOSSIL_DOWNLOAD_URL", "")
 
 
 class DevelopmentConfig(Config):

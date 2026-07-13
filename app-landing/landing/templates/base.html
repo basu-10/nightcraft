@@ -12,26 +12,30 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body class="landing-shell">
-    <nav class="alfred-navbar" aria-label="Main navigation">
-        <div class="alfred-nav-inner">
-            <a href="/" class="alfred-logo">Alfred</a>
-            <div class="alfred-nav-links">
-                <a href="#features">Features</a>
-                <a href="#use-cases">Use Cases</a>
-                <a href="#pricing">Pricing</a>
-                <a href="#privacy">Privacy</a>
-                <a href="#docs">Docs</a>
-            </div>
-            <div class="alfred-nav-actions">
-                <a href="{{ auth_url }}" class="alfred-nav-link">Log in</a>
-                <a href="{{ register_url }}" class="alfred-nav-cta">Download Alfred</a>
-            </div>
-        </div>
-    </nav>
-
     <main class="landing-page">
+        <header class="topbar">
+            <nav class="top-actions" aria-label="Primary actions">
+                <button class="icon-button" type="button" aria-label="Theme settings" id="theme-toggle">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.8"></circle>
+                        <path d="M12 3V5.5M12 18.5V21M3 12H5.5M18.5 12H21M5.7 5.7L7.4 7.4M16.6 16.6L18.3 18.3M16.6 7.4L18.3 5.7M5.7 18.3L7.4 16.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
+                    </svg>
+                </button>
+                {% if shared_user %}
+                <a class="action-link" href="{{ logout_url }}">Sign Out</a>
+                {% else %}
+                <a class="action-link" href="{{ auth_url }}">Sign In</a>
+                <a class="cta" href="{{ register_url }}">Sign Up</a>
+                {% endif %}
+                {% if shared_user and shared_user.is_admin %}
+                <a class="cta" href="{{ admin_url }}">Admin Dashboard</a>
+                {% endif %}
+            </nav>
+        </header>
+
         {% block content %}{% endblock %}
     </main>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
