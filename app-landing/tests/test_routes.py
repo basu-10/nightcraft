@@ -10,7 +10,7 @@ def _client():
     return app.test_client()
 
 
-def test_root_route_renders_alfred_landing_page():
+def test_root_route_renders_alfred_product_card():
     client = _client()
 
     response = client.get("/")
@@ -18,15 +18,10 @@ def test_root_route_renders_alfred_landing_page():
     assert response.status_code == 200
     html = response.get_data(as_text=True)
     assert "Alfred" in html
-    assert "Plan. Orchestrate." in html
-    assert "Get things done." in html
-    assert "Download Alfred" in html
-    assert "Explore Features" in html
-    assert "Your intelligent workspace" in html
     assert 'href="/alfred"' in html
 
 
-def test_root_route_shows_auth_links():
+def test_root_route_shows_sign_in_links():
     app = create_app()
     app.config.update(TESTING=True)
 
@@ -36,7 +31,25 @@ def test_root_route_shows_auth_links():
 
     assert response.status_code == 200
     html = response.get_data(as_text=True)
-    assert "Log in" in html
+    assert "Sign Out" in html
+
+
+def test_alfred_route_renders_alfred_landing_page():
+    client = _client()
+
+    response = client.get("/alfred")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Alfred" in html
+    assert "Plan. Orchestrate." in html
+    assert "Get things done." in html
+    assert "Download Alfred" in html
+    assert "Explore Features" in html
+    assert "Your intelligent workspace" in html
+    assert "Local First" in html
+    assert "Privacy Focused" in html
+    assert "No Cloud Required" in html
 
 
 def test_healthz_route_returns_expected_payload():
