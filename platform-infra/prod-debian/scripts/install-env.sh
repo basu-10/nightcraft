@@ -92,5 +92,8 @@ copy_env "${ENV_TARGET_DIR}/app-note.env" 1 \
 copy_env "${ENV_TARGET_DIR}/app-pledge.env" 1 \
   "${ENV_SRC_DIR}/app-pledge.env" \
   "${ENV_SRC_DIR}/pledge.env.example"
+copy_env "${ENV_TARGET_DIR}/tinyxl.env" 1 \
+  "${ENV_SRC_DIR}/tinyxl.env" \
+  "${ENV_SRC_DIR}/tinyxl.env.example"
 
 echo "Env install complete. Review files under ${ENV_TARGET_DIR}."

@@ -18,6 +18,7 @@ install -m 0644 "${PROD_DEBIAN_DIR}/systemd/nightcraft-admin.service" /etc/syste
 install -m 0644 "${PROD_DEBIAN_DIR}/systemd/nightcraft-game.service" /etc/systemd/system/nightcraft-game.service
 install -m 0644 "${PROD_DEBIAN_DIR}/systemd/nightcraft-note.service" /etc/systemd/system/nightcraft-note.service
 install -m 0644 "${PROD_DEBIAN_DIR}/systemd/nightcraft-pledge.service" /etc/systemd/system/nightcraft-pledge.service
+install -m 0644 "${PROD_DEBIAN_DIR}/systemd/nightcraft-tinyxl.service" /etc/systemd/system/nightcraft-tinyxl.service
 
 systemctl daemon-reload
 systemctl enable nightcraft-auth.service
@@ -29,5 +30,6 @@ systemctl enable nightcraft-admin.service
 systemctl enable nightcraft-game.service
 systemctl enable nightcraft-note.service
 systemctl enable nightcraft-pledge.service
+systemctl enable nightcraft-tinyxl.service
 
 echo "Systemd units installed and enabled."

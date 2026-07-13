@@ -17,6 +17,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 "${SCRIPT_DIR}/deploy-game.sh"
 "${SCRIPT_DIR}/deploy-note.sh"
 "${SCRIPT_DIR}/deploy-pledge.sh"
+"${SCRIPT_DIR}/deploy-tinyxl.sh"
 "${SCRIPT_DIR}/seed-auth-users.sh"
 "${SCRIPT_DIR}/seed-auth-client.sh"
 "${SCRIPT_DIR}/seed-neera-client.sh"
@@ -33,6 +34,7 @@ systemctl restart nightcraft-admin.service
 systemctl restart nightcraft-game.service
 systemctl restart nightcraft-note.service
 systemctl restart nightcraft-pledge.service
+systemctl restart nightcraft-tinyxl.service
 systemctl reload nginx
 
-systemctl status --no-pager nightcraft-auth.service nightcraft-radio.service nightcraft-neera.service nightcraft-seeksage.service nightcraft-landing.service nightcraft-admin.service nightcraft-game.service nightcraft-note.service nightcraft-pledge.service nginx || true
+systemctl status --no-pager nightcraft-auth.service nightcraft-radio.service nightcraft-neera.service nightcraft-seeksage.service nightcraft-landing.service nightcraft-admin.service nightcraft-game.service nightcraft-note.service nightcraft-pledge.service nightcraft-tinyxl.service nginx || true

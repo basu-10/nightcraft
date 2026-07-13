@@ -9,6 +9,10 @@ let saveLayoutTimer = null;
 let sheetsList = [];
 const SAVE_DEBOUNCE_MS = 400;
 
+// Mount prefix injected by the server (e.g. "/tinyxl") so all asset/API
+// references work both when served at the root and under a subpath.
+const BASE = (window.BASE_PATH || "").replace(/\/$/, "");
+
 // Multi-cell selection
 let isSelecting = false;
 let selectionStart = null;
@@ -258,7 +262,7 @@ function saveSheetUnload() {
     if (!currentFile || !currentSheet || !sheetData) return;
     try {
         const { plainData } = dehydrateData(sheetData.data);
-        fetch('/api/sheet', {
+        fetch(BASE + '/api/sheet', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             keepalive: true,
@@ -276,7 +280,7 @@ function saveLayoutUnload() {
     try {
         const { cell_colors } = dehydrateData(sheetData.data);
         const stateToSave = { ...layoutState, cell_colors };
-        fetch('/api/layout', {
+        fetch(BASE + '/api/layout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             keepalive: true,
@@ -340,11 +344,11 @@ function navigateToFile(filePath, fileId) {
     const params = new URLSearchParams();
     params.set('path', filePath);
     if (fileId) params.set('id', fileId);
-    window.location.href = '/file?' + params.toString();
+    window.location.href = BASE + '/file?' + params.toString();
 }
 
 function navigateToHome() {
-    window.location.href = '/';
+    window.location.href = BASE + '/';
 }
 
 // ==================== HOME PAGE ====================
@@ -397,7 +401,7 @@ function setupUpload() {
         const formData = new FormData();
         formData.append('file', fileInput.files[0]);
         try {
-            const resp = await fetch('/api/upload', { method: 'POST', body: formData });
+            const resp = await fetch(BASE + '/api/upload', { method: 'POST', body: formData });
             const data = await resp.json();
             if (data.error) throw new Error(data.error);
             hideModal('modal-upload');
@@ -415,7 +419,7 @@ function createNewFile() {
     const fileName = prompt('Enter file name (e.g., Untitled.xlsx):', 'Untitled.xlsx');
     if (!fileName) return;
 
-    fetch('/api/new', {
+    fetch(BASE + '/api/new', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ file_name: fileName })
@@ -431,7 +435,7 @@ function createNewFile() {
 // Recent Files
 async function loadRecentFiles() {
     try {
-        const resp = await fetch('/api/recent');
+        const resp = await fetch(BASE + '/api/recent');
         const data = await resp.json();
         renderRecentFiles(data.files);
     } catch (err) {
@@ -496,7 +500,7 @@ function renderRecentFiles(files) {
 
 async function openRecentFile(path) {
     try {
-        const resp = await fetch('/api/open-path', {
+        const resp = await fetch(BASE + '/api/open-path', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ path })
@@ -511,7 +515,7 @@ async function openRecentFile(path) {
 
 async function removeRecentFile(path) {
     try {
-        await fetch('/api/recent', {
+        await fetch(BASE + '/api/recent', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ file_path: path })
@@ -579,7 +583,7 @@ function initFilePage() {
 
 async function fetchSheets() {
     try {
-        const resp = await fetch('/api/open-path', {
+        const resp = await fetch(BASE + '/api/open-path', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ path: currentFile })
@@ -597,7 +601,7 @@ async function fetchSheets() {
             const initialSheet = sheetParam && sheetsList.includes(sheetParam) ? sheetParam : sheetsList[0];
             if (!params.get('sheet')) {
                 params.set('sheet', initialSheet);
-                window.history.replaceState(null, '', '/file?' + params.toString());
+                window.history.replaceState(null, '', BASE + '/file?' + params.toString());
             }
             await loadSheet(initialSheet);
         }
@@ -609,7 +613,7 @@ async function fetchSheets() {
 async function loadLinkedSheets() {
     if (!currentFile) return;
     try {
-        const url = new URL('/api/linked-sheets', window.location.origin);
+        const url = new URL(BASE + '/api/linked-sheets', window.location.origin);
         url.searchParams.set('file', currentFile);
         if (currentSheet) {
             url.searchParams.set('sheet', currentSheet);
@@ -683,7 +687,7 @@ async function switchLinkedSheet(ls) {
     isLinkedView = true;
 
     try {
-        const url = new URL('/api/linked-sheet-data', window.location.origin);
+        const url = new URL(BASE + '/api/linked-sheet-data', window.location.origin);
         url.searchParams.set('linked_id', ls.id);
         url.searchParams.set('file', currentFile);
 
@@ -734,7 +738,7 @@ async function switchLinkedSheet(ls) {
 async function deleteLinkedSheet(id) {
     if (!confirm('Remove this filter view?')) return;
     try {
-        await fetch('/api/linked-sheet', {
+        await fetch(BASE + '/api/linked-sheet', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id, file_path: currentFile })
@@ -762,7 +766,7 @@ async function switchSheet(sheetName) {
     currentLinkedFilter = null;
     const params = new URLSearchParams(window.location.search);
     params.set('sheet', sheetName);
-    window.history.replaceState(null, '', '/file?' + params.toString());
+    window.history.replaceState(null, '', BASE + '/file?' + params.toString());
     currentSheet = sheetName;
     await loadLinkedSheets();
     await loadSheet(sheetName);
@@ -772,7 +776,7 @@ async function loadSheet(sheetName) {
     currentSheet = sheetName;
     await loadLinkedSheets();
     try {
-        const url = new URL('/api/sheet', window.location.origin);
+        const url = new URL(BASE + '/api/sheet', window.location.origin);
         url.searchParams.set('file', currentFile);
         url.searchParams.set('sheet', sheetName);
         if (currentFileId) url.searchParams.set('file_id', currentFileId);
@@ -1592,7 +1596,7 @@ async function duplicateSheet(sheetName) {
     await flushPendingSaves();
 
     try {
-        const resp = await fetch('/api/sheet/duplicate', {
+        const resp = await fetch(BASE + '/api/sheet/duplicate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1619,7 +1623,7 @@ async function deleteSheet(sheetName) {
     await flushPendingSaves();
 
     try {
-        const resp = await fetch('/api/sheet/delete', {
+        const resp = await fetch(BASE + '/api/sheet/delete', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1638,7 +1642,7 @@ async function deleteSheet(sheetName) {
             const params = new URLSearchParams(window.location.search);
             const targetSheet = sheetsList[0];
             params.set('sheet', targetSheet);
-            window.history.replaceState(null, '', '/file?' + params.toString());
+            window.history.replaceState(null, '', BASE + '/file?' + params.toString());
             await loadSheet(targetSheet);
         } else {
             renderSheetTabs();
@@ -1653,7 +1657,7 @@ async function createNewSheet() {
     await flushPendingSaves();
 
     try {
-        const resp = await fetch('/api/sheet/create', {
+        const resp = await fetch(BASE + '/api/sheet/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1677,7 +1681,7 @@ async function reorderSheet(sheetName, direction) {
     await flushPendingSaves();
 
     try {
-        const resp = await fetch('/api/sheet/reorder', {
+        const resp = await fetch(BASE + '/api/sheet/reorder', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1939,7 +1943,7 @@ async function executePasteWithNewSheet(conflicts, pasteSource, startRow, startC
     });
 
     try {
-        await fetch('/api/sheet', {
+        await fetch(BASE + '/api/sheet', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1949,7 +1953,7 @@ async function executePasteWithNewSheet(conflicts, pasteSource, startRow, startC
             })
         });
 
-        const resp = await fetch('/api/open-path', {
+        const resp = await fetch(BASE + '/api/open-path', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ path: currentFile })
@@ -2080,7 +2084,7 @@ async function exportTXL() {
     try {
         await flushPendingSaves();
 
-        const url = new URL('/api/export/txl', window.location.origin);
+        const url = new URL(BASE + '/api/export/txl', window.location.origin);
         url.searchParams.set('file', currentFile);
 
         const resp = await fetch(url);
@@ -2112,7 +2116,7 @@ function importTXL() {
     const formData = new FormData();
     formData.append('file', file);
 
-    fetch('/api/import/txl', { method: 'POST', body: formData })
+    fetch(BASE + '/api/import/txl', { method: 'POST', body: formData })
         .then(resp => resp.json())
         .then(data => {
             if (data.error) throw new Error(data.error);
@@ -2128,7 +2132,7 @@ async function showFileProperties() {
         return;
     }
     try {
-        const url = new URL('/api/file-metadata', window.location.origin);
+        const url = new URL(BASE + '/api/file-metadata', window.location.origin);
         url.searchParams.set('file_id', currentFileId);
         url.searchParams.set('file', currentFile);
 
@@ -2925,7 +2929,7 @@ function updateTableWidth() {
 async function saveSheet() {
     try {
         const { plainData } = dehydrateData(sheetData.data);
-        const resp = await fetch('/api/sheet', {
+        const resp = await fetch(BASE + '/api/sheet', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -2950,7 +2954,7 @@ async function saveLayout() {
     try {
         const { cell_colors } = dehydrateData(sheetData.data);
         const stateToSave = { ...layoutState, cell_colors };
-        await fetch('/api/layout', {
+        await fetch(BASE + '/api/layout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -3028,7 +3032,7 @@ function showFilterModal() {
         }
         const preserveHeaders = document.getElementById('filter-preserve-headers').checked;
         try {
-            const resp = await fetch('/api/filter-preview', {
+            const resp = await fetch(BASE + '/api/filter-preview', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -3075,7 +3079,7 @@ function showFilterModal() {
         if (!name) return;
 
         try {
-            const resp = await fetch('/api/linked-sheet', {
+            const resp = await fetch(BASE + '/api/linked-sheet', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

@@ -1,0 +1,23 @@
+[Unit]
+Description=Nightcraft TinyXL Spreadsheet App (Gunicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=dev
+Group=dev
+WorkingDirectory=/nightcraft-source-code/app-spreadsheet
+EnvironmentFile=/etc/nightcraft/tinyxl.env
+ExecStart=/runtime/venvs/app-spreadsheet/bin/python -m gunicorn \
+  --workers 2 \
+  --bind 127.0.0.1:5200 \
+  --access-logfile - \
+  --error-logfile - \
+  tinyXL:app
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

@@ -10,6 +10,7 @@ from typing import Optional
 
 import pandas as pd
 from flask import Flask, jsonify, render_template, request
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
 # Engine mapping for initial conversion
@@ -22,12 +23,18 @@ ENGINE_FOR_SUFFIX = {
 }
 
 # Configuration
-UPLOAD_FOLDER = Path(__file__).parent / "uploads"
-DB_PATH = Path(__file__).parent / "db" / "excel_reader_state.sqlite3"
+# Runtime data (uploads + SQLite) lives outside the source checkout by default,
+# mirroring the rest of the Nightcraft stack. Override via env if needed.
+UPLOAD_FOLDER = Path(os.environ.get("TINYXL_UPLOAD_DIR", str(Path(__file__).parent / "uploads")))
+DB_PATH = Path(os.environ.get("TINYXL_DB_DIR", str(Path(__file__).parent / "db" / "excel_reader_state.sqlite3")))
 ALLOWED_EXTENSIONS = {".xlsx", ".xls", ".xlsb", ".xlsm", ".csv", ".txl"}
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = str(UPLOAD_FOLDER)
+
+# Respect X-Forwarded-Prefix so the app can be served under a subpath
+# (e.g. /tinyxl) behind Nginx, matching the rest of the Nightcraft stack.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # Ensure directories exist
 UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
