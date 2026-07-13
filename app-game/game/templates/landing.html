@@ -11,6 +11,16 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <style>
+      .hub-secondary {
+        text-align: center;
+        margin-top: 2rem;
+      }
+      .leaderboard-link {
+        font-size: 1.05rem;
+        padding: 0.7rem 1.6rem;
+      }
+    </style>
   </head>
   <body class="game-hub">
     <div class="arcade-grid" aria-hidden="true"></div>
@@ -27,11 +37,11 @@
         <article class="card game-card" data-accent="cyan">
           <div class="card-glow" aria-hidden="true"></div>
           <span class="card-badge">1P / 2P</span>
-          <h2>Highest Number</h2>
-          <p>Pick the larger number and test your eye for the highest digit.</p>
+          <h2>Tic-Tac-Toe</h2>
+          <p>Three-in-a-row on a 3×3 grid. Beat the bot or a live rival.</p>
           <div class="card-actions">
-            <a class="btn" href="{{ url_for('game.highest_number') }}">▶ Play vs AI</a>
-            <a class="btn pvp" href="{{ url_for('game.lobby', game='highest_number') }}">⚔ Play vs Others</a>
+            <a class="btn" href="{{ url_for('game.tic_tac_toe_ai') }}">▶ Play vs AI</a>
+            <a class="btn pvp" href="{{ url_for('game.lobby', game='tic_tac_toe') }}">⚔ Play vs Others</a>
           </div>
         </article>
 
@@ -55,6 +65,10 @@
             <a class="btn pvp" href="{{ url_for('emulator.index') }}">🎮 My Games</a>
           </div>
         </article>
+      </section>
+
+      <section class="hub-secondary">
+        <a class="btn leaderboard-link" href="{{ url_for('game.leaderboard', game='tic_tac_toe') }}">🏆 Leaderboard</a>
       </section>
 
       <footer class="hub-footer">

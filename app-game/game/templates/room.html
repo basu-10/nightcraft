@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
     <style>
       .room-shell {
-        max-width: 700px;
+        max-width: 720px;
         margin: 0 auto;
         padding: 2rem;
       }
@@ -28,6 +28,7 @@
       .round-info {
         color: #94a3b8;
         font-size: 0.9rem;
+        text-align: center;
       }
       .game-area {
         display: grid;
@@ -36,24 +37,7 @@
         border-radius: 18px;
         background: rgba(15, 23, 42, 0.95);
         border: 1px solid rgba(148, 163, 184, 0.18);
-      }
-      .number-btn {
-        min-width: 120px;
-        padding: 1.25rem;
-        font-size: 1.5rem;
-        font-weight: 700;
-      }
-      .number-btn.selected {
-        background: #38bdf8;
-        color: #0f172a;
-      }
-      .choice-btn {
-        font-size: 1.1rem;
-        min-width: 130px;
-      }
-      .choice-btn.selected {
-        background: #38bdf8;
-        color: #0f172a;
+        justify-items: center;
       }
       .result-banner {
         text-align: center;
@@ -70,6 +54,10 @@
         background: rgba(248, 113, 113, 0.16);
         color: #fecaca;
       }
+      .result-banner.draw {
+        background: rgba(148, 163, 184, 0.16);
+        color: #cbd5e1;
+      }
       .room-actions {
         display: flex;
         gap: 1rem;
@@ -85,6 +73,63 @@
         text-align: center;
         padding: 0.5rem;
       }
+      .prompt {
+        color: #e2e8f0;
+        font-size: 1.05rem;
+        margin-bottom: 0.5rem;
+      }
+      /* Tic-Tac-Toe board */
+      .ttt-board {
+        display: grid;
+        grid-template-columns: repeat(3, 96px);
+        grid-template-rows: repeat(3, 96px);
+        gap: 10px;
+      }
+      .ttt-cell {
+        font-family: "Orbitron", sans-serif;
+        font-size: 2.6rem;
+        font-weight: 900;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(2, 6, 23, 0.8);
+        color: #e2e8f0;
+        cursor: pointer;
+        transition: transform 0.08s ease, box-shadow 0.15s ease;
+      }
+      .ttt-cell:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 0 14px rgba(56, 189, 248, 0.55);
+      }
+      .ttt-cell:disabled {
+        cursor: default;
+      }
+      .ttt-cell.cell-x {
+        color: #38bdf8;
+        text-shadow: 0 0 12px rgba(56, 189, 248, 0.8);
+      }
+      .ttt-cell.cell-o {
+        color: #f472b6;
+        text-shadow: 0 0 12px rgba(244, 114, 182, 0.8);
+      }
+      .ttt-cell.win {
+        box-shadow: 0 0 18px rgba(163, 230, 53, 0.9);
+        border-color: #a3e635;
+      }
+      /* Rock Paper Scissors */
+      .choices {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .choice-btn {
+        font-size: 1.1rem;
+        min-width: 130px;
+      }
+      .choice-btn.selected {
+        background: #38bdf8;
+        color: #0f172a;
+      }
     </style>
   </head>
   <body>
@@ -96,23 +141,15 @@
       </div>
 
       <div id="gameArea" class="game-area">
-        <div id="hnSection" class="hidden">
-          <div class="numbers">
-            <button id="numBtn0" class="number-btn" type="button" disabled>-</button>
-            <button id="numBtn1" class="number-btn" type="button" disabled>-</button>
-          </div>
-          <p id="hnPrompt" class="waiting-text">Waiting for round to start…</p>
-        </div>
-
+        <div id="prompt" class="prompt hidden"></div>
+        <div id="tttBoard" class="ttt-board hidden"></div>
         <div id="rpsSection" class="hidden">
           <div class="choices">
             <button class="choice-btn" data-choice="rock" type="button" disabled>Rock</button>
             <button class="choice-btn" data-choice="paper" type="button" disabled>Paper</button>
             <button class="choice-btn" data-choice="scissors" type="button" disabled>Scissors</button>
           </div>
-          <p id="rpsPrompt" class="waiting-text">Waiting for round to start…</p>
         </div>
-
         <div id="roundResult" class="hidden"></div>
       </div>
 
@@ -131,189 +168,20 @@
     </main>
 
     <script>
-      const roomId = {{ room_id | tojson }};
-      const gameType = {{ game_type | tojson }};
-      const userId = {{ user_id | tojson }};
-
-      const myScoreEl = document.getElementById('myScore');
-      const oppScoreEl = document.getElementById('oppScore');
-      const roundInfoEl = document.getElementById('roundInfo');
-      const hnSection = document.getElementById('hnSection');
-      const rpsSection = document.getElementById('rpsSection');
-      const hnPrompt = document.getElementById('hnPrompt');
-      const rpsPrompt = document.getElementById('rpsPrompt');
-      const numBtn0 = document.getElementById('numBtn0');
-      const numBtn1 = document.getElementById('numBtn1');
-      const choiceBtns = document.querySelectorAll('.choice-btn');
-      const roundResult = document.getElementById('roundResult');
-      const gameOverSection = document.getElementById('gameOverSection');
-      const resultBanner = document.getElementById('resultBanner');
-      const finalScore = document.getElementById('finalScore');
-      const leaveActions = document.getElementById('leaveActions');
-      const leaveBtn = document.getElementById('leaveBtn');
-      const playAgainBtn = document.getElementById('playAgainBtn');
-
-      let myMove = null;
-      let roundValues = null;
-
-      if (gameType === 'highest_number') {
-        hnSection.classList.remove('hidden');
-      } else if (gameType === 'rock_paper_scissors') {
-        rpsSection.classList.remove('hidden');
-      }
-
-      function updateScoreboard(scores, round) {
-        const entries = Object.entries(scores);
-        let myS = 0, oppS = 0;
-        for (const [pid, sc] of entries) {
-          if (pid === userId) { myS = sc; } else { oppS = sc; }
-        }
-        myScoreEl.textContent = 'You: ' + myS;
-        oppScoreEl.textContent = 'Opponent: ' + oppS;
-        if (round) { roundInfoEl.textContent = 'Round ' + round; }
-      }
-
-      function setControlsDisabled(disabled) {
-        numBtn0.disabled = disabled;
-        numBtn1.disabled = disabled;
-        choiceBtns.forEach(function (b) { b.disabled = disabled; });
-      }
-
-      function resetRoundUI() {
-        myMove = null;
-        roundResult.classList.add('hidden');
-        roundResult.textContent = '';
-        numBtn0.classList.remove('selected');
-        numBtn1.classList.remove('selected');
-        choiceBtns.forEach(function (b) { b.classList.remove('selected'); });
-      }
-
-      numBtn0.addEventListener('click', function () { submitMove({ index: 0 }); });
-      numBtn1.addEventListener('click', function () { submitMove({ index: 1 }); });
-
-      choiceBtns.forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          submitMove({ choice: btn.dataset.choice });
-        });
-      });
-
-      function submitMove(moveData) {
-        if (myMove !== null) return;
-        myMove = moveData;
-        if (gameType === 'highest_number') {
-          if (moveData.index === 0) numBtn0.classList.add('selected');
-          if (moveData.index === 1) numBtn1.classList.add('selected');
-          setControlsDisabled(true);
-          hnPrompt.textContent = 'Waiting for opponent…';
-        } else {
-          choiceBtns.forEach(function (b) {
-            if (b.dataset.choice === moveData.choice) b.classList.add('selected');
-          });
-          setControlsDisabled(true);
-          rpsPrompt.textContent = 'Waiting for opponent…';
-        }
-        fetch('/game/room/' + roomId + '/move', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(moveData),
-        }).catch(function () {
-          roundResult.textContent = 'Network error — retrying…';
-          roundResult.classList.remove('hidden');
-        });
-      }
-
-      const roomEvents = new EventSource('/game/room/' + roomId + '/events');
-
-      roomEvents.addEventListener('your_turn', function (e) {
-        const data = JSON.parse(e.data);
-        updateScoreboard(data.scores, data.round);
-        resetRoundUI();
-        setControlsDisabled(false);
-        if (gameType === 'highest_number' && data.current_round && data.current_round.values) {
-          roundValues = data.current_round.values;
-          numBtn0.textContent = roundValues[0];
-          numBtn1.textContent = roundValues[1];
-          hnPrompt.textContent = 'Pick the higher number!';
-        } else if (gameType === 'rock_paper_scissors') {
-          rpsPrompt.textContent = 'Make your move!';
-        }
-      });
-
-      roomEvents.addEventListener('waiting_round', function (e) {
-        const data = JSON.parse(e.data);
-        updateScoreboard(data.scores, data.round);
-        setControlsDisabled(true);
-        hnPrompt.textContent = 'Waiting for round to start…';
-        rpsPrompt.textContent = 'Waiting for round to start…';
-      });
-
-      roomEvents.addEventListener('round_ready', function (e) {
-        const data = JSON.parse(e.data);
-        updateScoreboard(data.scores, data.round);
-        setControlsDisabled(true);
-        roundResult.classList.remove('hidden');
-        if (gameType === 'highest_number') {
-          const myR = data.results[userId];
-          if (myR) {
-            const v = myR.values || roundValues || ['?', '?'];
-            roundResult.textContent = myR.correct
-              ? 'Correct! ' + v[0] + ' vs ' + v[1] + ' — You win this round!'
-              : 'Wrong! ' + v[0] + ' vs ' + v[1] + ' — Opponent wins this round.';
-            roundResult.className = 'result ' + (myR.correct ? 'success' : 'failure');
-          }
-        } else if (gameType === 'rock_paper_scissors') {
-          const myR = data.results[userId];
-          if (myR) {
-            var text = 'You chose ' + myR.choice + '. Opponent chose ' + myR.opponent_choice + '. ';
-            text += myR.result === 'win' ? 'You Win!' : myR.result === 'lose' ? 'You Lose!' : 'Tie!';
-            roundResult.textContent = text;
-            roundResult.className = 'result ' + (myR.result === 'win' ? 'success' : myR.result === 'lose' ? 'failure' : '');
-          }
-        }
-      });
-
-      roomEvents.addEventListener('game_over', function (e) {
-        const data = JSON.parse(e.data);
-        updateScoreboard(data.scores, data.round);
-        roomEvents.close();
-        const entries = Object.entries(data.scores || {});
-        let myS = 0, oppS = 0;
-        for (const [pid, sc] of entries) {
-          if (pid === userId) { myS = sc; } else { oppS = sc; }
-        }
-        resultBanner.textContent = data.is_winner ? 'Victory!' : 'Defeat';
-        resultBanner.className = 'result-banner ' + (data.is_winner ? 'victory' : 'defeat');
-        finalScore.textContent = 'Final Score: ' + myS + ' - ' + oppS;
-        hnSection.classList.add('hidden');
-        rpsSection.classList.add('hidden');
-        roundResult.classList.add('hidden');
-        leaveActions.classList.add('hidden');
-        gameOverSection.classList.remove('hidden');
-      });
-
-      roomEvents.addEventListener('room_closed', function () {
-        roundResult.textContent = 'Room closed.';
-        roundResult.classList.remove('hidden');
-        setControlsDisabled(true);
-      });
-
-      roomEvents.addEventListener('heartbeat', function () {});
-      roomEvents.onerror = function () {};
-
-      leaveBtn.addEventListener('click', function () {
-        if (!confirm('Are you sure you want to leave? This will count as a forfeit.')) return;
-        roomEvents.close();
-        fetch('/game/room/' + roomId + '/leave', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        }).finally(function () {
-          window.location.href = '{{ url_for("game.landing") }}';
-        });
-      });
-
-      playAgainBtn.addEventListener('click', function () {
-        window.location.href = '{{ url_for("game.lobby") }}?game=' + encodeURIComponent(gameType);
-      });
+      const RoomConfig = {
+        roomId: {{ room_id | tojson }},
+        gameType: {{ game_type | tojson }},
+        userId: {{ user_id | tojson }},
+        landingUrl: {{ url_for('game.landing') | tojson }},
+        lobbyUrl: {{ url_for('game.lobby') | tojson }},
+      };
     </script>
+    <script src="{{ url_for('static', filename='js/room_core.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tic_tac_toe_board.js') }}"></script>
+    {% if game_type == 'tic_tac_toe' %}
+    <script src="{{ url_for('static', filename='js/room_ttt.js') }}"></script>
+    {% else %}
+    <script src="{{ url_for('static', filename='js/room_rps.js') }}"></script>
+    {% endif %}
   </body>
 </html>

@@ -32,6 +32,7 @@ class Config:
     REDIS_URL = os.environ.get("REDIS_URL", "redis://127.0.0.1:6379/0")
     ROOM_EXPIRY = int(os.environ.get("GAME_ROOM_EXPIRY", "3600"))
     QUEUE_TIMEOUT = int(os.environ.get("GAME_QUEUE_TIMEOUT", "120"))
+    QUEUE_TTL = int(os.environ.get("GAME_QUEUE_TTL", "60"))
     DISCONNECT_TIMEOUT = int(os.environ.get("GAME_DISCONNECT_TIMEOUT", "30"))
     ROUNDS_PER_MATCH = int(os.environ.get("GAME_ROUNDS_PER_MATCH", "5"))
     WINS_REQUIRED = int(os.environ.get("GAME_WINS_REQUIRED", "3"))

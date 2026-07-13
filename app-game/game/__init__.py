@@ -9,8 +9,8 @@ def create_app() -> Flask:
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
     app.config.from_object(get_config())
 
-    from .routes import game_bp
-    app.register_blueprint(game_bp)
+    from .views import register_blueprints
+    register_blueprints(app)
 
     from .auth import auth_bp
     app.register_blueprint(auth_bp)

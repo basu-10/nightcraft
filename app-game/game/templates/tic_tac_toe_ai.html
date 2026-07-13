@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tic-Tac-Toe vs AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <style>
+      .ai-shell {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 2rem;
+        text-align: center;
+      }
+      .ai-panel {
+        padding: 1.5rem;
+        border-radius: 18px;
+        background: rgba(15, 23, 42, 0.95);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        margin-bottom: 1.5rem;
+      }
+      .ai-section-title {
+        text-align: left;
+        color: #94a3b8;
+        font-size: 0.85rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin: 1rem 0 0.6rem;
+      }
+      .tier-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 0.6rem;
+      }
+      .tier-btn {
+        padding: 0.7rem 0.5rem;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(2, 6, 23, 0.8);
+        color: #e2e8f0;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .tier-btn .tier-num {
+        display: block;
+        font-family: "Orbitron", sans-serif;
+        font-size: 1.2rem;
+        color: #38bdf8;
+      }
+      .tier-btn.selected {
+        border-color: #38bdf8;
+        box-shadow: 0 0 14px rgba(56, 189, 248, 0.5);
+      }
+      .side-grid {
+        display: flex;
+        gap: 0.8rem;
+        justify-content: center;
+      }
+      .side-btn {
+        width: 90px;
+        height: 90px;
+        font-family: "Orbitron", sans-serif;
+        font-size: 2.4rem;
+        font-weight: 900;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(2, 6, 23, 0.8);
+        color: #e2e8f0;
+        cursor: pointer;
+      }
+      .side-btn.x { color: #38bdf8; }
+      .side-btn.o { color: #f472b6; }
+      .side-btn.selected {
+        box-shadow: 0 0 14px rgba(56, 189, 248, 0.5);
+        border-color: #38bdf8;
+      }
+      .deploy-btn {
+        margin-top: 1.2rem;
+        font-size: 1.1rem;
+        padding: 0.8rem 2rem;
+      }
+      .ttt-board {
+        display: grid;
+        grid-template-columns: repeat(3, 96px);
+        grid-template-rows: repeat(3, 96px);
+        gap: 10px;
+        justify-content: center;
+        margin: 0 auto;
+      }
+      .ttt-cell {
+        font-family: "Orbitron", sans-serif;
+        font-size: 2.6rem;
+        font-weight: 900;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(2, 6, 23, 0.8);
+        color: #e2e8f0;
+        cursor: pointer;
+        transition: transform 0.08s ease, box-shadow 0.15s ease;
+      }
+      .ttt-cell:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 0 14px rgba(56, 189, 248, 0.55);
+      }
+      .ttt-cell:disabled { cursor: default; }
+      .ttt-cell.cell-x { color: #38bdf8; text-shadow: 0 0 12px rgba(56, 189, 248, 0.8); }
+      .ttt-cell.cell-o { color: #f472b6; text-shadow: 0 0 12px rgba(244, 114, 182, 0.8); }
+      .ttt-cell.win { box-shadow: 0 0 18px rgba(163, 230, 53, 0.9); border-color: #a3e635; }
+      .prompt { color: #e2e8f0; font-size: 1.1rem; margin: 1rem 0; min-height: 1.4rem; }
+      .result-banner {
+        display: inline-block;
+        margin: 1rem auto;
+        padding: 1rem 2rem;
+        border-radius: 14px;
+        font-size: 1.4rem;
+        font-weight: 700;
+      }
+      .result-banner.victory { background: rgba(34, 197, 94, 0.16); color: #a7f3d0; }
+      .result-banner.defeat { background: rgba(248, 113, 113, 0.16); color: #fecaca; }
+      .result-banner.draw { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; }
+      .hub-links { margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center; }
+      .hidden { display: none !important; }
+    </style>
+  </head>
+  <body class="game-hub">
+    <div class="arcade-grid" aria-hidden="true"></div>
+    <div class="scanlines" aria-hidden="true"></div>
+
+    <main class="ai-shell">
+      <header>
+        <p class="hub-kicker">// NIGHTCRAFT ARCADE</p>
+        <h1 class="hub-title" data-text="TIC-TAC-TOE">TIC-TAC-TOE</h1>
+        <p class="hub-tagline">Deploy a bot. Pick your side. Three in a row wins.</p>
+      </header>
+
+      <section id="configPanel" class="ai-panel">
+        <div class="ai-section-title">Deploy Bot — Select Combat Tier</div>
+        <div id="tierGrid" class="tier-grid"></div>
+
+        <div class="ai-section-title">Your Side</div>
+        <div class="side-grid">
+          <button class="side-btn x" data-side="X" type="button">X</button>
+          <button class="side-btn o" data-side="O" type="button">O</button>
+        </div>
+
+        <button id="deployBtn" class="btn deploy-btn" type="button" disabled>DEPLOY BOT</button>
+      </section>
+
+      <section id="gamePanel" class="ai-panel hidden">
+        <div id="tttBoard" class="ttt-board"></div>
+        <p id="prompt" class="prompt"></p>
+        <div id="resultBanner" class="result-banner hidden"></div>
+        <div id="afterActions" class="hub-links hidden">
+          <button id="playAgainBtn" class="btn" type="button">Play Again</button>
+        </div>
+      </section>
+
+      <div class="hub-links">
+        <a class="link-button" href="{{ url_for('game.landing') }}">Back to Hub</a>
+        <a class="link-button" href="{{ url_for('game.leaderboard', game='tic_tac_toe') }}">🏆 Leaderboard</a>
+      </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/tic_tac_toe_board.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tic_tac_toe_ai.js') }}"></script>
+    <script>
+      (function () {
+        const tierGrid = document.getElementById("tierGrid");
+        const deployBtn = document.getElementById("deployBtn");
+        const configPanel = document.getElementById("configPanel");
+        const gamePanel = document.getElementById("gamePanel");
+        const boardEl = document.getElementById("tttBoard");
+        const promptEl = document.getElementById("prompt");
+        const resultBanner = document.getElementById("resultBanner");
+        const afterActions = document.getElementById("afterActions");
+        const playAgainBtn = document.getElementById("playAgainBtn");
+        const sideBtns = document.querySelectorAll(".side-btn");
+
+        let selectedTier = null;
+        let selectedSide = null;
+        let board = [];
+        let mySymbol = null;
+        let aiSymbol = null;
+        let current = null;
+        let gameOver = false;
+
+        Object.keys(TTT_AI.TIERS).forEach(function (tier) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "tier-btn";
+          btn.dataset.tier = tier;
+          btn.innerHTML =
+            '<span class="tier-num">' + tier + "</span>" + TTT_AI.TIERS[tier];
+          btn.addEventListener("click", function () {
+            selectedTier = parseInt(tier, 10);
+            tierGrid.querySelectorAll(".tier-btn").forEach(function (b) {
+              b.classList.remove("selected");
+            });
+            btn.classList.add("selected");
+            refreshDeploy();
+          });
+          tierGrid.appendChild(btn);
+        });
+
+        sideBtns.forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            selectedSide = btn.dataset.side;
+            sideBtns.forEach(function (b) {
+              b.classList.remove("selected");
+            });
+            btn.classList.add("selected");
+            refreshDeploy();
+          });
+        });
+
+        function refreshDeploy() {
+          deployBtn.disabled = !(selectedTier && selectedSide);
+        }
+
+        function render() {
+          const line = gameOver ? findTttWinningLine(board) : null;
+          renderTttBoard(boardEl, board, {
+            enabled: !gameOver && current === mySymbol,
+            winningLine: line,
+            onClick: userMove,
+          });
+          if (gameOver) {
+            promptEl.textContent = "";
+          } else {
+            promptEl.textContent =
+              current === mySymbol
+                ? "Your move! (" + mySymbol + ")"
+                : "Bot is thinking…";
+          }
+        }
+
+        function userMove(i) {
+          if (gameOver || current !== mySymbol) return;
+          board[i] = mySymbol;
+          current = aiSymbol;
+          render();
+          maybeContinue();
+        }
+
+        function aiMove() {
+          if (gameOver) return;
+          const cell = TTT_AI.chooseMove(board, selectedTier, aiSymbol);
+          if (cell < 0) return;
+          board[cell] = aiSymbol;
+          current = mySymbol;
+          render();
+          maybeContinue();
+        }
+
+        function maybeContinue() {
+          const w = TTT_AI.winner(board);
+          const full = board.every(function (c) {
+            return c !== null;
+          });
+          if (w || full) {
+            endGame(w);
+            return;
+          }
+          if (current === aiSymbol) {
+            setTimeout(aiMove, 450);
+          }
+        }
+
+        function endGame(w) {
+          gameOver = true;
+          const outcome = w === mySymbol ? "win" : w === aiSymbol ? "loss" : "draw";
+          render();
+
+          let cls = "draw";
+          let text = "DRAW";
+          if (w === mySymbol) {
+            cls = "victory";
+            text = "VICTORY";
+          } else if (w === aiSymbol) {
+            cls = "defeat";
+            text = "DEFEAT";
+          }
+          resultBanner.textContent = text;
+          resultBanner.className = "result-banner " + cls;
+          resultBanner.classList.remove("hidden");
+          afterActions.classList.remove("hidden");
+
+          fetch("/game/leaderboard/record", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              game: "tic_tac_toe",
+              mode: "ai",
+              tier: selectedTier,
+              outcome: outcome,
+            }),
+          }).catch(function () {});
+        }
+
+        function start() {
+          mySymbol = selectedSide;
+          aiSymbol = mySymbol === "X" ? "O" : "X";
+          board = [null, null, null, null, null, null, null, null, null];
+          // Coin toss decides who moves first.
+          current = Math.random() < 0.5 ? "X" : "O";
+          gameOver = false;
+          configPanel.classList.add("hidden");
+          gamePanel.classList.remove("hidden");
+          resultBanner.classList.add("hidden");
+          afterActions.classList.add("hidden");
+          render();
+          if (current === aiSymbol) {
+            setTimeout(aiMove, 450);
+          }
+        }
+
+        deployBtn.addEventListener("click", start);
+        playAgainBtn.addEventListener("click", function () {
+          gamePanel.classList.add("hidden");
+          configPanel.classList.remove("hidden");
+          resultBanner.classList.add("hidden");
+          afterActions.classList.add("hidden");
+        });
+      })();
+    </script>
+  </body>
+</html>

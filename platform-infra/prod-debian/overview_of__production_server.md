@@ -73,7 +73,7 @@ Runtime folders like:
   - `/game/` → game (5800)
   - `/notestack/` → notestack (5900)
 - Trailing-slash redirects exist for each path root.
-- Game gets `proxy_buffering off` + 600s read timeout (for SSE).
+- Game uses lightweight client polling (no SSE); nginx `/game/` keeps `client_max_body_size 64m` for EmulatorJS ROM uploads.
 - Catch-all server block returns `444` for unknown hostnames.
 - Exposes public IP `31.70.85.89` on port 80.
 

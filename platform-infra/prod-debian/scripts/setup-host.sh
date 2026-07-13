@@ -52,4 +52,12 @@ systemctl enable nginx
 systemctl enable postgresql
 systemctl enable redis-server
 
+# Enable Redis AOF so the game leaderboard (and other Redis-backed state)
+# survives restarts. Matchmaking/room keys stay ephemeral (TTL'd).
+if [ -f /etc/redis/redis.conf ]; then
+  sed -i 's/^#\?\s*appendonly\s\+no/appendonly yes/' /etc/redis/redis.conf
+  sed -i 's/^#\?\s*appendfsync\s\+.*/appendfsync everysec/' /etc/redis/redis.conf
+  systemctl restart redis-server || true
+fi
+
 echo "Host setup complete."

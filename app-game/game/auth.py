@@ -1,4 +1,5 @@
 from functools import wraps
+from urllib.parse import urlencode
 
 from flask import (
     Blueprint,
@@ -39,12 +40,15 @@ def login():
         auth_url = current_app.config["AUTH_SERVICE_URL"].rstrip("/")
         client_id = current_app.config["OIDC_CLIENT_ID"]
         redirect_uri = current_app.config["OIDC_REDIRECT_URI"]
-        authorize_url = (
-            f"{auth_url}/authorize"
-            f"?client_id={client_id}"
-            f"&redirect_uri={redirect_uri}"
-            f"&response_type=code"
+        query = urlencode(
+            {
+                "client_id": client_id,
+                "redirect_uri": redirect_uri,
+                "response_type": "code",
+                "scope": "openid profile email",
+            }
         )
+        authorize_url = f"{auth_url}/oauth/authorize?{query}"
         return redirect(authorize_url)
 
     session["user_id"] = f"local_{request.remote_addr}"
@@ -68,7 +72,7 @@ def callback():
         import requests
 
         resp = requests.post(
-            f"{auth_url}/token",
+            f"{auth_url}/oauth/token",
             data={
                 "grant_type": "authorization_code",
                 "code": code,

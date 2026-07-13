@@ -21,7 +21,10 @@
         </div>
 
         <div id="roundResult" class="result">Make your move.</div>
-        <a class="link-button" href="{{ url_for('game.landing') }}">Back to hub</a>
+        <div class="hub-links">
+          <a class="link-button" href="{{ url_for('game.landing') }}">Back to hub</a>
+          <a class="link-button" href="{{ url_for('game.leaderboard', game='rock_paper_scissors') }}">🏆 Leaderboard</a>
+        </div>
       </section>
     </main>
 

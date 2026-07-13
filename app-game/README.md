@@ -5,8 +5,8 @@ A small Flask game hub inspired by the project structure used in `app-radio`.
 ## Goal
 
 Create a landing page that links to lightweight browser games such as:
-- Highest Number
-- Rock Paper Scissors
+- Tic-Tac-Toe (vs AI or vs others, with a server-side leaderboard)
+- Rock Paper Scissors (vs AI or vs others, with a server-side leaderboard)
 
 ## Quick start
 

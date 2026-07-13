@@ -9,7 +9,7 @@ os.environ["GAME_SHARED_DIR"] = _TMP_SHARED
 import fakeredis  # noqa: E402
 import pytest  # noqa: E402
 
-from game import create_app, redis_manager  # noqa: E402
+from game import create_app, matchmaking, leaderboard  # noqa: E402
 
 
 @pytest.fixture
@@ -21,12 +21,15 @@ def app():
     application.config["EMULATOR_DB_PATH"] = os.path.join(_TMP_SHARED, "emulator.db")
 
     fake = fakeredis.FakeStrictRedis(decode_responses=True)
-    original_rc = redis_manager._rc
-    redis_manager._rc = lambda: fake
+    original_mm = matchmaking._rc
+    original_lb = leaderboard._rc
+    matchmaking._rc = lambda: fake
+    leaderboard._rc = lambda: fake
 
     yield application
 
-    redis_manager._rc = original_rc
+    matchmaking._rc = original_mm
+    leaderboard._rc = original_lb
 
 
 @pytest.fixture

@@ -78,60 +78,15 @@
       </div>
     </main>
 
+    <script src="{{ url_for('static', filename='js/lobby.js') }}"></script>
     <script>
-      const gameType = {{ game_type | tojson }};
-      const waitingSection = document.getElementById('waitingSection');
-      const foundSection = document.getElementById('foundSection');
-      const timeoutSection = document.getElementById('timeoutSection');
-      const statusText = document.getElementById('statusText');
-      const cancelBtn = document.getElementById('cancelBtn');
-      const retryBtn = document.getElementById('retryBtn');
-
-      const queueEvents = new EventSource(
-        '/game/queue/events?game=' + encodeURIComponent(gameType)
-      );
-
-      queueEvents.addEventListener('waiting', function () {
-        statusText.textContent = 'Searching for a match…';
-      });
-
-      queueEvents.addEventListener('matched', function (e) {
-        const data = JSON.parse(e.data);
-        queueEvents.close();
-        waitingSection.classList.add('hidden');
-        foundSection.classList.remove('hidden');
-        setTimeout(function () {
-          window.location.href = '/game/room/' + data.room_id;
-        }, 500);
-      });
-
-      queueEvents.addEventListener('timeout', function () {
-        queueEvents.close();
-        waitingSection.classList.add('hidden');
-        timeoutSection.classList.remove('hidden');
-      });
-
-      queueEvents.addEventListener('heartbeat', function () {
-        // keep-alive, no-op
-      });
-
-      queueEvents.onerror = function () {
-        statusText.textContent = 'Connection lost. Retrying…';
-      };
-
-      cancelBtn.addEventListener('click', function () {
-        queueEvents.close();
-        fetch('/game/queue/cancel', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ game: gameType }),
-        }).finally(function () {
-          window.location.href = '{{ url_for("game.landing") }}';
-        });
-      });
-
-      retryBtn.addEventListener('click', function () {
-        window.location.reload();
+      Lobby.init({
+        gameType: {{ game_type | tojson }},
+        landingUrl: {{ url_for('game.landing') | tojson }},
+        pollUrl: '/game/queue/status?game=' + encodeURIComponent({{ game_type | tojson }}),
+        joinUrl: '/game/queue/join',
+        cancelUrl: '/game/queue/cancel',
+        timeoutMs: 60000,
       });
     </script>
   </body>
