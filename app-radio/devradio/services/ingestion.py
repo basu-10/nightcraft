@@ -1,12 +1,12 @@
 from datetime import datetime, timezone
 
-import feedparser
 from flask import current_app
 from sqlalchemy import case
 
 from ..models import Article, SourceFeed
 from ..utils import strip_html
 from .source_fetch import SourceArticleFetcher
+from .automation import _parse_feed_with_timeout
 
 
 def _first_image_from_html(html: str | None, base_url: str) -> str | None:
@@ -107,7 +107,7 @@ def ingest_articles(limit_per_feed=5, source_feed_ids=None, restage_existing=Fal
         )
 
     for feed in feeds:
-        parsed = feedparser.parse(feed.feed_url)
+        parsed = _parse_feed_with_timeout(feed.feed_url)
         for entry in parsed.entries[:limit_per_feed]:
             source_url = entry.get("link", "")
             title = (entry.get("title") or "Untitled story").strip()

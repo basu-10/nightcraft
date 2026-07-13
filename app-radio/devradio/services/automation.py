@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qsl, urlencode, urlparse
 
 import feedparser
+import requests
 from flask import current_app
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import case
@@ -181,6 +182,27 @@ def _canonical_source_url(raw_url: str) -> str:
     if query:
         canonical = f"{canonical}?{query}"
     return canonical
+
+
+def _parse_feed_with_timeout(feed_url: str, timeout_seconds: float = 15.0):
+    """Fetch a feed via requests (bounded timeout) then parse its bytes.
+
+    feedparser.parse(url) uses urllib with NO timeout and can hang forever on a
+    slow/hanging feed host. That would freeze the automation thread (and the
+    server) because the leaked DB connection/pool is never released. Always
+    fetch with an explicit timeout first; on failure return an empty parse so
+    the caller simply skips the feed instead of blocking.
+    """
+    try:
+        resp = requests.get(
+            feed_url,
+            timeout=timeout_seconds,
+            headers={"User-Agent": "DevRadioBot/1.0 (+https://devradio.local)"},
+        )
+        resp.raise_for_status()
+        return feedparser.parse(resp.content)
+    except Exception:
+        return feedparser.parse("")
 
 
 def _build_fetcher() -> SourceArticleFetcher | None:
@@ -725,7 +747,7 @@ def _run_automated_ingestion_locked(limit_per_feed=None, skip_timestamp_gate=Fal
             candidate_count = 0
 
             try:
-                parsed = feedparser.parse(feed.feed_url)
+                parsed = _parse_feed_with_timeout(feed.feed_url)
             except Exception as exc:
                 fetch_failures += 1
                 failures.append(

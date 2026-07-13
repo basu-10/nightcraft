@@ -363,6 +363,12 @@ def fossil_login():
     return redirect(current_app.config["FOSSIL_URL"])
 
 
+@main_bp.post("/fossil/login-demo")
+def fossil_login_demo():
+    session["fossil_user"] = "demo-user-ALEX"
+    return redirect(current_app.config["FOSSIL_URL"])
+
+
 @main_bp.post("/fossil/logout")
 def fossil_logout():
     session.pop("fossil_user", None)

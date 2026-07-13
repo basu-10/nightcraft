@@ -128,7 +128,7 @@ def test_fossil_library_renders_landing_page():
     assert "FOSSil" in html
     assert "Publish with purpose" in html
     assert "Preserve forever" in html
-    assert "Decentralized publishing platform" in html
+    assert "cryptographically signed" in html
     assert "Download FOSSil" in html
     assert "See How It Works" in html
     assert "macOS, Windows, Linux" in html
@@ -241,3 +241,65 @@ def test_platform_admin_user_detail_renders_for_admin():
     html = response.get_data(as_text=True)
     assert "seeduser" in html
     assert "Reset password" in html
+
+
+def test_fossil_demo_login_sets_session_and_redirects():
+    client = _client()
+
+    response = client.post("/fossil/login-demo", follow_redirects=False)
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/fossil"
+
+
+def test_fossil_dashboard_renders_when_logged_in_as_demo_user():
+    app = create_app()
+    app.config.update(TESTING=True)
+
+    client = app.test_client()
+    client.post("/fossil/login-demo")
+
+    response = client.get("/fossil")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Recent Publications" in html
+    assert "A Minimalist Guide to Local-First Software" in html
+    assert "Essential Papers on Decentralization" in html
+    assert "The Long History of Open Knowledge" in html
+    assert "Climate Science Reports 2020" in html
+    assert "At a glance" in html
+    assert "Network status" in html
+    assert "Recent downloads" in html
+    assert "demo-user-ALEX" in html
+    assert "Log out" in html
+
+
+def test_fossil_landing_shows_demo_login_button_when_logged_out():
+    client = _client()
+
+    response = client.get("/fossil")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Login as demo-user-ALEX" in html
+    assert "Publish with purpose" in html
+    assert "Preserve forever" in html
+
+
+def test_fossil_logout_clears_session_and_returns_to_landing():
+    app = create_app()
+    app.config.update(TESTING=True)
+
+    client = app.test_client()
+    client.post("/fossil/login-demo")
+    response = client.post("/fossil/logout", follow_redirects=False)
+
+    assert response.status_code == 302
+    assert response.headers["Location"] == "/fossil"
+
+    response = client.get("/fossil")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Publish with purpose" in html
+    assert "Login as demo-user-ALEX" in html
+    assert "At a glance" not in html
+    assert "Network status" not in html

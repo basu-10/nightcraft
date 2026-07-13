@@ -125,7 +125,14 @@ class SourceArticleFetcher:
             robots = RobotFileParser()
             robots.set_url(robots_url)
             try:
-                robots.read()
+                # IMPORTANT: RobotFileParser.read() performs a blocking network
+                # fetch with no timeout. A flaky/slow robots.txt would hang this
+                # thread forever, leaking a DB connection and the process lock,
+                # eventually freezing the whole server. Always fetch with a
+                # bounded timeout via the session and parse the text ourselves.
+                robots_timeout = min(8.0, max(3.0, self.timeout_seconds))
+                resp = self._session.get(robots_url, timeout=robots_timeout)
+                robots.parse(resp.text.splitlines())
             except Exception:
                 # If robots cannot be read, fail open to avoid false negatives.
                 self._robots_cache[host] = robots
