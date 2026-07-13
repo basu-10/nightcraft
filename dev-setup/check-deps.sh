@@ -5,13 +5,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=common.sh
 source "${SCRIPT_DIR}/common.sh"
 
-NEED_SUDO=0
-if [[ "${EUID}" -ne 0 ]] && command -v sudo >/dev/null 2>&1; then
-  NEED_SUDO=1
-fi
+# On a dev laptop we must NOT pollute the host OS with apt installs. Docker
+# provides PostgreSQL + Redis, and uv provides isolated Python environments.
+# Set NIGHTCRAFT_INSTALL_APT=1 to allow apt-based installation (e.g. on a bare
+# server that is being bootstrapped for the first time).
+ALLOW_APT="${NIGHTCRAFT_INSTALL_APT:-0}"
 
 sudo_it() {
-  if [[ "${NEED_SUDO}" -eq 1 ]]; then
+  if [[ "${ALLOW_APT}" -eq 1 ]] && [[ "${EUID}" -ne 0 ]] && command -v sudo >/dev/null 2>&1; then
     sudo "$@"
   else
     "$@"
@@ -20,6 +21,9 @@ sudo_it() {
 
 APT_UPDATED=0
 ensure_apt_updated() {
+  if [[ "${ALLOW_APT}" -ne 1 ]]; then
+    return 0
+  fi
   if [[ "${APT_UPDATED}" -eq 0 ]]; then
     log "Running apt update..."
     sudo_it apt-get update -qq
@@ -28,107 +32,70 @@ ensure_apt_updated() {
 }
 
 install_pkgs() {
+  if [[ "${ALLOW_APT}" -ne 1 ]]; then
+    warn "Skipping apt install of: $* (set NIGHTCRAFT_INSTALL_APT=1 to allow)"
+    return 0
+  fi
   ensure_apt_updated
   sudo_it apt-get install -y -qq "$@"
 }
 
-INSTALLED_ANY=0
+log "Checking required tooling"
 
-log "Checking and installing required system dependencies"
-
-if ! command -v python3 >/dev/null 2>&1; then
-  log "Installing python3..."
-  install_pkgs python3
-  INSTALLED_ANY=1
-fi
-
-if ! python3 -c 'import venv' >/dev/null 2>&1; then
-  log "Installing python3-venv..."
-  install_pkgs python3-venv
-  INSTALLED_ANY=1
-fi
-
-if ! command -v pip3 >/dev/null 2>&1; then
-  if ! python3 -m pip --version >/dev/null 2>&1; then
-    log "Installing python3-pip..."
-    install_pkgs python3-pip
-    INSTALLED_ANY=1
+missing=0
+need_cmd() {
+  local cmd="$1"
+  local pkg="$2"
+  if ! command -v "${cmd}" >/dev/null 2>&1; then
+    if [[ "${ALLOW_APT}" -eq 1 ]]; then
+      install_pkgs "${pkg}"
+    else
+      warn "Required command not found: ${cmd} (install via ${pkg}, or set NIGHTCRAFT_INSTALL_APT=1)"
+      missing=1
+    fi
   fi
+}
+
+need_cmd python3 python3
+need_cmd uv "uv (https://docs.astral.sh/uv)"
+need_cmd node nodejs
+need_cmd npm npm
+# postgresql-client / redis-tools are intentionally NOT required: the health
+# checks in common.sh run pg_isready/redis-cli INSIDE the Docker containers.
+
+if [[ "${missing}" -eq 1 ]]; then
+  die "Missing required tooling. Install it or set NIGHTCRAFT_INSTALL_APT=1"
 fi
 
-if ! command -v pg_isready >/dev/null 2>&1; then
-  log "Installing postgresql-client (for pg health checks)..."
-  install_pkgs postgresql-client
-  INSTALLED_ANY=1
-fi
-
-if ! command -v redis-cli >/dev/null 2>&1; then
-  log "Installing redis-tools (for redis health checks)..."
-  install_pkgs redis-tools
-  INSTALLED_ANY=1
-fi
-
-if ! command -v npm >/dev/null 2>&1; then
-  log "Installing Node.js and npm (needed for SeekSage frontend)..."
-  if ! command -v node >/dev/null 2>&1; then
-    install_pkgs nodejs npm
+# Docker is required (provides PostgreSQL + Redis in isolated containers).
+if ! command -v docker >/dev/null 2>&1; then
+  if [[ "${ALLOW_APT}" -eq 1 ]]; then
+    log "Installing Docker from apt repositories..."
+    ensure_apt_updated
+    install_pkgs docker.io docker-compose-v2
   else
-    install_pkgs npm
+    die "Docker not found. Install Docker, or set NIGHTCRAFT_INSTALL_APT=1"
   fi
-  INSTALLED_ANY=1
-fi
-
-DOCKER_INSTALLED=0
-if command -v docker >/dev/null 2>&1; then
-  DOCKER_INSTALLED=1
-fi
-
-if [[ "${DOCKER_INSTALLED}" -eq 0 ]]; then
-  log "Installing Docker from apt repositories..."
-  ensure_apt_updated
-  install_pkgs docker.io docker-compose-v2
-
-  CURRENT_USER="${SUDO_USER:-${USER}}"
-  if ! id -nG "${CURRENT_USER}" | grep -qw docker; then
-    log "Adding ${CURRENT_USER} to docker group..."
-    sudo_it usermod -aG docker "${CURRENT_USER}"
-    log "WARN: User added to docker group. Log out and back in, or run: newgrp docker"
-  fi
-
-  sudo_it systemctl enable docker 2>/dev/null || true
-  sudo_it systemctl start docker 2>/dev/null || true
-
-  INSTALLED_ANY=1
-  DOCKER_INSTALLED=1
 fi
 
 if command -v docker >/dev/null 2>&1; then
   if ! docker info >/dev/null 2>&1; then
-    log "Docker daemon not accessible. Attempting with sudo..."
-    if sudo docker info >/dev/null 2>&1; then
-      log "Docker accessible via sudo"
-    else
-      log "Docker daemon not running. Attempting to start..."
-      sudo_it systemctl start docker 2>/dev/null || true
-      sleep 3
-      for i in $(seq 1 10); do
-        if sudo docker info >/dev/null 2>&1; then
-          log "Docker daemon started"
-          break
-        fi
-        sleep 2
-      done
-      if ! sudo docker info >/dev/null 2>&1; then
-        die "Docker daemon failed to start. Try: sudo systemctl start docker"
+    log "Docker daemon not accessible. Attempting to start..."
+    sudo_it systemctl start docker 2>/dev/null || true
+    sleep 3
+    for i in $(seq 1 10); do
+      if sudo_it docker info >/dev/null 2>&1; then
+        log "Docker daemon started"
+        break
       fi
+      sleep 2
+    done
+    if ! sudo_it docker info >/dev/null 2>&1; then
+      die "Docker daemon failed to start. Try: sudo systemctl start docker"
     fi
   fi
 else
   die "Docker installation failed — docker command not found"
 fi
 
-if [[ "${INSTALLED_ANY}" -eq 1 ]]; then
-  log "All dependencies installed successfully"
-else
-  log "All dependencies already present"
-fi
+log "All required tooling present (apt installs skipped: NIGHTCRAFT_INSTALL_APT=${ALLOW_APT})"

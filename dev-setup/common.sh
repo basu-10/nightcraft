@@ -61,27 +61,27 @@ ensure_dir() {
   mkdir -p "$1"
 }
 
+# Use uv for fully isolated Python environments. uv downloads and caches its own
+# interpreter (NIGHTCRAFT_PYTHON_VERSION, default 3.12) under ~/.local/share/uv,
+# so nothing is installed into the host OS.
 setup_venv_and_deps() {
   local venv_dir="$1"
   local app_dir="$2"
   local venv_python="${venv_dir}/bin/python"
+  local py_req="${NIGHTCRAFT_PYTHON_VERSION:-3.12}"
 
-  require_cmd python3
+  require_cmd uv
   ensure_dir "${venv_dir}"
 
   if [[ ! -x "${venv_python}" ]] || ! "${venv_python}" -c 'import sys' >/dev/null 2>&1; then
     rm -rf "${venv_dir}"
-    python3 -m venv "${venv_dir}"
+    uv venv --python "${py_req}" "${venv_dir}"
     venv_python="${venv_dir}/bin/python"
   fi
 
-  if ! "${venv_python}" -m pip --version >/dev/null 2>&1; then
-    "${venv_python}" -m ensurepip --upgrade
-  fi
-
-  "${venv_python}" -m pip install --upgrade pip wheel setuptools
-  "${venv_python}" -m pip install -r "${app_dir}/requirements.txt"
-  "${venv_python}" -m pip install 'gunicorn>=22.0.0' 'psycopg[binary]>=3.1.0'
+  uv pip install --python "${venv_python}" --upgrade pip wheel setuptools
+  uv pip install --python "${venv_python}" -r "${app_dir}/requirements.txt"
+  uv pip install --python "${venv_python}" 'gunicorn>=22.0.0' 'psycopg[binary]>=3.1.0'
 }
 
 # Docker helper: use sudo if current user is not in docker group

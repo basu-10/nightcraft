@@ -37,4 +37,15 @@ if [[ "${killed_orphans}" -gt 0 ]]; then
   log "  ${killed_orphans} orphaned processes stopped"
 fi
 
+# Final sweep: kill anything still bound to a service port. This catches
+# Flask reloader worker children that outlive their parent process.
+SERVICE_PORTS=(5100 5333 5400 5500 5600 5000 5800 5900 8000)
+for p in "${SERVICE_PORTS[@]}"; do
+  _ppid=$(ss -tlnp "sport = :${p}" 2>/dev/null | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2)
+  if [[ -n "${_ppid}" ]]; then
+    kill "${_ppid}" 2>/dev/null || true
+    log "  freed port ${p} (PID ${_ppid})"
+  fi
+done
+
 log "All services stopped"

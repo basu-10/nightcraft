@@ -65,6 +65,16 @@ EOF
   exit 0
 }
 
+# --no-sudo is handled by the root-detection block above and must be stripped
+# before the option parser runs.
+_orch_args=()
+for _a in "$@"; do
+  if [[ "${_a}" != "--no-sudo" ]]; then
+    _orch_args+=("${_a}")
+  fi
+done
+set -- "${_orch_args[@]}"
+
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
     --skip-infra) SKIP_INFRA=1 ;;

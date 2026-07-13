@@ -26,6 +26,8 @@ docker_cmd exec -i nightcraft-postgres psql -U postgres \
   -v seeksage_db_password="seeksage_app_db_2026_prod_secret" \
   -v notestack_db_user="notestack_app" \
   -v notestack_db_password="notestack_app_db_2026_prod_secret" \
+  -v green_pledge_db_user="green_pledge_app" \
+  -v green_pledge_db_password="green_pledge_app_db_2026_prod_secret" \
   < "${USERS_SQL}"
 
 docker_cmd exec -i nightcraft-postgres psql -U postgres \
@@ -39,6 +41,8 @@ docker_cmd exec -i nightcraft-postgres psql -U postgres \
   -v seeksage_db_user="seeksage_app" \
   -v notestack_db_name="notestack_db" \
   -v notestack_db_user="notestack_app" \
+  -v green_pledge_db_name="green_pledge_db" \
+  -v green_pledge_db_user="green_pledge_app" \
   < "${DBS_SQL}"
 
 log "PostgreSQL users and databases created"
