@@ -32,6 +32,18 @@ log "app-radio ready from ${RADIO_SRC_DIR}"
 log "Restarting nightcraft-radio.service"
 systemctl restart nightcraft-radio.service
 
+# Ensure the ingestion timer unit files exist on this host. They are installed
+# by install-systemd.sh, but a deploy must not fail if that hasn't been re-run
+# since the units were added. Install idempotently, then enable the timer.
+PROD_DEBIAN_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+INGEST_SERVICE_SRC="${PROD_DEBIAN_DIR}/systemd/nightcraft-radio-ingest.service"
+INGEST_TIMER_SRC="${PROD_DEBIAN_DIR}/systemd/nightcraft-radio-ingest.timer"
+if [[ -f "${INGEST_SERVICE_SRC}" && -f "${INGEST_TIMER_SRC}" ]]; then
+  install -m 0644 "${INGEST_SERVICE_SRC}" /etc/systemd/system/nightcraft-radio-ingest.service
+  install -m 0644 "${INGEST_TIMER_SRC}" /etc/systemd/system/nightcraft-radio-ingest.timer
+  systemctl daemon-reload
+fi
+
 log "Enabling nightcraft-radio-ingest.timer (hourly ingestion, out of gunicorn)"
 systemctl enable --now nightcraft-radio-ingest.timer
 
