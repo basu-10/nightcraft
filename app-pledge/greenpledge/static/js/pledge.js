@@ -102,7 +102,7 @@
 
   var heroEarth = heroHost.querySelector(".earth");
   var futureEarth = futureHost.querySelector(".earth");
-  futureEarth.style.setProperty("--vib", "1"); // future starts lush; slider adds more
+  futureEarth.style.setProperty("--vib", "1");
 
   function setVib(el, v) {
     el.style.setProperty("--vib", v.toFixed(4));
@@ -149,8 +149,6 @@
 
   function startCinematic() {
     playBtn.classList.add("is-hidden");
-    caption.style.opacity = "0";
-    caption.style.transform = "translateY(-8px)";
 
     if (reduce) {
       setVib(heroEarth, 1);
@@ -158,7 +156,7 @@
       return;
     }
 
-    heroEarth.classList.add("playing"); // no transition during rAF
+    heroEarth.classList.add("playing");
     var dur = 10500;
     var t0 = performance.now();
     (function frame(now) {
@@ -189,37 +187,36 @@
   var treesEl = document.getElementById("trees");
   var carsEl = document.getElementById("cars");
   var homesEl = document.getElementById("homes");
-  var kmEl = document.getElementById("km");
+  var flightsEl = document.getElementById("flights");
 
-  var PER_PERSON = 480; // kg CO2 avoided per participant, per year (estimate)
-  var TREE = 21;        // kg CO2 absorbed by one tree, per year
-  var CAR = 4600;       // kg CO2 emitted by one car, per year
-  var HOME = 4300;      // kg CO2 for one home's clean-energy supply, per year
-  var KM = 0.17;        // kg CO2 per km driven
-
-  function compact(n) {
-    if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + "M";
-    if (n >= 1e3) return Math.round(n / 1e3) + "K";
-    return nf.format(Math.round(n));
+  function getPeople(sliderVal) {
+    // slider 0 -> 10K, 250 -> 100K, 500 -> 1M, 750 -> 10M, 1000 -> 100M
+    return Math.round(10000 * Math.pow(10, (sliderVal / 1000) * 4));
   }
-  function tonnes(n) {
-    if (n >= 1000) return nf.format(Math.round(n / 1000)) + " t";
-    return nf.format(Math.round(n)) + " kg";
+
+  var PER_PERSON = 100;   // kg CO2 avoided per participant, per year
+  var TREE = 22;          // kg CO2 absorbed by one tree, per year
+  var CAR = 4651;         // kg CO2 emitted by one car, per year
+  var HOME = 676;         // kg CO2 for one home's clean-energy supply, per year
+  var FLIGHT = 5495;      // kg CO2 per flight (NYC-LA)
+
+  function fmt(n) {
+    return nf.format(Math.round(n));
   }
 
   function updateFromSlider() {
-    var t = Number(slider.value) / 1000;            // 0..1
-    var N = Math.round(1000 * Math.pow(2000, t));    // 1,000 .. 2,000,000
-    var v = 1 + 0.5 * t;                             // vibrancy 1 .. 1.5
+    var sliderVal = Number(slider.value);
+    var N = getPeople(sliderVal);
+    var v = 1 + 0.5 * (sliderVal / 1000);
     setVib(futureEarth, v);
 
     var co2 = N * PER_PERSON;
-    participantsNum.textContent = nf.format(N);
-    co2El.textContent = tonnes(co2);
-    treesEl.textContent = compact(co2 / TREE);
-    carsEl.textContent = compact(co2 / CAR);
-    homesEl.textContent = compact(co2 / HOME);
-    kmEl.textContent = compact(co2 / KM);
+    participantsNum.textContent = fmt(N);
+    co2El.textContent = fmt(co2);
+    treesEl.textContent = fmt(co2 / TREE);
+    carsEl.textContent = fmt(co2 / CAR);
+    homesEl.textContent = fmt(co2 / HOME);
+    flightsEl.textContent = fmt(co2 / FLIGHT);
   }
 
   if (slider) slider.addEventListener("input", updateFromSlider);

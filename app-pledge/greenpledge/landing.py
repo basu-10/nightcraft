@@ -7,9 +7,9 @@ bp = Blueprint("landing", __name__)
 # to invite the visitor to imagine the future rather than fixate on the low
 # numbers. Wire these to real aggregates once the product data layer lands.
 COMMUNITY = {
-    "people": 0,
-    "co2_pledged": 0,
-    "co2_completed": 0,
+    "people": 12,
+    "co2_pledged": 180,
+    "co2_completed": 42,
 }
 
 

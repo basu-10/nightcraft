@@ -10,87 +10,152 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
   </head>
-  <body class="experience">
-    <header class="exp-bar">
-      <a class="brand" href="{{ url_for('landing.home') }}">&#127807;&nbsp;The Green Pledge</a>
-      <a class="signin" href="{{ url_for('auth.login') }}">Sign in</a>
+  <body class="pledge-page">
+    <header class="pledge-header">
+      <div class="header-inner">
+        <a class="brand" href="{{ url_for('landing.home') }}">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.6C11.7 4.8 14.3 4.8 16.2 6.6A7 7 0 0 1 22 12c0 3.5-2.5 6.5-6 7.5"/><path d="M12 20v-8"/><path d="M8 20h8"/></svg>
+          The Green Pledge
+        </a>
+        <nav class="header-nav">
+          <a href="{{ url_for('landing.home') }}">About</a>
+          <a href="#how">How it works</a>
+          <a href="#leaderboard">Leaderboard</a>
+          <a class="btn-pledge" href="{{ url_for('auth.register') }}">Make a Pledge</a>
+        </nav>
+      </div>
     </header>
 
-    <main class="stage">
-      <!-- Community statistics: understated, above the Earth -->
-      <section class="community" id="community">
-        <p class="eyebrow">The community so far</p>
-        <div class="community-stats">
-          <div class="cstat">
-            <span class="cnum" data-target="{{ community.people }}">0</span>
-            <span class="clbl">people who have pledged</span>
+    <main class="pledge-main">
+      <!-- Hero Section -->
+      <section class="hero-section">
+        <div class="hero-grid">
+          <div class="hero-left">
+            <h1 class="hero-title">
+              Our planet.<br>
+              Our <span class="text-lime">promise.</span>
+            </h1>
+            <p class="hero-subtitle">Small choices. Big change.<br>Together, we can build a greener future.</p>
+
+            <div class="hero-stats">
+              <div class="stat-card">
+                <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <div class="stat-content">
+                  <span class="stat-num" data-target="{{ community.people }}">0</span>
+                  <span class="stat-label">People Pledged</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.6C11.7 4.8 14.3 4.8 16.2 6.6A7 7 0 0 1 22 12c0 3.5-2.5 6.5-6 7.5"/><path d="M12 20v-8"/><path d="M8 20h8"/></svg>
+                <div class="stat-content">
+                  <span class="stat-num" data-target="{{ community.co2_pledged }}">0</span>
+                  <span class="stat-label">kg CO&#8322; Pledged</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-7"/><path d="M12 15a5 5 0 0 0 5-5c0-2.76-2.24-5-5-5S7 7.24 7 10a5 5 0 0 0 5 5z"/><path d="M7 15h10"/></svg>
+                <div class="stat-content">
+                  <span class="stat-num" data-target="{{ community.co2_completed }}">0</span>
+                  <span class="stat-label">kg CO&#8322; Completed</span>
+                </div>
+              </div>
+            </div>
+
+            <p class="hero-note">
+              <svg class="note-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.6C11.7 4.8 14.3 4.8 16.2 6.6A7 7 0 0 1 22 12c0 3.5-2.5 6.5-6 7.5"/></svg>
+              Each pledge brings us closer to a better tomorrow.
+            </p>
           </div>
-          <div class="cstat">
-            <span class="cnum" data-target="{{ community.co2_pledged }}">0</span>
-            <span class="clbl">kg of CO&#8322; pledged</span>
-          </div>
-          <div class="cstat">
-            <span class="cnum" data-target="{{ community.co2_completed }}">0</span>
-            <span class="clbl">kg of CO&#8322; completed</span>
+
+          <div class="hero-right">
+            <div class="earth-host" id="heroEarth" aria-hidden="true"></div>
+            <div class="play-prompt">
+              <p class="play-eyebrow">Our story is just beginning.</p>
+              <h2 class="play-title">Press Play</h2>
+              <p class="play-caption">See how millions of small promises<br>can make our planet breathe easier.</p>
+              <button class="play-btn" id="playBtn" type="button" aria-label="Play the vision">
+                <span class="play-ring"></span>
+                <span class="play-tri"></span>
+              </button>
+              <p class="play-hint">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                click to play
+              </p>
+            </div>
           </div>
         </div>
-        <p class="community-note">A movement begins with one. Imagine what we can grow together.</p>
       </section>
 
-      <!-- Earth hero -->
-      <section class="hero" id="hero">
-        <div class="earth-host" id="heroEarth" aria-hidden="true"></div>
-        <p class="caption" id="caption">See how your pledge could help the Earth breathe easier.</p>
-        <button class="play" id="playBtn" type="button" aria-label="Play the vision">
-          <span class="play-ring"></span>
-          <span class="play-tri"></span>
-        </button>
-      </section>
+      <!-- Slider / Future Section -->
+      <section class="future-section" id="future" hidden>
+        <div class="future-inner">
+          <div class="future-text">
+            <h2 class="future-title">Imagine if <span class="text-lime">more of us</span> joined.</h2>
+            <p class="future-subtitle">Move the slider to see the impact we can create together.</p>
 
-      <!-- Interactive future section, revealed after the cinematic -->
-      <section class="future" id="future" hidden>
-        <h2 class="future-title">Imagine if more of us joined.</h2>
+            <div class="slider-wrap">
+              <div class="slider-header">
+                <span class="slider-num" id="participantsNum">0</span>
+                <span class="slider-label">people joining the pledge</span>
+              </div>
+              <input class="slider" id="slider" type="range" min="0" max="1000" value="350" aria-label="Number of people joining">
+              <div class="slider-ticks">
+                <span>10K</span>
+                <span>100K</span>
+                <span>1M</span>
+                <span>10M</span>
+                <span>100M</span>
+              </div>
+            </div>
 
-        <div class="future-grid">
+            <div class="impact-grid">
+              <div class="impact-card">
+                <svg class="impact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.6C11.7 4.8 14.3 4.8 16.2 6.6A7 7 0 0 1 22 12c0 3.5-2.5 6.5-6 7.5"/><path d="M12 20v-8"/><path d="M8 20h8"/></svg>
+                <div class="impact-content">
+                  <span class="impact-num" id="co2">0</span>
+                  <span class="impact-label">kg CO&#8322; Saved<br>per year</span>
+                </div>
+              </div>
+              <div class="impact-card">
+                <svg class="impact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-7"/><path d="M12 15a5 5 0 0 0 5-5c0-2.76-2.24-5-5-5S7 7.24 7 10a5 5 0 0 0 5 5z"/><path d="M7 15h10"/></svg>
+                <div class="impact-content">
+                  <span class="impact-num" id="trees">0</span>
+                  <span class="impact-label">Trees Equivalent<br>planted</span>
+                </div>
+              </div>
+              <div class="impact-card">
+                <svg class="impact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2.4-3-3.8c-.5-.4-1.2-.4-1.7 0C9.3 7.6 7 10 7 10s-2.7.6-4.5 1.1C1.4 11.3.7 12.1.7 13v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+                <div class="impact-content">
+                  <span class="impact-num" id="cars">0</span>
+                  <span class="impact-label">Cars Off the Road<br>for a year</span>
+                </div>
+              </div>
+              <div class="impact-card">
+                <svg class="impact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <div class="impact-content">
+                  <span class="impact-num" id="homes">0</span>
+                  <span class="impact-label">Homes Powered<br>for a year</span>
+                </div>
+              </div>
+              <div class="impact-card">
+                <svg class="impact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+                <div class="impact-content">
+                  <span class="impact-num" id="flights">0</span>
+                  <span class="impact-label">Flights Avoided<br>(NYC ↔ LA)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="future-cta">
+              <a class="btn-primary" href="{{ url_for('auth.register') }}">Make Your Green Pledge</a>
+              <a class="btn-ghost" href="#how">Learn how it works <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+            </div>
+          </div>
+
           <div class="future-earth">
             <div class="earth-host" id="futureEarth" aria-hidden="true"></div>
           </div>
-
-          <div class="future-controls">
-            <label class="slider-label" for="slider">
-              <span class="slider-num" id="participantsNum">0</span>
-              <span class="slider-sub">people joining the pledge</span>
-            </label>
-            <input class="slider" id="slider" type="range" min="0" max="1000" value="350"
-                   aria-label="Number of people joining">
-            <p class="slider-hint">Drag to grow the movement.</p>
-
-            <ul class="impact">
-              <li>
-                <span class="inum" id="co2">0</span>
-                <span class="ilbl">estimated CO&#8322; saved each year</span>
-              </li>
-              <li>
-                <span class="inum" id="trees">0</span>
-                <span class="ilbl">trees grown equivalent</span>
-              </li>
-              <li>
-                <span class="inum" id="cars">0</span>
-                <span class="ilbl">cars taken off the road</span>
-              </li>
-              <li>
-                <span class="inum" id="homes">0</span>
-                <span class="ilbl">homes powered by clean energy</span>
-              </li>
-              <li>
-                <span class="inum" id="km">0</span>
-                <span class="ilbl">kilometres not driven</span>
-              </li>
-            </ul>
-          </div>
         </div>
-
-        <a class="cta" href="{{ url_for('auth.register') }}">Make your Green Pledge</a>
       </section>
     </main>
 
