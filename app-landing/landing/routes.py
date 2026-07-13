@@ -203,6 +203,16 @@ def alfred_home():
     return render_template("alfred.html")
 
 
+@main_bp.get("/texttrace")
+def texttrace_home():
+    return render_template(
+        "texttrace.html",
+        texttrace_url=current_app.config["TEXTTRACE_URL"],
+        texttrace_github_url=current_app.config["TEXTTRACE_GITHUB_URL"] or current_app.config["TEXTTRACE_URL"],
+        texttrace_download_url=current_app.config["TEXTTRACE_DOWNLOAD_URL"] or current_app.config["TEXTTRACE_URL"],
+    )
+
+
 @main_bp.get("/experimental")
 def experimental_apps():
     shared_user = _fetch_shared_auth_user()

@@ -47,6 +47,9 @@ Default local URL: `http://127.0.0.1:5400`
 - `LANDING_FOSSIL_URL` (default `/fossil`)
 - `LANDING_FOSSIL_GITHUB_URL` (default empty; FOSSil "View on GitHub"/Docs links fall back to `LANDING_FOSSIL_URL`)
 - `LANDING_FOSSIL_DOWNLOAD_URL` (default empty; FOSSil "Download" links fall back to `LANDING_FOSSIL_URL`)
+- `LANDING_TEXTTRACE_URL` (default `/texttrace`)
+- `LANDING_TEXTTRACE_GITHUB_URL` (default empty; TextTrace GitHub/Docs links fall back to `LANDING_TEXTTRACE_URL`)
+- `LANDING_TEXTTRACE_DOWNLOAD_URL` (default empty; TextTrace download links fall back to `LANDING_TEXTTRACE_URL`)
 
 ## Tests
 

@@ -61,6 +61,41 @@ def test_healthz_route_returns_expected_payload():
     assert response.get_json() == {"status": "ok", "service": "landing"}
 
 
+def test_texttrace_route_renders_texttrace_landing_page():
+    client = _client()
+
+    response = client.get("/texttrace")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "TextTrace" in html
+    assert "Search your words" in html
+    assert "the way" in html
+    assert "you think" in html
+    assert "Semantic Search" in html
+    assert "Local Embeddings" in html
+    assert "Private by Design" in html
+    assert "Pick your platform" in html
+    assert 'href="/texttrace"' in html or "texttrace" in html
+
+
+def test_texttrace_route_wires_github_and_download_links():
+    app = create_app()
+    app.config.update(
+        TESTING=True,
+        TEXTTRACE_GITHUB_URL="https://github.com/example/texttrace",
+        TEXTTRACE_DOWNLOAD_URL="https://github.com/example/texttrace/releases",
+    )
+    client = app.test_client()
+
+    response = client.get("/texttrace")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "https://github.com/example/texttrace" in html
+    assert "https://github.com/example/texttrace/releases" in html
+
+
 def test_admin_route_prompts_login_when_not_authenticated():
     client = _client()
 
