@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Workspace — Visual Prototype</title>
+    <style>
+        :root {
+            --bg-app: #131316;
+            --bg-canvas: #1a1a1f;
+            --bg-panel: #222228;
+            --bg-card: #26262c;
+            --bg-card-head: #2e2e36;
+            --text-primary: #e4e4e7;
+            --text-secondary: #8888a0;
+            --accent: #3b82f6;
+            --accent-dim: rgba(59, 130, 246, 0.15);
+            --border: #333339;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --code-bg: #111114;
+            --highlight: rgba(250, 204, 21, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        
+        body { background: var(--bg-app); color: var(--text-primary); overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+
+        /* --- Top Bar & Fade Logic --- */
+        .topbar {
+            height: 44px; background: var(--bg-panel); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 16px; flex-shrink: 0; z-index: 100;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            transform-origin: top center;
+        }
+        .topbar.hidden { opacity: 0; transform: translateY(-10px); pointer-events: none; }
+        
+        .topbar-left { display: flex; align-items: center; gap: 16px; }
+        .topbar-title { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; color: var(--text-secondary);}
+        .topbar-title span { color: var(--text-primary); }
+        .save-badge { font-size: 10px; background: var(--success); color: #000; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+        
+        .tabs { display: flex; gap: 2px; margin-left: 24px; }
+        .tab { padding: 6px 14px; font-size: 12px; color: var(--text-secondary); background: transparent; border-radius: 6px 6px 0 0; border: none; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .tab:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
+        .tab.active { color: var(--text-primary); background: var(--bg-app); border-bottom-color: var(--accent); }
+
+        .topbar-actions { display: flex; gap: 8px; align-items: center; }
+        .search-box { width: 200px; background: var(--bg-app); border: 1px solid var(--border); color: var(--text-primary); padding: 6px 10px; border-radius: 6px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+        .search-box span { color: var(--text-secondary); }
+
+        /* --- Main Layout --- */
+        .main-area { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: 260px; background: var(--bg-panel); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; flex-shrink: 0;
+            transition: width 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+            overflow: hidden; z-index: 50;
+        }
+        .sidebar.collapsed { width: 0; opacity: 0; border-right: none; }
+        
+        .sidebar-section { padding: 16px; border-bottom: 1px solid var(--border); width: 260px; }
+        .sidebar-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 12px; letter-spacing: 0.5px; }
+        
+        mark { background: var(--highlight); color: var(--text-primary); padding: 0 2px; border-radius: 2px; }
+        .filter-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+        .filter-pill { font-size: 10px; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border); color: var(--text-secondary); background: transparent; }
+        .filter-pill.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+        .match-item { padding: 8px; background: var(--bg-app); border-radius: 4px; border: 1px solid var(--border); margin-bottom: 4px; font-size: 12px; color: var(--text-secondary); }
+        .match-item.current { border-color: var(--warning); color: var(--warning); font-weight: 600; }
+
+        .inspector-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; }
+        .inspector-label { color: var(--text-secondary); }
+        .inspector-val { color: var(--text-primary); font-weight: 500; }
+
+        /* --- Canvas Viewport --- */
+        #canvas-viewport {
+            flex-grow: 1; position: relative; overflow: hidden; cursor: grab; 
+            background-color: var(--bg-canvas);
+            background-image: radial-gradient(circle, #2a2a30 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        #canvas-viewport.grabbing { cursor: grabbing; }
+
+        #canvas-world { position: absolute; top: 0; left: 0; width: 0; height: 0; transform-origin: 0 0; }
+        
+        /* --- SVG Layer --- */
+        #svg-layer { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: visible; pointer-events: none; z-index: 1; }
+        .edge { fill: none; stroke: #44445a; stroke-width: 2; }
+        .edge-active { stroke: var(--accent); filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.4)); }
+        .edge-hierarchical { stroke-dasharray: 8, 4; stroke: #6366f1; }
+        .edge-head { fill: #44445a; }
+        .edge-active-head { fill: var(--accent); }
+        .edge-label { font-family: inherit; font-size: 11px; fill: var(--text-secondary); }
+        .edge-label-bg { fill: var(--bg-canvas); stroke: var(--border); stroke-width: 1; rx: 4; ry: 4; }
+
+        /* --- Cards --- */
+        .card {
+            position: absolute; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 2;
+            display: flex; flex-direction: column; transition: box-shadow 0.2s, border-color 0.2s;
+        }
+        .card:hover { box-shadow: 0 12px 32px rgba(0,0,0,0.6); }
+        .card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 12px 32px rgba(0,0,0,0.6); }
+        .card.search-match { border-color: var(--warning); box-shadow: 0 0 0 1px var(--warning), 0 0 20px rgba(245, 158, 11, 0.2); }
+
+        .card-head {
+            padding: 10px 14px; background: var(--bg-card-head); border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0; flex-shrink: 0;
+        }
+        .card-title { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .card-badge { font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+        .badge-text { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
+        .badge-file { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .badge-img { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+        .badge-tbl { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+
+        .card-body { padding: 14px; font-size: 13px; line-height: 1.5; color: #d4d4d8; flex-grow: 1; overflow: hidden; }
+        .card-body img { width: 100%; height: 140px; object-fit: cover; border-radius: 4px; display: block; margin-bottom: 8px; }
+
+        /* Rich Text Styles */
+        h1, h2, h3 { margin-bottom: 8px; color: var(--text-primary); line-height: 1.2; }
+        h1 { font-size: 20px; border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 12px;}
+        h2 { font-size: 16px; }
+        h3 { font-size: 14px; color: var(--accent); }
+        p { margin-bottom: 10px; }
+        strong { color: var(--text-primary); font-weight: 600; }
+        em { color: var(--warning); font-style: italic; }
+        ul, ol { margin-left: 20px; margin-bottom: 10px; }
+        li { margin-bottom: 4px; }
+        
+        pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace; font-size: 11px; color: #a5f3fc; margin: 10px 0; overflow-x: auto; }
+        code { font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace; background: var(--code-bg); padding: 2px 4px; border-radius: 4px; font-size: 0.9em; color: #a5f3fc; }
+
+        .data-table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 0; }
+        .data-table th { background: rgba(0,0,0,0.3); color: var(--text-primary); font-weight: 600; text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--border); }
+        .data-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+        .data-table tr:last-child td { border-bottom: none; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .dot-green { background: var(--success); } .dot-red { background: var(--danger); } .dot-yellow { background: var(--warning); }
+
+        .file-preview { display: flex; align-items: center; gap: 14px; padding: 4px 0; }
+        .file-icon-large { font-size: 32px; opacity: 0.8; }
+        .file-meta { font-size: 12px; color: var(--text-secondary); }
+        .file-meta strong { color: var(--text-primary); display: block; margin-bottom: 2px; font-size: 13px;}
+
+        .port { position: absolute; width: 10px; height: 10px; background: var(--accent); border: 2px solid var(--bg-card); border-radius: 50%; opacity: 0; transition: opacity 0.2s, transform 0.2s; z-index: 10; }
+        .card:hover .port, .card.selected .port { opacity: 1; }
+        .port:hover { transform: scale(1.4); }
+        .port-top { top: -5px; left: 50%; margin-left: -5px; }
+        .port-right { right: -5px; top: 50%; margin-top: -5px; }
+        .port-bottom { bottom: -5px; left: 50%; margin-left: -5px; }
+        .port-left { left: -5px; top: 50%; margin-top: -5px; }
+
+        /* Zoom UI */
+        .zoom-ui { position: absolute; bottom: 16px; right: 16px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; z-index: 50; display: flex; align-items: center; overflow: hidden; }
+        .z-btn { background: transparent; border: none; border-right: 1px solid var(--border); color: var(--text-secondary); padding: 8px 12px; cursor: pointer; font-size: 14px; }
+        .z-btn:last-child { border-right: none; }
+        .z-level { padding: 0 12px; font-size: 11px; color: var(--text-secondary); border-right: 1px solid var(--border); height: 100%; display: flex; align-items: center; }
+
+        /* Tab Content Canvas Wrappers */
+        .tab-canvas { position: absolute; top: 0; left: 0; width: 0; height: 0; display: none; }
+        .tab-canvas.active { display: block; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <div class="topbar" id="topbar">
+        <div class="topbar-left">
+            <div class="topbar-title">📚 <span>Machine Learning Study Guide</span></div>
+            <div class="save-badge">SAVED</div>
+            <div class="tabs">
+                <button class="tab" data-tab="tab1">📑 1. Fundamentals</button>
+                <button class="tab active" data-tab="tab2">📑 2. Neural Networks</button>
+                <button class="tab" data-tab="tab3">📑 3. NLP Basics</button>
+            </div>
+        </div>
+        <div class="topbar-actions">
+            <div class="search-box">🔍 <span><mark>backprop</mark></span></div>
+            <button class="z-btn" style="border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; font-size: 12px; color: var(--text-secondary); background: var(--bg-card); cursor: pointer;">⊞ Fit</button>
+            <button class="z-btn" style="border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; font-size: 12px; color: var(--text-secondary); background: var(--bg-card); cursor: pointer;">⧉ Layout</button>
+        </div>
+    </div>
+
+    <div class="main-area">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-section" style="flex-grow: 1;">
+                <div class="sidebar-title">Search & Filter</div>
+                <div class="search-box" style="width: 100%;">🔍 <span>Search "<mark>backprop</mark>"</span></div>
+                <div class="filter-row">
+                    <div class="filter-pill active">All</div>
+                    <div class="filter-pill">Text</div>
+                    <div class="filter-pill">Images</div>
+                    <div class="filter-pill">Tables</div>
+                    <div class="filter-pill">Files</div>
+                </div>
+                <div style="margin-top: 20px; font-size: 12px; color: var(--text-secondary);">
+                    <div style="margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">Matches on Canvas:</div>
+                    <div class="match-item current">
+                        <div style="font-size: 11px; margin-bottom: 4px;">CURRENT CANVAS</div>
+                        Core Concepts Note
+                    </div>
+                    <div class="match-item" style="opacity: 0.6;">
+                        <div style="font-size: 11px; margin-bottom: 4px;">📑 1. Fundamentals</div>
+                        History of AI
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">Inspector</div>
+                <div class="inspector-row"><span class="inspector-label">Type</span><span class="inspector-val">Text Note</span></div>
+                <div class="inspector-row"><span class="inspector-label">Connections</span><span class="inspector-val">3 Out / 1 In</span></div>
+                <div class="inspector-row"><span class="inspector-label">Created</span><span class="inspector-val">Oct 24, 2023</span></div>
+                <div class="inspector-row"><span class="inspector-label">Modified</span><span class="inspector-val">2 mins ago</span></div>
+            </div>
+        </div>
+
+        <!-- Canvas -->
+        <div id="canvas-viewport">
+            <div id="canvas-world">
+                
+                <!-- TAB 1 CONTENT: FUNDAMENTALS -->
+                <div class="tab-canvas" id="tab1">
+                    <svg class="svg-layer" style="position: absolute; top:0; left:0; width:1px; height:1px; overflow:visible; pointer-events:none; z-index:1;">
+                        <defs><marker id="arrow1" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#44445a"/></marker></defs>
+                        <path d="M 400 150 L 700 150" class="edge" marker-end="url(#arrow1)" />
+                    </svg>
+                    <div class="card" style="left: 0px; top: 0px; width: 400px;">
+                        <div class="port port-top"></div><div class="port port-right"></div><div class="port port-bottom"></div><div class="port port-left"></div>
+                        <div class="card-head"><div class="card-title">History of AI</div><div class="card-badge badge-text">TEXT</div></div>
+                        <div class="card-body">
+                            <h2>The Turing Test (1950)</h2>
+                            <p>Alan Turing proposed a test for machine intelligence. A human evaluator judges natural language conversations between a human and a machine designed to generate human-like responses.</p>
+                            <p>The evaluator knows that one of the two partners in conversation is a machine, and all participants are separated from one another. <strong>If the evaluator cannot reliably tell the machine from the human, the machine is said to have passed the test.</strong></p>
+                        </div>
+                    </div>
+                    <div class="card" style="left: 700px; top: 50px; width: 300px;">
+                        <div class="port port-top"></div><div class="port port-right"></div><div class="port port-bottom"></div><div class="port port-left"></div>
+                        <div class="card-head"><div class="card-title">Early Computer</div><div class="card-badge badge-img">IMG</div></div>
+                        <div class="card-body" style="padding: 0; overflow: hidden;">
+                            <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="History">
+                            <div style="padding: 10px; font-size: 12px; color: var(--text-secondary);">Fig 1.2: Early mainframe computers used in initial AI research.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2 CONTENT: NEURAL NETWORKS (Main Feature) -->
+                <div class="tab-canvas active" id="tab2">
+                    <svg id="svg-layer" style="position: absolute; top:0; left:0; width:1px; height:1px; overflow:visible; pointer-events:none; z-index:1;">
+                        <defs>
+                            <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" class="edge-head"/></marker>
+                            <marker id="arrow-active" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" class="edge-active-head"/></marker>
+                            <marker id="arrow-hier" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#6366f1"/></marker>
+                        </defs>
+                        <path d="M 360 180 C 500 180, 500 140, 640 140" class="edge edge-active" marker-end="url(#arrow-active)" />
+                        <rect x="440" y="140" width="60" height="18" class="edge-label-bg" />
+                        <text x="470" y="153" text-anchor="middle" class="edge-label" style="fill: var(--accent);">visual</text>
+                        <path d="M 180 320 L 180 420" class="edge" marker-end="url(#arrow)" />
+                        <rect x="190" y="355" width="50" height="18" class="edge-label-bg" />
+                        <text x="215" y="368" text-anchor="middle" class="edge-label">code</text>
+                        <path d="M 180 320 C 180 450, -100 400, -100 530" class="edge edge-hierarchical" marker-end="url(#arrow-hier)" />
+                        <rect x="-170" y="415" width="40" height="18" class="edge-label-bg" />
+                        <text x="-150" y="428" text-anchor="middle" class="edge-label" style="fill: #6366f1;">src</text>
+                        <path d="M 640 400 C 400 400, 360 350, 360 320" class="edge" marker-end="url(#arrow)" />
+                        <rect x="460" y="370" width="70" height="18" class="edge-label-bg" />
+                        <text x="495" y="383" text-anchor="middle" class="edge-label">extracted</text>
+                        <path d="M 890 200 L 890 350" class="edge" marker-end="url(#arrow)" />
+                        <rect x="900" y="265" width="60" height="18" class="edge-label-bg" />
+                        <text x="930" y="278" text-anchor="middle" class="edge-label">results</text>
+                    </svg>
+
+                    <div class="card selected search-match" style="left: 0px; top: 0px; width: 360px;">
+                        <div class="port port-top"></div><div class="port port-right"></div><div class="port port-bottom"></div><div class="port port-left"></div>
+                        <div class="card-head"><div class="card-title">Core Concepts Note</div><div class="card-badge badge-text">TEXT</div></div>
+                        <div class="card-body">
+                            <h2>Neural Networks</h2>
+                            <p>A network of functions that understand and translate data inputs into specific outputs. The core mechanism relies on <mark>backprop</mark>agation.</p>
+                            <ul>
+                                <li><strong>Forward Pass:</strong> Calculate loss</li>
+                                <li><strong>Backward Pass:</strong> <mark>backprop</mark>agation adjusts weights based on error rate</li>
+                                <li><em>Crucial for training deep learning models</em></li>
+                            </ul>
+                            <p>Read the attached <strong>PDF</strong> for the mathematical derivation of gradients.</p>
+                        </div>
+                    </div>
+
+                    <div class="card" style="left: 640px; top: 40px; width: 280px;">
+                        <div class="port port-top"></div><div class="port port-right"></div><div class="port port-bottom"></div><div class="port port-left"></div>
+                        <div class="card-head"><div class="card-title">Network Topology</div><div class="card-badge badge-img">IMG</div></div>
+                        <div class="card-body" style="padding: 0; overflow: hidden;">
+                            <img src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Abstract Network">
+                            <div style="padding: 10px; font-size: 12px; color: var(--text-secondary);">Figure 1.1: Multi-layer perceptron structure showing hidden layers.</div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="left: 0px; top: 420px; width: 360px;">
+                        <div class="port port-top"></div><div class="port port-right"></div><div class="port port-bottom"></div><div class="port port-left"></div>
+                        <div class="card-head"><div class="card-title">PyTorch Implementation</div><div class="card-badge badge-text">TEXT</div></div>
+                        <div class="card-body">
+                            <h3>Basic Training Loop</h3>
+                            <p>Standard boilerplate for optimizing a model using <code>loss.backward()</code>.</p>
+                            <pre>optimizer.zero_grad()
+outputs = model(inputs)
+loss = criterion(outputs, labels)
+loss.backward() # Backprop here
+optimizer.step()</pre>
+                            <p>Ensure gradients are zeroed before <strong>backprop</strong> to prevent accumulation.</p>
+                        </div>
+                    </div>
+
+                    <div class="card" style="left: -280px; top: 530px; width: 280px;">
+                        <div class="port port-top"></div><div class="port port-right"></div><div class="port port-bottom"></div><div class="port port-left"></div>
+                        <div class="card-head"><div class="card-title">Original Paper</div><div class="card-badge badge-file">FILE</div></div>
+                        <div class="card-body">
+                            <div class="file-preview">
+                                <div class="file-icon-large">📕</div>
+                                <div class="file-meta">
+                                    <strong>backprop_derivation.pdf</strong>
+                                    2.4 MB • Uploaded Oct 20<br>Pages: 14
+                                </div>
+                            </div>
+                            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-secondary);">
+                                <strong style="color: var(--text-primary); display: block; margin-bottom: 4px;">Abstract Snippet:</strong>
+                                "We describe a new procedure for calculating the gradient of a complex nonlinear system..."
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="left: 640px; top: 350px; width: 500px;">
+                        <div class="port port-top"></div><div class="port port-right"></div><div class="port port-bottom"></div><div class="port port-left"></div>
+                        <div class="card-head"><div class="card-title">Epoch Training Results</div><div class="card-badge badge-tbl">TABLE</div></div>
+                        <div class="card-body" style="padding: 0;">
+                            <table class="data-table">
+                                <thead><tr><th>Epoch</th><th>Loss</th><th>Accuracy</th><th>Learning Rate</th><th>Status</th></tr></thead>
+                                <tbody>
+                                    <tr><td>10</td><td>0.4521</td><td>82.4%</td><td>0.001</td><td><span class="status-dot dot-yellow"></span>Running</td></tr>
+                                    <tr><td>20</td><td>0.2130</td><td>91.2%</td><td>0.001</td><td><span class="status-dot dot-green"></span>Completed</td></tr>
+                                    <tr><td>30</td><td>0.1054</td><td>96.8%</td><td>0.0001</td><td><span class="status-dot dot-green"></span>Completed</td></tr>
+                                    <tr><td>40</td><td>0.0992</td><td>97.1%</td><td>0.0001</td><td><span class="status-dot dot-red"></span>Early Stop</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3 CONTENT: NLP BASICS -->
+                <div class="tab-canvas" id="tab3">
+                    <svg class="svg-layer" style="position: absolute; top:0; left:0; width:1px; height:1px; overflow:visible; pointer-events:none; z-index:1;">
+                        <defs><marker id="arrow2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#44445a"/></marker></defs>
+                        <path d="M 350 120 C 500 120, 500 300, 650 300" class="edge" marker-end="url(#arrow2)" />
+                        <rect x="440" y="190" width="60" height="18" class="edge-label-bg" />
+                        <text x="470" y="203" text-anchor="middle" class="edge-label">parsed</text>
+                    </svg>
+                    <div class="card" style="left: 0px; top: 0px; width: 350px;">
+                        <div class="port port-top"></div><div class="port port-right"></div><div class="port port-bottom"></div><div class="port port-left"></div>
+                        <div class="card-head"><div class="card-title">Raw Text Input</div><div class="card-badge badge-text">TEXT</div></div>
+                        <div class="card-body">
+                            <h2>Corpus Example</h2>
+                            <p>"The quick brown fox jumps over the lazy dog. Natural language processing is a subfield of linguistics and computer science."</p>
+                            <p><em>Note: Requires tokenization and lemmatization before vectorization.</em></p>
+                        </div>
+                    </div>
+                    <div class="card" style="left: 650px; top: 200px; width: 400px;">
+                        <div class="port port-top"></div><div class="port port-right"></div><div class="port port-bottom"></div><div class="port port-left"></div>
+                        <div class="card-head"><div class="card-title">Tokenization Output</div><div class="card-badge badge-tbl">TABLE</div></div>
+                        <div class="card-body" style="padding: 0;">
+                            <table class="data-table">
+                                <thead><tr><th>Token ID</th><th>String</th><th>Lemma</th><th>POS Tag</th></tr></thead>
+                                <tbody>
+                                    <tr><td>101</td><td>The</td><td>the</td><td>DET</td></tr>
+                                    <tr><td>2440</td><td>quick</td><td>quick</td><td>ADJ</td></tr>
+                                    <tr><td>3845</td><td>jumps</td><td>jump</td><td>VERB</td></tr>
+                                    <tr><td>101</td><td>the</td><td>the</td><td>DET</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Zoom Controls -->
+            <div class="zoom-ui">
+                <button class="z-btn" id="zoom-in">+</button>
+                <div class="z-level" id="zoom-level">100%</div>
+                <button class="z-btn" id="zoom-out">−</button>
+                <button class="z-btn" id="zoom-reset">⟲</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State ---
+        let scale = 1;
+        let panX = 100;
+        let panY = 100;
+        let isDragging = false;
+        let startX, startY;
+        let topbarTimeout;
+        const topbar = document.getElementById('topbar');
+        const viewport = document.getElementById('canvas-viewport');
+        const world = document.getElementById('canvas-world');
+        const sidebar = document.getElementById('sidebar');
+        const zoomLevelEl = document.getElementById('zoom-level');
+
+        // --- Transform Logic ---
+        function updateTransform() {
+            // Apply transform to the world container
+            world.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+            zoomLevelEl.innerText = `${Math.round(scale * 100)}%`;
+        }
+
+        function showTopbar() {
+            topbar.classList.remove('hidden');
+        }
+
+        function hideTopbar() {
+            topbar.classList.add('hidden');
+        }
+
+        // --- Pan Logic ---
+        viewport.addEventListener('mousedown', (e) => {
+            // Only pan if clicking directly on the viewport background or the world background
+            if (e.target === viewport || e.target === world || e.target.tagName === 'svg') {
+                isDragging = true;
+                startX = e.clientX - panX;
+                startY = e.clientY - panY;
+                viewport.classList.add('grabbing');
+                
+                hideTopbar(); // Hide immediately on drag start
+                clearTimeout(topbarTimeout);
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            panX = e.clientX - startX;
+            panY = e.clientY - startY;
+            updateTransform();
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                viewport.classList.remove('grabbing');
+                
+                // Show topbar again after user stops panning (idle for 500ms)
+                clearTimeout(topbarTimeout);
+                topbarTimeout = setTimeout(showTopbar, 500);
+            }
+        });
+
+        // --- Zoom Logic ---
+        viewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+            const newScale = Math.min(Math.max(scale * zoomFactor, 0.1), 5);
+            
+            // Get mouse position relative to viewport
+            const rect = viewport.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            // Adjust pan to zoom towards mouse pointer
+            panX = mouseX - (mouseX - panX) * (newScale / scale);
+            panY = mouseY - (mouseY - panY) * (newScale / scale);
+            scale = newScale;
+            
+            updateTransform();
+        }, { passive: false });
+
+        // Zoom UI Buttons
+        document.getElementById('zoom-in').addEventListener('click', () => { scale = Math.min(scale * 1.2, 5); updateTransform(); });
+        document.getElementById('zoom-out').addEventListener('click', () => { scale = Math.max(scale / 1.2, 0.1); updateTransform(); });
+        document.getElementById('zoom-reset').addEventListener('click', () => { scale = 1; panX = 100; panY = 100; updateTransform(); });
+
+        // --- Tab Click Logic (Switches Canvas Layout) ---
+        const tabs = document.querySelectorAll('.tab');
+        const canvases = document.querySelectorAll('.tab-canvas');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active from all
+                tabs.forEach(t => t.classList.remove('active'));
+                canvases.forEach(c => c.classList.remove('active'));
+                
+                // Add active to clicked
+                tab.classList.add('active');
+                const targetCanvas = document.getElementById(tab.dataset.tab);
+                if (targetCanvas) targetCanvas.classList.add('active');
+            });
+        });
+
+        // --- Sidebar Deselect/Collapse Logic ---
+        viewport.addEventListener('click', (e) => {
+            // If clicking on the background, collapse sidebar
+            if (e.target === viewport || e.target === world || e.target.tagName === 'svg') {
+                sidebar.classList.add('collapsed');
+                // Deselect cards
+                document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+            }
+        });
+
+        // Re-open sidebar if clicking a card
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('mousedown', (e) => {
+                // Don't trigger if clicking a port
+                if (e.target.classList.contains('port')) return;
+                
+                document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                sidebar.classList.remove('collapsed');
+            });
+        });
+
+        // Initialize
+        updateTransform();
+    </script>
+</body>
+</html>

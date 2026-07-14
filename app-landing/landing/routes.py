@@ -213,6 +213,46 @@ def texttrace_home():
     )
 
 
+@main_bp.get("/scrapbook")
+def scrapbook_landing():
+    return render_template("mindmap-landing.html")
+
+
+@main_bp.get("/scrapbook/app")
+def scrapbook_app():
+    return render_template("mindmap-app.html")
+
+
+@main_bp.get("/miobook")
+def notebook_landing():
+    return render_template("browser-notebook-app-landing.html")
+
+
+@main_bp.get("/miobook/app")
+def notebook_app():
+    return render_template("browser-notebook-app.html")
+
+
+@main_bp.get("/quickpost")
+def quickpost_landing():
+    return render_template("quickposts-landing.html")
+
+
+@main_bp.get("/quickpost/quickcollages")
+def quickpost_quickcollages():
+    return render_template("quickposts-app-quickcollages.html")
+
+
+@main_bp.get("/quickpost/quickedits")
+def quickpost_quickedits():
+    return render_template("quickposts-app-quickedits.html")
+
+
+@main_bp.get("/quickpost/quickslides")
+def quickpost_quickslides():
+    return render_template("quickposts-app-quickslides.html")
+
+
 @main_bp.get("/experimental")
 def experimental_apps():
     shared_user = _fetch_shared_auth_user()
@@ -270,10 +310,10 @@ def experimental_apps():
                     "stack": "JavaScript, Canvas",
                 },
                 {
-                    "name": "MioBook",
+                    "name": "NoteFlow",
                     "tagline": "A Jupyter-notebook inspired text app.",
                     "description": "An interactive document app that mixes prose and runnable blocks for quick experiments.",
-                    "url": current_app.config["MIOBOOK_URL"],
+                    "url": current_app.config["NOTEBOOK_URL"],
                     "status": "In Development",
                     "stack": "Python, Web",
                 },
@@ -294,6 +334,14 @@ def experimental_apps():
                     "url": current_app.config["NEERA_URL"],
                     "status": "In Development",
                     "stack": "Next.js, Prisma, PostgreSQL",
+                },
+                {
+                    "name": "QuickPost",
+                    "tagline": "Text-to-post pipeline for quick sharing.",
+                    "description": "Turn drafts into posts, slides, and edits with a lightweight local-first pipeline.",
+                    "url": current_app.config["QUICKPOST_URL"],
+                    "status": "In Development",
+                    "stack": "Python, Web",
                 },
             ],
         },
