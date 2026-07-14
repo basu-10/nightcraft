@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuickPost — Text-to-Post Pipeline</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Cinzel', 'serif'],
+            body: ['Lato', 'sans-serif'],
+            serif: ['Cormorant Garamond', 'serif'],
+          },
+          colors: {
+            brand: {
+              black: '#0c0a09',
+              dark: '#1c1917',
+              mid: '#292524',
+              light: '#78716c',
+              lighter: '#a8a29e',
+              cream: '#f5f5f4',
+              white: '#fafaf9',
+              accent: '#fde68a',
+              accentDark: '#b45309',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    ::selection { background: #fde68a; color: #0c0a09; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1c1917; }
+    ::-webkit-scrollbar-thumb { background: #44403c; border-radius: 3px; }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes drawLine {
+      from { stroke-dashoffset: 100; }
+      to { stroke-dashoffset: 0; }
+    }
+    @keyframes morphSlide {
+      0% { opacity: 0; transform: scaleY(0.3); border-radius: 2px; }
+      30% { opacity: 1; transform: scaleY(0.8); }
+      60% { transform: scaleY(1); }
+      100% { opacity: 1; transform: scaleY(1); border-radius: 2px; }
+    }
+    @keyframes cropIn {
+      0% { clip-path: inset(20% 15%); opacity: 0.5; }
+      100% { clip-path: inset(0% 0%); opacity: 1; }
+    }
+    @keyframes assembleCollage {
+      0% { opacity: 0; transform: scale(0.6) rotate(-3deg); }
+      50% { transform: scale(1.05) rotate(0.5deg); }
+      100% { opacity: 1; transform: scale(1) rotate(0deg); }
+    }
+    @keyframes typeCursor {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    @keyframes flowPulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.8; }
+    }
+    @keyframes dotTravel {
+      0% { offset-distance: 0%; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { offset-distance: 100%; opacity: 0; }
+    }
+
+    .anim-fade-up { animation: fadeInUp 0.8s ease-out forwards; opacity: 0; }
+    .anim-fade-in { animation: fadeIn 0.6s ease-out forwards; opacity: 0; }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.25s; }
+    .delay-3 { animation-delay: 0.4s; }
+    .delay-4 { animation-delay: 0.55s; }
+    .delay-5 { animation-delay: 0.7s; }
+    .delay-6 { animation-delay: 0.85s; }
+
+    .tool-card {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .tool-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #fde68a, transparent);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    .tool-card:hover::before { opacity: 1; }
+    .tool-card:hover {
+      transform: translateY(-6px);
+      border-color: #44403c;
+      box-shadow: 0 25px 60px -15px rgba(0,0,0,0.6), 0 0 40px -10px rgba(253,230,138,0.06);
+    }
+
+    .tool-icon-wrap {
+      position: relative;
+    }
+    .tool-icon-wrap::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 1px solid rgba(253,230,138,0.15);
+      transition: all 0.4s ease;
+    }
+    .tool-card:hover .tool-icon-wrap::after {
+      border-color: rgba(253,230,138,0.35);
+      transform: scale(1.1);
+    }
+
+    .feature-pill {
+      transition: all 0.3s ease;
+    }
+    .feature-pill:hover {
+      background: rgba(253,230,138,0.08);
+      border-color: rgba(253,230,138,0.25);
+      color: #fde68a;
+    }
+
+    .launch-btn {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .launch-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+      transition: left 0.6s ease;
+    }
+    .launch-btn:hover::before { left: 100%; }
+    .launch-btn:hover {
+      box-shadow: 0 0 25px -5px rgba(253,230,138,0.4);
+      transform: scale(1.03);
+    }
+    .launch-btn:active { transform: scale(0.98); }
+
+    .nav-link { position: relative; }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -2px; left: 0;
+      width: 0; height: 1px;
+      background: #fde68a;
+      transition: width 0.3s ease;
+    }
+    .nav-link:hover::after { width: 100%; }
+
+    .bg-noise {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    }
+
+    .tag-badge {
+      background: linear-gradient(135deg, rgba(253,230,138,0.12), rgba(253,230,138,0.04));
+      border: 1px solid rgba(253,230,138,0.15);
+    }
+
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    .toast {
+      transform: translateY(20px);
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .search-input:focus {
+      box-shadow: 0 0 0 2px rgba(253,230,138,0.2);
+    }
+
+    /* Pipeline preview animations */
+    .preview-morph { animation: morphSlide 1.2s ease-out forwards; animation-delay: 0.3s; opacity: 0; }
+    .preview-crop { animation: cropIn 1s ease-out forwards; animation-delay: 0.3s; }
+    .preview-assemble { animation: assembleCollage 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 0.3s; opacity: 0; }
+
+    .cursor-blink::after {
+      content: '|';
+      animation: typeCursor 1s step-end infinite;
+      color: #fde68a;
+      font-weight: 300;
+    }
+
+    .flow-arrow {
+      position: relative;
+    }
+    .flow-arrow::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: -2px;
+      transform: translateY(-50%);
+      width: 0; height: 0;
+      border-left: 6px solid rgba(253,230,138,0.3);
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+    }
+
+    .pipeline-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #fde68a;
+      animation: flowPulse 2s ease-in-out infinite;
+    }
+
+    .step-number {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .input-output-tag {
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body class="bg-brand-black font-body text-stone-300 antialiased bg-noise">
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-brand-black/80 backdrop-blur-md border-b border-white/5">
+    <div class="max-w-7xl mx-auto px-6 md:px-12 h-16 flex items-center justify-between">
+      <a href="#" class="font-display text-lg tracking-wider text-brand-cream flex items-center gap-2.5">
+        <span class="w-7 h-7 rounded-sm bg-brand-accent flex items-center justify-center">
+          <i data-lucide="zap" class="w-4 h-4 text-brand-black"></i>
+        </span>
+        QUICKPOST
+      </a>
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#" class="nav-link text-sm font-light tracking-wide text-brand-lighter hover:text-brand-cream transition-colors">Dashboard</a>
+        <a href="#" class="nav-link text-sm font-light tracking-wide text-brand-accent">Pipeline</a>
+        <a href="#" class="nav-link text-sm font-light tracking-wide text-brand-lighter hover:text-brand-cream transition-colors">History</a>
+        <a href="#" class="nav-link text-sm font-light tracking-wide text-brand-lighter hover:text-brand-cream transition-colors">Settings</a>
+      </div>
+      <div class="flex items-center gap-4">
+        <button class="hidden md:flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-brand-lighter hover:text-brand-cream transition-colors border border-white/10 rounded-sm px-4 py-2 hover:border-white/20">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          New Post
+        </button>
+        <div class="w-8 h-8 rounded-full bg-brand-mid flex items-center justify-center cursor-pointer hover:bg-brand-light/20 transition-colors">
+          <i data-lucide="user" class="w-4 h-4 text-brand-lighter"></i>
+        </div>
+        <button class="md:hidden text-brand-lighter" id="mobileMenuBtn">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+    <div class="md:hidden hidden border-t border-white/5 bg-brand-black/95 backdrop-blur-md" id="mobileMenu">
+      <div class="px-6 py-4 flex flex-col gap-3">
+        <a href="#" class="text-sm font-light text-brand-lighter hover:text-brand-cream py-2">Dashboard</a>
+        <a href="#" class="text-sm font-light text-brand-accent py-2">Pipeline</a>
+        <a href="#" class="text-sm font-light text-brand-lighter hover:text-brand-cream py-2">History</a>
+        <a href="#" class="text-sm font-light text-brand-lighter hover:text-brand-cream py-2">Settings</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative min-h-[55vh] flex items-end pt-32 pb-12 md:pt-40 md:pb-20 grid-bg overflow-hidden">
+    <div class="absolute top-20 right-1/4 w-px h-32 bg-gradient-to-b from-transparent via-brand-accent/20 to-transparent"></div>
+    <div class="absolute top-28 left-[15%] w-px h-20 bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
+
+    <div class="max-w-7xl mx-auto px-6 md:px-12 w-full">
+      <div class="anim-fade-up">
+        <div class="flex items-center gap-3 mb-6">
+          <span class="tag-badge text-[10px] font-medium uppercase tracking-[0.2em] text-brand-accent px-3 py-1.5 rounded-sm">Post Pipeline</span>
+          <span class="text-brand-light text-xs">3 stages · end to end</span>
+        </div>
+        <h1 class="font-display text-4xl md:text-6xl lg:text-7xl font-medium tracking-tight text-brand-cream leading-none mb-5">
+          QuickPost
+        </h1>
+        <p class="text-base md:text-lg font-light leading-relaxed text-brand-lighter max-w-2xl">
+          From raw text to publication-ready assets in three stages. Generate slide images, refine each frame, then compose them into scroll-stopping posts.
+        </p>
+      </div>
+
+      <!-- Pipeline Flow Visual -->
+      <div class="mt-14 anim-fade-up delay-3">
+        <div class="flex items-center gap-0 overflow-x-auto pb-2">
+          <!-- Stage 1 -->
+          <div class="flex items-center gap-3 flex-shrink-0">
+            <div class="w-10 h-10 rounded-full border border-brand-accent/30 bg-brand-accent/10 flex items-center justify-center">
+              <span class="step-number text-xs font-medium text-brand-accent">01</span>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-brand-cream whitespace-nowrap">Quick Slides</p>
+              <p class="text-[11px] text-brand-light font-light">Text → Slide Images</p>
+            </div>
+          </div>
+
+          <!-- Connector -->
+          <div class="flex items-center mx-4 flex-shrink-0">
+            <div class="w-16 h-px bg-gradient-to-r from-brand-accent/30 to-brand-accent/10 relative">
+              <div class="pipeline-dot absolute -top-[2px] left-0" style="animation-delay: 0s;"></div>
+            </div>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-brand-accent/30 ml-0.5"></i>
+          </div>
+
+          <!-- Stage 2 -->
+          <div class="flex items-center gap-3 flex-shrink-0">
+            <div class="w-10 h-10 rounded-full border border-brand-accent/30 bg-brand-accent/10 flex items-center justify-center">
+              <span class="step-number text-xs font-medium text-brand-accent">02</span>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-brand-cream whitespace-nowrap">Quick Edits</p>
+              <p class="text-[11px] text-brand-light font-light">Crop · Filter · Watermark</p>
+            </div>
+          </div>
+
+          <!-- Connector -->
+          <div class="flex items-center mx-4 flex-shrink-0">
+            <div class="w-16 h-px bg-gradient-to-r from-brand-accent/30 to-brand-accent/10 relative">
+              <div class="pipeline-dot absolute -top-[2px] left-0" style="animation-delay: 0.7s;"></div>
+            </div>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-brand-accent/30 ml-0.5"></i>
+          </div>
+
+          <!-- Stage 3 -->
+          <div class="flex items-center gap-3 flex-shrink-0">
+            <div class="w-10 h-10 rounded-full border border-brand-accent/30 bg-brand-accent/10 flex items-center justify-center">
+              <span class="step-number text-xs font-medium text-brand-accent">03</span>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-brand-cream whitespace-nowrap">QuickCollages</p>
+              <p class="text-[11px] text-brand-light font-light">Compose → Listicle / Scrapbook</p>
+            </div>
+          </div>
+
+          <!-- End marker -->
+          <div class="flex items-center ml-4 flex-shrink-0">
+            <div class="w-px h-6 bg-brand-accent/10"></div>
+            <div class="ml-2 w-2 h-2 rounded-full bg-emerald-400/60" style="animation: flowPulse 2s ease-in-out infinite; animation-delay: 1.4s;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Divider -->
+  <div class="max-w-7xl mx-auto px-6 md:px-12">
+    <div class="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+  </div>
+
+  <!-- Tools Grid — Pipeline Cards -->
+  <section class="py-16 md:py-24">
+    <div class="max-w-7xl mx-auto px-6 md:px-12">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8" id="toolsGrid">
+
+        <!-- ═══════════ STAGE 1: QUICK SLIDES ═══════════ -->
+        <div class="tool-card bg-brand-dark border border-white/5 rounded-sm p-8 md:p-10 flex flex-col anim-fade-up delay-2" data-category="content" data-name="quick slides">
+          <!-- Stage Indicator -->
+          <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-2.5">
+              <span class="text-[10px] font-medium uppercase tracking-[0.2em] text-brand-accent/70">Stage 01</span>
+              <div class="w-6 h-px bg-brand-accent/20"></div>
+            </div>
+            <span class="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.15em] text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-sm">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              Active
+            </span>
+          </div>
+
+          <!-- Icon + Title -->
+          <div class="flex items-start gap-4 mb-4">
+            <div class="tool-icon-wrap w-12 h-12 rounded-full bg-brand-mid flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span class="text-xl">📝</span>
+            </div>
+            <div>
+              <h3 class="font-serif text-2xl text-brand-cream leading-tight">Quick Slides</h3>
+              <p class="text-[11px] text-brand-light mt-1 font-light">Text-to-image generation</p>
+            </div>
+          </div>
+
+          <p class="text-sm font-light leading-relaxed text-brand-lighter mb-6">
+            Paste any body of text and QuickPost splits it into discrete slide images — each framed, paced, and formatted for maximum readability on any feed.
+          </p>
+
+          <!-- Input/Output Tags -->
+          <div class="flex items-center gap-2 mb-6">
+            <span class="input-output-tag text-brand-light bg-white/5 border border-white/10 px-2.5 py-1 rounded-sm flex items-center gap-1">
+              <i data-lucide="file-text" class="w-3 h-3"></i> Input: Raw text
+            </span>
+            <i data-lucide="arrow-right" class="w-3 h-3 text-brand-accent/40"></i>
+            <span class="input-output-tag text-brand-accent/80 bg-brand-accent/5 border border-brand-accent/15 px-2.5 py-1 rounded-sm flex items-center gap-1">
+              <i data-lucide="images" class="w-3 h-3"></i> Output: Slide PNGs
+            </span>
+          </div>
+
+          <!-- Features -->
+          <div class="flex flex-wrap gap-2 mb-6">
+            <span class="feature-pill text-[11px] font-light text-brand-lighter border border-white/10 rounded-sm px-3 py-1.5 cursor-default">Smart text-to-slide split</span>
+            <span class="feature-pill text-[11px] font-light text-brand-lighter border border-white/10 rounded-sm px-3 py-1.5 cursor-default">Color & typography controls</span>
+            <span class="feature-pill text-[11px] font-light text-brand-lighter border border-white/10 rounded-sm px-3 py-1.5 cursor-default">Brand-safe presets</span>
+            <span class="feature-pill text-[11px] font-light text-brand-lighter border border-white/10 rounded-sm px-3 py-1.5 cursor-default">One-click export</span>
+          </div>
+
+          <!-- Animated Preview: Text morphing into slide -->
+          <div class="relative bg-brand-black/60 border border-white/5 rounded-sm p-4 mb-6 flex-1 overflow-hidden" id="slidePreview">
+            <div class="flex items-center gap-1.5 mb-3">
+              <span class="w-2 h-2 rounded-full bg-red-500/50"></span>
+              <span class="w-2 h-2 rounded-full bg-yellow-500/50"></span>
+              <span class="w-2 h-2 rounded-full bg-green-500/50"></span>
+              <span class="ml-auto text-[9px] text-brand-light font-mono tracking-wide">generate-slides</span>
+            </div>
+
+            <!-- Before: Raw text -->
+            <div class="space-y-1.5 mb-3">
+              <div class="flex items-center gap-2">
+                <div class="h-1.5 bg-brand-accent/25 rounded-full w-3/4 preview-morph"></div>
+                <span class="text-[9px] text-brand-light/50 font-mono cursor-blink">.txt</span>
+              </div>
+              <div class="h-1 bg-white/5 rounded-full w-full preview-morph" style="animation-delay:0.45s"></div>
+              <div class="h-1 bg-white/5 rounded-full w-5/6 preview-morph" style="animation-delay:0.55s"></div>
+              <div class="h-1 bg-white/5 rounded-full w-4/6 preview-morph" style="animation-delay:0.65s"></div>
+            </div>
+
+            <!-- Arrow transition -->
+            <div class="flex items-center justify-center my-2">
+              <div class="flex items-center gap-1 text-brand-accent/40">
+                <div class="w-4 h-px bg-brand-accent/30"></div>
+                <i data-lucide="arrow-down" class="w-3 h-3"></i>
+                <div class="w-4 h-px bg-brand-accent/30"></div>
+              </div>
+            </div>
+
+            <!-- After: Slide thumbnails -->
+            <div class="flex items-end gap-2">
+              <div class="flex-1 h-14 bg-gradient-to-b from-brand-accent/15 to-brand-mid/50 rounded-sm border border-brand-accent/10 preview-morph flex items-center justify-center" style="animation-delay:0.8s">
+                <div class="space-y-1 px-1.5 w-full">
+                  <div class="h-1 bg-brand-accent/30 rounded-full w-2/3"></div>
+                  <div class="h-0.5 bg-white/10 rounded-full w-full"></div>
+                  <div class="h-0.5 bg-white/10 rounded-full w-4/5"></div>
+                </div>
+              </div>
+              <div class="flex-1 h-14 bg-gradient-to-b from-white/5 to-brand-mid/50 rounded-sm border border-white/5 preview-morph flex items-center justify-center" style="animation-delay:0.95s">
+                <div class="space-y-1 px-1.5 w-full">
+                  <div class="h-0.5 bg-white/10 rounded-full w-full"></div>
+                  <div class="h-0.5 bg-white/10 rounded-full w-3/4"></div>
+                </div>
+              </div>
+              <div class="flex-1 h-14 bg-gradient-to-b from-white/5 to-brand-mid/50 rounded-sm border border-white/5 preview-morph flex items-center justify-center" style="animation-delay:1.1s">
+                <div class="space-y-1 px-1.5 w-full">
+                  <div class="h-0.5 bg-white/10 rounded-full w-5/6"></div>
+                  <div class="h-0.5 bg-white/10 rounded-full w-2/3"></div>
+                </div>
+              </div>
+              <div class="flex-shrink-0 w-6 h-14 rounded-sm border border-dashed border-white/10 flex items-center justify-center preview-morph" style="animation-delay:1.2s">
+                <span class="text-[8px] text-brand-light/40">+4</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="flex items-center justify-between pt-1">
+            <div class="flex items-center gap-3 text-brand-light text-xs font-light">
+              <span class="flex items-center gap-1"><i data-lucide="timer" class="w-3 h-3"></i> ~30s</span>
+              <span class="flex items-center gap-1"><i data-lucide="layers" class="w-3 h-3"></i> Unlimited</span>
+            </div>
+            <button class="launch-btn bg-brand-accent text-brand-black text-xs font-medium uppercase tracking-widest px-6 py-2.5 rounded-sm flex items-center gap-2" onclick="launchTool('Quick Slides')">
+              Launch
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ═══════════ STAGE 2: Quick Edits ═══════════ -->
+        <div class="tool-card bg-brand-dark border border-white/5 rounded-sm p-8 md:p-10 flex flex-col anim-fade-up delay-3" data-category="image" data-name="Quick Edits">
+          <!-- Stage Indicator -->
+          <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-2.5">
+              <span class="text-[10px] font-medium uppercase tracking-[0.2em] text-brand-accent/70">Stage 02</span>
+              <div class="w-6 h-px bg-brand-accent/20"></div>
+            </div>
+            <span class="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.15em] text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-sm">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              Active
+            </span>
+          </div>
+
+          <!-- Icon + Title -->
+          <div class="flex items-start gap-4 mb-4">
+            <div class="tool-icon-wrap w-12 h-12 rounded-full bg-brand-mid flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span class="text-xl">🎨</span>
+            </div>
+            <div>
+              <h3 class="font-serif text-2xl text-brand-cream leading-tight">Quick Edits</h3>
+              <p class="text-[11px] text-brand-light mt-1 font-light">Asset refinement layer</p>
+            </div>
+          </div>
+
+          <p class="text-sm font-light leading-relaxed text-brand-lighter mb-6">
+            Take each slide image from Stage 1 and apply precise crops, color grading, watermarks, or annotations — preparing publication-grade assets at scale.
+          </p>
+
+          <!-- Input/Output Tags -->
+          <div class="flex items-center gap-2 mb-6">
+            <span class="input-output-tag text-brand-accent/80 bg-brand-accent/5 border border-brand-accent/15 px-2.5 py-1 rounded-sm flex items-center gap-1">
+              <i data-lucide="images" class="w-3 h-3"></i> Input: Slide PNGs
+            </span>
+            <i data-lucide="arrow-right" class="w-3 h-3 text-brand-accent/40"></i>
+            <span class="input-output-tag text-brand-cream/70 bg-white/5 border border-white/10 px-2.5 py-1 rounded-sm flex items-center gap-1">
+              <i data-lucide="badge-check" class="w-3 h-3"></i> Output: Polished assets
+            </span>
+          </div>
+
+          <!-- Features -->
+          <div class="flex flex-wrap gap-2 mb-6">
+            <span class="feature-pill text-[11px] font-light text-brand-lighter border border-white/10 rounded-sm px-3 py-1.5 cursor-default">Auto crop suggestions</span>
+            <span class="feature-pill text-[11px] font-light text-brand-lighter border border-white/10 rounded-sm px-3 py-1.5 cursor-default">Text & sticker overlays</span>
+            <span class="feature-pill text-[11px] font-light text-brand-lighter border border-white/10 rounded-sm px-3 py-1.5 cursor-default">Brush + annotations</span>
+            <span class="feature-pill text-[11px] font-light text-brand-lighter border border-white/10 rounded-sm px-3 py-1.5 cursor-default">Watermark & filters</span>
+          </div>
+
+          <!-- Animated Preview: Crop/filter transform -->
+          <div class="relative bg-brand-black/60 border border-white/5 rounded-sm p-4 mb-6 flex-1 overflow-hidden" id="editPreview">
+            <div class="flex items-center gap-1.5 mb-3">
+              <span class="w-2 h-2 rounded-full bg-red-500/50"></span>
+              <span class="w-2 h-2 rounded-full bg-yellow-500/50"></span>
+              <span class="w-2 h-2 rounded-full bg-green-500/50"></span>
+              <span class="ml-auto text-[9px] text-brand-light font-mono tracking-wide">refine-asset</span>
+            </div>
+
+            <div class="flex items-center gap-4">
+              <!-- Before -->
+              <div class="flex-1">
+                <p class="text-[8px] uppercase tracking-widest text-brand-light/40 mb-2">Before</p>
+                <div class="relative aspect-[4/3] bg-gradient-to-br from-brand-mid to-brand-dark rounded-sm border border-white/5 overflow-hidden preview-crop" style="clip-path: inset(8% 5%);">
+                  <div class="absolute inset-0 flex flex-col items-center justify-center p-2">
+                    <div class="h-1.5 bg-brand-accent/20 rounded-full w-2/3 mb-1.5"></div>
+                    <div class="h-1 bg-white/8 rounded-full w-full mb-1"></div>
+                    <div class="h-1 bg-white/8 rounded-full w-4/5"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Transform arrow -->
+              <div class="flex flex-col items-center gap-1 flex-shrink-0">
+                <i data-lucide="arrow-right" class="w-4 h-4 text-brand-accent/40"></i>
+                <div class="flex flex-col items-center gap-0.5 mt-1">
+                  <span class="w-4 h-4 rounded-sm bg-brand-accent/10 border border-brand-accent/20 flex items-center justify-center">
+                    <i data-lucide="crop" class="w-2.5 h-2.5 text-brand-accent/60"></i>
+                  </span>
+                  <span class="w-4 h-4 rounded-sm bg-brand-accent/10 border border-brand-accent/20 flex items-center justify-center">
+                    <i data-lucide="droplets" class="w-2.5 h-2.5 text-brand-accent/60"></i>
+                  </span>
+                  <span class="w-4 h-4 rounded-sm bg-brand-accent/10 border border-brand-accent/20 flex items-center justify-center">
+                    <i data-lucide="stamp" class="w-2.5 h-2.5 text-brand-accent/60"></i>
+                  </span>
+                </div>
+              </div>
+
+              <!-- After -->
+              <div class="flex-1">
+                <p class="text-[8px] uppercase tracking-widest text-brand-accent/50 mb-2">After</p>
+                <div class="relative aspect-[4/3] bg-gradient-to-br from-brand-accent/10 via-brand-mid to-brand-dark rounded-sm border border-brand-accent/15 overflow-hidden preview-crop" style="animation-delay: 0.6s;">
+                  <div class="absolute inset-0 flex flex-col items-center justify-center p-2">
+                    <div class="h-1.5 bg-brand-accent/35 rounded-full w-2/3 mb-1.5"></div>
+                    <div class="h-1 bg-white/12 rounded-full w-full mb-1"></div>
+                    <div class="h-1 bg-white/12 rounded-full w-4/5"></div>
+                  </div>
+                  <!-- Watermark hint -->
+                  <div class="absolute bottom-1 right-1.5">
+                    <div class="w-5 h-1 bg-white/10 rounded-full"></div>
+                  </div>
+                  <!-- Filter tint overlay -->
+                  <div class="absolute inset-0 bg-amber-900/10 mix-blend-multiply rounded-sm"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Batch indicator -->
+            <div class="flex items-center justify-center gap-1.5 mt-3">
+              <div class="w-5 h-3.5 rounded-[2px] border border-brand-accent/20 bg-brand-accent/10"></div>
+              <span class="text-[9px] text-brand-light/50 font-mono">×7 batch</span>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="flex items-center justify-between pt-1">
+            <div class="flex items-center gap-3 text-brand-light text-xs font-light">
+              <span class="flex items-center gap-1"><i data-lucide="timer" class="w-3 h-3"></i> ~15s each</span>
+              <span class="flex items-center gap-1"><i data-lucide="hard-drive" class="w-3 h-3"></i> 25MB max</span>
+            </div>
+            <button class="launch-btn bg-brand-accent text-brand-black text-xs font-medium uppercase tracking-widest px-6 py-2.5 rounded-sm flex items-center gap-2" onclick="launchTool('Quick Edits')">
+              Launch
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ═══════════ STAGE 3: COLLAGE MAKER ═══════════ -->
+        <div class="tool-card bg-brand-dark border border-white/5 rounded-sm p-8 md:p-10 flex flex-col anim-fade-up delay-4" data-category="image" data-name="QuickCollages">
+          <!-- Stage Indicator -->
+          <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-2.5">
+              <span class="text-[10px] font-medium uppercase tracking-[0.2em] text-brand-accent/70">Stage 03</span>
+              <div class="w-6 h-px bg-brand-accent/20"></div>
+            </div>
+            <span class="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-[0.15em] text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2.5 py-1 rounded-sm">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+              Beta
+            </span>
+          </div>
+
+          <!-- Icon + Title -->
+          <div class="flex items-start gap-4 mb-4">
+            <div class="tool-icon-wrap w-12 h-12 rounded-full bg-brand-mid flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span class="text-xl">🧩</span>
+            </div>
+            <div>
+              <h3 class="font-serif text-2xl text-brand-cream leading-tight">QuickCollages</h3>
+              <p class="text-[11px] text-brand-light mt-1 font-light">Final composition</p>
+            </div>
+          </div>
+
+          <p class="text-sm font-light leading-relaxed text-brand-lighter mb-6">
+            Arrange your refined slide images into listicle layouts, scrapbook compositions, or text-collage carousels — designed for scroll-stopping social posts and blog graphics.
+          </p>
+
+          <!-- Input/Output Tags -->
+          <div class="flex items-center gap-2 mb-6">
+            <span class="input-output-tag text-brand-cream/70 bg-white/5 border border-white/10 px-2.5 py-1 rounded-sm flex items-center gap-1">
+              <i data-lucide="badge-check" class="w-3 h-3"></i> Input: Polished assets
+            </span>
+            <i data-lucide="arrow-right" class="w-3 h-3 text-brand-accent/40"></i>
+            <span class="input-output-tag text-emerald-400/80 bg-emerald-400/5 border border-emerald-400/15 px-2.5 py-1 rounded-sm flex items-center gap-1">
+              <i data-lucide="share-2" class="w-3 h-3"></i> Output: Post-ready
+            </span>
+          </div>
+
+          <!-- Features -->
+          <div class="flex flex-wrap gap-2 mb-6">
+            <span class="feature-pill text-[11px] font-light text-brand-lighter border border-white/10 rounded-sm px-3 py-1.5 cursor-default">Listicle grid templates</span>
+            <span class="feature-pill text-[11px] font-light text-brand-lighter border border-white/10 rounded-sm px-3 py-1.5 cursor-default">Scrapbook spacing</span>
+            <span class="feature-pill text-[11px] font-light text-brand-lighter border border-white/10 rounded-sm px-3 py-1.5 cursor-default">Save as PNG instantly</span>
+            <span class="feature-pill text-[11px] font-light text-brand-lighter border border-white/10 rounded-sm px-3 py-1.5 cursor-default">Responsive export size</span>
+          </div>
+
+          <!-- Animated Preview: Collage assembly -->
+          <div class="relative bg-brand-black/60 border border-white/5 rounded-sm p-4 mb-6 flex-1 overflow-hidden" id="collagePreview">
+            <div class="flex items-center gap-1.5 mb-3">
+              <span class="w-2 h-2 rounded-full bg-red-500/50"></span>
+              <span class="w-2 h-2 rounded-full bg-yellow-500/50"></span>
+              <span class="w-2 h-2 rounded-full bg-green-500/50"></span>
+              <span class="ml-auto text-[9px] text-brand-light font-mono tracking-wide">compose-post</span>
+            </div>
+
+            <!-- Collage being assembled -->
+            <div class="relative bg-brand-dark/50 rounded-sm border border-white/5 p-2">
+              <!-- Listicle layout -->
+              <div class="grid grid-cols-2 gap-1.5">
+                <div class="aspect-[4/3] bg-gradient-to-br from-brand-accent/12 to-brand-mid/60 rounded-sm border border-brand-accent/10 preview-assemble flex items-center justify-center" style="animation-delay:0.4s">
+                  <div class="space-y-0.5 px-1.5 w-full">
+                    <div class="h-1 bg-brand-accent/25 rounded-full w-1/2"></div>
+                    <div class="h-0.5 bg-white/8 rounded-full w-full"></div>
+                    <div class="h-0.5 bg-white/8 rounded-full w-3/4"></div>
+                  </div>
+                </div>
+                <div class="aspect-[4/3] bg-gradient-to-br from-white/5 to-brand-mid/60 rounded-sm border border-white/5 preview-assemble flex items-center justify-center" style="animation-delay:0.6s">
+                  <div class="space-y-0.5 px-1.5 w-full">
+                    <div class="h-0.5 bg-white/8 rounded-full w-full"></div>
+                    <div class="h-0.5 bg-white/8 rounded-full w-2/3"></div>
+                  </div>
+                </div>
+                <div class="aspect-[4/3] bg-gradient-to-br from-white/5 to-brand-mid/60 rounded-sm border border-white/5 preview-assemble flex items-center justify-center" style="animation-delay:0.8s">
+                  <div class="space-y-0.5 px-1.5 w-full">
+                    <div class="h-0.5 bg-white/8 rounded-full w-5/6"></div>
+                    <div class="h-0.5 bg-white/8 rounded-full w-1/2"></div>
+                  </div>
+                </div>
+                <div class="aspect-[4/3] bg-gradient-to-br from-white/5 to-brand-mid/60 rounded-sm border border-white/5 preview-assemble flex items-center justify-center" style="animation-delay:1.0s">
+                  <div class="space-y-0.5 px-1.5 w-full">
+                    <div class="h-0.5 bg-white/8 rounded-full w-3/4"></div>
+                    <div class="h-0.5 bg-white/8 rounded-full w-full"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Title bar on collage -->
+              <div class="mt-1.5 px-1 preview-assemble" style="animation-delay:1.2s">
+                <div class="h-1 bg-brand-accent/20 rounded-full w-1/3 mb-1"></div>
+                <div class="h-0.5 bg-white/5 rounded-full w-2/3"></div>
+              </div>
+
+              <!-- "Listicle" label -->
+              <div class="absolute top-1.5 right-1.5">
+                <span class="text-[7px] uppercase tracking-[0.2em] text-brand-accent/40 bg-brand-black/60 px-1.5 py-0.5 rounded-sm">Listicle</span>
+              </div>
+            </div>
+
+            <!-- Template selector row -->
+            <div class="flex items-center justify-center gap-2 mt-3">
+              <span class="w-8 h-5 rounded-sm border-2 border-brand-accent/50 grid grid-cols-2 grid-rows-2 gap-px p-0.5">
+                <span class="bg-brand-accent/20 rounded-[1px]"></span>
+                <span class="bg-brand-accent/20 rounded-[1px]"></span>
+                <span class="bg-brand-accent/20 rounded-[1px]"></span>
+                <span class="bg-brand-accent/20 rounded-[1px]"></span>
+              </span>
+              <span class="w-8 h-5 rounded-sm border border-white/10 grid grid-cols-3 grid-rows-2 gap-px p-0.5 cursor-pointer hover:border-white/20 transition-colors">
+                <span class="col-span-2 row-span-2 bg-white/5 rounded-[1px]"></span>
+                <span class="bg-white/5 rounded-[1px]"></span>
+                <span class="bg-white/5 rounded-[1px]"></span>
+              </span>
+              <span class="w-8 h-5 rounded-sm border border-white/10 grid grid-rows-3 gap-px p-0.5 cursor-pointer hover:border-white/20 transition-colors">
+                <span class="bg-white/5 rounded-[1px]"></span>
+                <span class="bg-white/5 rounded-[1px]"></span>
+                <span class="bg-white/5 rounded-[1px]"></span>
+              </span>
+              <span class="text-[8px] text-brand-light/40 font-mono ml-1">3 layouts</span>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="flex items-center justify-between pt-1">
+            <div class="flex items-center gap-3 text-brand-light text-xs font-light">
+              <span class="flex items-center gap-1"><i data-lucide="timer" class="w-3 h-3"></i> ~20s</span>
+              <span class="flex items-center gap-1"><i data-lucide="layout-grid" class="w-3 h-3"></i> Up to 9 tiles</span>
+            </div>
+            <button class="launch-btn bg-brand-accent text-brand-black text-xs font-medium uppercase tracking-widest px-6 py-2.5 rounded-sm flex items-center gap-2" onclick="launchTool('QuickCollages')">
+              Launch
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Empty State (hidden by default) -->
+      <div class="hidden text-center py-24" id="emptyState">
+        <i data-lucide="search-x" class="w-12 h-12 text-brand-light/30 mx-auto mb-4"></i>
+        <p class="text-brand-lighter font-light text-lg">No stages match your search</p>
+        <p class="text-brand-light text-sm font-light mt-1">Try a different keyword or clear filters</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pipeline Summary Bar -->
+  <section class="border-y border-white/5 bg-brand-dark/40">
+    <div class="max-w-7xl mx-auto px-6 md:px-12 py-10 md:py-14">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div class="text-center anim-fade-up delay-1">
+          <p class="font-serif text-3xl md:text-4xl text-brand-cream mb-1">3</p>
+          <p class="text-xs uppercase tracking-[0.2em] text-brand-light font-light">Pipeline Stages</p>
+        </div>
+        <div class="text-center anim-fade-up delay-2">
+          <p class="font-serif text-3xl md:text-4xl text-brand-cream mb-1">~65s</p>
+          <p class="text-xs uppercase tracking-[0.2em] text-brand-light font-light">End-to-End</p>
+        </div>
+        <div class="text-center anim-fade-up delay-3">
+          <p class="font-serif text-3xl md:text-4xl text-brand-cream mb-1">23k+</p>
+          <p class="text-xs uppercase tracking-[0.2em] text-brand-light font-light">Posts Published</p>
+        </div>
+        <div class="text-center anim-fade-up delay-4">
+          <p class="font-serif text-3xl md:text-4xl text-brand-accent mb-1">Zero</p>
+          <p class="text-xs uppercase tracking-[0.2em] text-brand-light font-light">Design Skills Needed</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works — Expanded Pipeline -->
+  <section class="py-20 md:py-28">
+    <div class="max-w-5xl mx-auto px-6 md:px-12">
+      <div class="text-center mb-16 anim-fade-up">
+        <span class="text-[10px] font-medium uppercase tracking-[0.25em] text-brand-accent/70 mb-4 block">Workflow</span>
+        <h2 class="font-serif text-3xl md:text-5xl text-brand-cream tracking-tight">How a post gets made</h2>
+      </div>
+
+      <!-- Vertical Timeline -->
+      <div class="relative">
+        <!-- Vertical line -->
+        <div class="absolute left-5 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-brand-accent/20 via-brand-accent/10 to-transparent md:-translate-x-px"></div>
+
+        <!-- Step 1 -->
+        <div class="relative flex items-start gap-6 md:gap-12 mb-16 anim-fade-up delay-1">
+          <div class="flex-shrink-0 w-10 h-10 rounded-full bg-brand-accent/10 border border-brand-accent/25 flex items-center justify-center z-10 md:absolute md:left-1/2 md:-translate-x-1/2">
+            <span class="text-xs font-medium text-brand-accent">01</span>
+          </div>
+          <div class="md:w-1/2 md:pr-12">
+            <div class="bg-brand-dark/50 border border-white/5 rounded-sm p-6">
+              <p class="text-xs uppercase tracking-[0.15em] text-brand-accent/60 mb-2">Ingest</p>
+              <h4 class="font-serif text-xl text-brand-cream mb-2">Paste your text</h4>
+              <p class="text-sm font-light text-brand-lighter leading-relaxed">An article, a listicle draft, talking points — any block of text. QuickPost tokenizes and segments it into logical slide boundaries automatically.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="relative flex items-start gap-6 md:gap-12 mb-16 anim-fade-up delay-2 md:justify-end">
+          <div class="flex-shrink-0 w-10 h-10 rounded-full bg-brand-accent/10 border border-brand-accent/25 flex items-center justify-center z-10 md:absolute md:left-1/2 md:-translate-x-1/2">
+            <span class="text-xs font-medium text-brand-accent">02</span>
+          </div>
+          <div class="md:w-1/2 md:pl-12">
+            <div class="bg-brand-dark/50 border border-white/5 rounded-sm p-6">
+              <p class="text-xs uppercase tracking-[0.15em] text-brand-accent/60 mb-2">Generate</p>
+              <h4 class="font-serif text-xl text-brand-cream mb-2">Slides become images</h4>
+              <p class="text-sm font-light text-brand-lighter leading-relaxed">Each segment renders as a formatted slide image with your brand's typography, color palette, and aspect ratio. Export all at once.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="relative flex items-start gap-6 md:gap-12 mb-16 anim-fade-up delay-3">
+          <div class="flex-shrink-0 w-10 h-10 rounded-full bg-brand-accent/10 border border-brand-accent/25 flex items-center justify-center z-10 md:absolute md:left-1/2 md:-translate-x-1/2">
+            <span class="text-xs font-medium text-brand-accent">03</span>
+          </div>
+          <div class="md:w-1/2 md:pr-12">
+            <div class="bg-brand-dark/50 border border-white/5 rounded-sm p-6">
+              <p class="text-xs uppercase tracking-[0.15em] text-brand-accent/60 mb-2">Refine</p>
+              <h4 class="font-serif text-xl text-brand-cream mb-2">Polish each asset</h4>
+              <p class="text-sm font-light text-brand-lighter leading-relaxed">Run slides through Quick Edits to apply crops, filters, watermarks, or annotations. Batch-apply changes across all frames for consistency.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="relative flex items-start gap-6 md:gap-12 anim-fade-up delay-4 md:justify-end">
+          <div class="flex-shrink-0 w-10 h-10 rounded-full bg-emerald-400/10 border border-emerald-400/25 flex items-center justify-center z-10 md:absolute md:left-1/2 md:-translate-x-1/2">
+            <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+          <div class="md:w-1/2 md:pl-12">
+            <div class="bg-brand-dark/50 border border-emerald-400/10 rounded-sm p-6">
+              <p class="text-xs uppercase tracking-[0.15em] text-emerald-400/60 mb-2">Publish</p>
+              <h4 class="font-serif text-xl text-brand-cream mb-2">Compose and ship</h4>
+              <p class="text-sm font-light text-brand-lighter leading-relaxed">Arrange refined assets into a listicle grid, scrapbook layout, or carousel. Export at the exact dimensions your platform requires — ready to post.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="py-20 md:py-28 relative overflow-hidden border-t border-white/5">
+    <div class="absolute inset-0 bg-gradient-to-t from-brand-accent/[0.03] to-transparent"></div>
+    <div class="max-w-3xl mx-auto px-6 md:px-12 text-center relative z-10">
+      <h2 class="font-serif text-3xl md:text-5xl text-brand-cream tracking-tight mb-5 anim-fade-up">Start your first post</h2>
+      <p class="text-base font-light leading-relaxed text-brand-lighter mb-10 anim-fade-up delay-1">
+        Paste text. Get slides. Refine. Compose. Publish. That's the entire QuickPost pipeline — under ninety seconds from start to finish.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-3 anim-fade-up delay-2">
+        <button class="launch-btn bg-brand-accent text-brand-black text-xs font-semibold uppercase tracking-widest px-10 py-3.5 rounded-sm w-full sm:w-auto flex items-center justify-center gap-2" onclick="showToast('Opening pipeline workspace…', 'info'); setTimeout(() => showToast('Pipeline workspace ready', 'success'), 1500);">
+          <i data-lucide="play" class="w-3.5 h-3.5"></i>
+          Start Pipeline
+        </button>
+        <button class="text-xs font-medium uppercase tracking-widest text-brand-lighter hover:text-brand-cream transition-colors border border-white/10 hover:border-white/20 rounded-sm px-8 py-3.5 w-full sm:w-auto" onclick="document.getElementById('toolsGrid').scrollIntoView({behavior:'smooth', block:'center'})">
+          Browse Stages
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/5 bg-brand-black">
+    <div class="max-w-7xl mx-auto px-6 md:px-12 py-10 md:py-14">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-2.5">
+          <span class="w-6 h-6 rounded-sm bg-brand-accent flex items-center justify-center">
+            <i data-lucide="zap" class="w-3.5 h-3.5 text-brand-black"></i>
+          </span>
+          <span class="font-display text-sm tracking-wider text-brand-lighter">QUICKPOST</span>
+        </div>
+        <div class="flex items-center gap-6 text-xs text-brand-light font-light">
+          <a href="#" class="hover:text-brand-cream transition-colors">Docs</a>
+          <a href="#" class="hover:text-brand-cream transition-colors">Changelog</a>
+          <a href="#" class="hover:text-brand-cream transition-colors">Support</a>
+          <a href="#" class="hover:text-brand-cream transition-colors">Privacy</a>
+        </div>
+        <p class="text-[11px] text-brand-light/60 font-light">© 2025 QuickPost</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast Container -->
+  <div class="fixed bottom-6 right-6 z-[100] flex flex-col gap-2" id="toastContainer"></div>
+
+  <script>
+    lucide.createIcons();
+
+    // Mobile menu
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+
+    // Toast system
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const iconName = type === 'success' ? 'check-circle-2' : 'loader';
+      const accentColor = type === 'success' ? 'text-emerald-400' : 'text-brand-accent';
+      const spin = type !== 'success' ? 'animate-spin' : '';
+
+      toast.className = 'toast flex items-center gap-3 bg-brand-dark border border-white/10 rounded-sm px-5 py-3.5 shadow-2xl min-w-[280px]';
+      toast.innerHTML = `
+        <i data-lucide="${iconName}" class="w-4 h-4 ${accentColor} flex-shrink-0 ${spin}"></i>
+        <span class="text-sm font-light text-brand-cream">${message}</span>
+      `;
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => toast.classList.add('show'));
+      });
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+      }, 3000);
+    }
+
+    // Launch tool
+    function launchTool(name) {
+      const stageMap = { 'Quick Slides': 'Stage 01', 'Quick Edits': 'Stage 02', 'QuickCollages': 'Stage 03' };
+      showToast(`Initializing ${stageMap[name]} — ${name}…`, 'info');
+      setTimeout(() => showToast(`${name} workspace loaded`, 'success'), 1600);
+    }
+
+    // Intersection Observer for scroll animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.animationPlayState = 'running';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.anim-fade-up, .anim-fade-in').forEach(el => {
+      el.style.animationPlayState = 'paused';
+      observer.observe(el);
+    });
+  </script>
+</body>
+</html>

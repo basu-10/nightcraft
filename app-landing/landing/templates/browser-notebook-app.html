@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NoteFlow — Notebook</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root {
+    --bg-deep: #0f1117;
+    --bg-surface: #161820;
+    --bg-cell: #1a1d28;
+    --bg-cell-hover: #1e2230;
+    --bg-input: #12141c;
+    --bg-comment: #141620;
+    --border: #2a2d3a;
+    --border-focus: #e8943a;
+    --fg: #e2e4ed;
+    --fg-muted: #6b7089;
+    --fg-dim: #454860;
+    --accent: #e8943a;
+    --accent-glow: rgba(232, 148, 58, 0.15);
+    --accent-soft: rgba(232, 148, 58, 0.08);
+    --green: #5ecc7b;
+    --green-glow: rgba(94, 204, 123, 0.12);
+    --red: #e85d5d;
+    --blue: #5da8e8;
+    --purple: #b07de8;
+    --string: #e8c97a;
+    --keyword: #e8787a;
+    --comment-syn: #5a5e78;
+    --func: #6cc4e8;
+    --num: #d4976c;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-deep);
+    color: var(--fg);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(232,148,58,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -300px;
+    left: -200px;
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(94,204,123,0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(15, 17, 23, 0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, var(--accent), #d47a20);
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #fff;
+    font-weight: 700;
+  }
+
+  .logo-text {
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.3px;
+    color: var(--fg);
+  }
+
+  .notebook-title {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--fg);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    outline: none;
+    transition: all 0.2s;
+    min-width: 200px;
+  }
+  .notebook-title:hover {
+    border-color: var(--border);
+    background: var(--bg-cell);
+  }
+  .notebook-title:focus {
+    border-color: var(--accent);
+    background: var(--bg-input);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .header-center {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .header-btn {
+    background: transparent;
+    border: none;
+    color: var(--fg-muted);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+  }
+  .header-btn:hover {
+    background: var(--bg-cell);
+    color: var(--fg);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .kernel-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 14px;
+    background: var(--green-glow);
+    border: 1px solid rgba(94, 204, 123, 0.2);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--green);
+    font-weight: 500;
+  }
+
+  .kernel-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(94,204,123,0.4); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 5px rgba(94,204,123,0); }
+  }
+
+  .save-indicator {
+    font-size: 12px;
+    color: var(--fg-dim);
+    transition: color 0.3s;
+  }
+  .save-indicator.saved {
+    color: var(--green);
+  }
+
+  .toolbar {
+    padding: 8px 32px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-surface);
+    position: relative;
+    z-index: 50;
+  }
+
+  .tool-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--fg-muted);
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .tool-btn:hover {
+    background: var(--bg-cell);
+    color: var(--fg);
+    border-color: var(--border);
+  }
+  .tool-btn:active {
+    transform: scale(0.92);
+  }
+
+  .tool-btn[title]::after {
+    content: attr(title);
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    background: #2a2d3a;
+    color: var(--fg);
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+    z-index: 200;
+  }
+  .tool-btn:hover[title]::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .tool-sep {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+    margin: 0 6px;
+  }
+
+  .cell-type-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: auto;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+  }
+  .cell-type-badge.code {
+    background: rgba(93, 168, 232, 0.1);
+    color: var(--blue);
+    border-color: rgba(93, 168, 232, 0.2);
+  }
+  .cell-type-badge.markdown {
+    background: rgba(176, 125, 232, 0.1);
+    color: var(--purple);
+    border-color: rgba(176, 125, 232, 0.2);
+  }
+
+  main {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 24px 32px 120px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cell-row {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 0;
+    margin-bottom: 4px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: all 0.25s ease;
+    border: 1px solid transparent;
+  }
+  .cell-row:hover {
+    border-color: var(--border);
+  }
+  .cell-row.active {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px var(--accent-glow), 0 8px 32px rgba(0,0,0,0.3);
+  }
+
+  .cell-panel {
+    background: var(--bg-cell);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .cell-gutter {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 56px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 14px;
+    gap: 6px;
+    z-index: 5;
+  }
+
+  .exec-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--fg-dim);
+    min-width: 24px;
+    text-align: center;
+    user-select: none;
+  }
+  .exec-count.ran {
+    color: var(--fg-muted);
+  }
+
+  .run-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--fg-dim);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    transition: all 0.25s;
+    opacity: 0;
+  }
+  .cell-row:hover .run-btn,
+  .cell-row.active .run-btn {
+    opacity: 1;
+  }
+  .run-btn:hover {
+    background: var(--green);
+    color: #fff;
+    transform: scale(1.15);
+    box-shadow: 0 0 12px rgba(94,204,123,0.4);
+  }
+  .run-btn.running {
+    background: var(--accent);
+    color: #fff;
+    animation: spin-run 0.8s linear infinite;
+    opacity: 1;
+  }
+
+  @keyframes spin-run {
+    to { transform: rotate(360deg); }
+  }
+
+  .cell-body {
+    margin-left: 56px;
+    padding: 12px 16px;
+    flex: 1;
+  }
+
+  .cell-editor {
+    width: 100%;
+    min-height: 44px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--fg);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    resize: none;
+    overflow: hidden;
+  }
+  .cell-editor.markdown-editor {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
+  .cell-editor::placeholder {
+    color: var(--fg-dim);
+  }
+
+  .cell-output {
+    margin-left: 56px;
+    padding: 10px 16px 14px;
+    border-top: 1px solid var(--border);
+    display: none;
+  }
+  .cell-output.visible {
+    display: block;
+    animation: output-in 0.3s ease;
+  }
+
+  @keyframes output-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .output-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--fg-muted);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    padding: 8px 12px;
+    background: var(--bg-input);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--green);
+  }
+  .output-error {
+    border-left-color: var(--red);
+    color: var(--red);
+  }
+  .output-image {
+    padding: 8px 0;
+  }
+  .output-image img {
+    max-width: 100%;
+    border-radius: var(--radius-sm);
+  }
+
+  .md-rendered {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--fg);
+  }
+  .md-rendered h1 { font-size: 28px; font-weight: 900; margin-bottom: 8px; letter-spacing: -0.5px; }
+  .md-rendered h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.3px; color: var(--fg); }
+  .md-rendered h3 { font-size: 17px; font-weight: 600; margin-bottom: 4px; color: var(--accent); }
+  .md-rendered p { margin-bottom: 8px; }
+  .md-rendered strong { color: var(--fg); font-weight: 700; }
+  .md-rendered em { color: var(--fg-muted); }
+  .md-rendered code {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg-input);
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--accent);
+    border: 1px solid var(--border);
+  }
+  .md-rendered ul { padding-left: 20px; margin-bottom: 8px; }
+  .md-rendered li { margin-bottom: 4px; color: var(--fg-muted); }
+  .md-rendered li::marker { color: var(--accent); }
+
+  .comments-panel {
+    background: var(--bg-comment);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    max-height: 260px;
+    transition: all 0.25s;
+  }
+  .cell-row.active .comments-panel {
+    max-height: 500px;
+  }
+
+  .comments-header {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .comments-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--fg-dim);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .comments-count {
+    background: var(--accent-soft);
+    color: var(--accent);
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .comments-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+  .comments-list::-webkit-scrollbar { width: 4px; }
+  .comments-list::-webkit-scrollbar-track { background: transparent; }
+  .comments-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .comment-item {
+    padding: 8px 14px;
+    display: flex;
+    gap: 8px;
+    animation: comment-in 0.3s ease;
+    transition: background 0.2s;
+  }
+  .comment-item:hover {
+    background: rgba(255,255,255,0.02);
+  }
+
+  @keyframes comment-in {
+    from { opacity: 0; transform: translateX(8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .comment-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .comment-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .comment-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 3px;
+  }
+
+  .comment-author {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--fg);
+  }
+
+  .comment-time {
+    font-size: 10px;
+    color: var(--fg-dim);
+  }
+
+  .comment-text {
+    font-size: 12px;
+    color: var(--fg-muted);
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  .comment-actions {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .comment-item:hover .comment-actions {
+    opacity: 1;
+  }
+
+  .comment-action-btn {
+    background: none;
+    border: none;
+    color: var(--fg-dim);
+    font-size: 10px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 3px;
+    transition: all 0.15s;
+  }
+  .comment-action-btn:hover {
+    color: var(--fg);
+    background: var(--bg-cell);
+  }
+  .comment-action-btn.delete:hover {
+    color: var(--red);
+  }
+
+  .comments-input-area {
+    padding: 8px 12px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .comment-input-wrap {
+    display: flex;
+    gap: 6px;
+    align-items: flex-end;
+  }
+
+  .comment-input {
+    flex: 1;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 10px;
+    color: var(--fg);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    outline: none;
+    resize: none;
+    min-height: 32px;
+    max-height: 80px;
+    line-height: 1.4;
+    transition: border-color 0.2s;
+  }
+  .comment-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+  .comment-input::placeholder {
+    color: var(--fg-dim);
+  }
+
+  .comment-send {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .comment-send:hover {
+    background: #d4832e;
+    transform: scale(1.05);
+  }
+  .comment-send:active {
+    transform: scale(0.95);
+  }
+
+  .no-comments {
+    padding: 20px 14px;
+    text-align: center;
+    color: var(--fg-dim);
+    font-size: 11px;
+  }
+  .no-comments i {
+    display: block;
+    font-size: 20px;
+    margin-bottom: 6px;
+    opacity: 0.4;
+  }
+
+  .add-cell-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    margin-top: 8px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.25s;
+    color: var(--fg-dim);
+    font-size: 13px;
+  }
+  .add-cell-area:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toast {
+    padding: 10px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: toast-in 0.35s ease, toast-out 0.35s ease 2.5s forwards;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .toast.success { background: #2d7a46; }
+  .toast.info { background: #3a5a8a; }
+  .toast.error { background: #8a3a3a; }
+
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateX(40px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes toast-out {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(40px); }
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--fg-dim); }
+
+  .syn-kw { color: var(--keyword); }
+  .syn-fn { color: var(--func); }
+  .syn-str { color: var(--string); }
+  .syn-num { color: var(--num); }
+  .syn-cm { color: var(--comment-syn); font-style: italic; }
+  .syn-op { color: var(--fg-muted); }
+  .syn-var { color: var(--fg); }
+
+  @media (max-width: 900px) {
+    .cell-row {
+      grid-template-columns: 1fr;
+    }
+    .comments-panel {
+      border-left: none;
+      border-top: 1px solid var(--border);
+      max-height: 200px;
+    }
+    header { padding: 0 16px; }
+    main { padding: 16px 16px 80px; }
+    .toolbar { padding: 8px 16px; overflow-x: auto; }
+    .header-center { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">
+      <div class="logo-icon"><i class="fas fa-bolt" style="font-size:13px"></i></div>
+      <span class="logo-text">NoteFlow</span>
+    </div>
+    <input type="text" class="notebook-title" value="Data Exploration — Customer Churn Analysis" id="notebookTitle" aria-label="Notebook title">
+  </div>
+  <div class="header-center">
+    <button class="header-btn" onclick="saveNotebook()"><i class="fas fa-save"></i> Save</button>
+    <button class="header-btn" onclick="clearAllOutputs()"><i class="fas fa-eraser"></i> Clear</button>
+    <button class="header-btn" onclick="exportNotebook()"><i class="fas fa-download"></i> Export</button>
+  </div>
+  <div class="header-right">
+    <span class="save-indicator" id="saveIndicator"><i class="fas fa-circle" style="font-size:6px;vertical-align:middle;margin-right:4px"></i>Unsaved</span>
+    <div class="kernel-status">
+      <span class="kernel-dot"></span>
+      Python 3.11
+    </div>
+  </div>
+</header>
+
+<nav class="toolbar" role="toolbar" aria-label="Cell toolbar">
+  <button class="tool-btn" title="Save" onclick="saveNotebook()"><i class="fas fa-save"></i></button>
+  <button class="tool-btn" title="Add Code Cell" onclick="addCell('code')"><i class="fas fa-plus"></i></button>
+  <button class="tool-btn" title="Add Markdown Cell" onclick="addCell('markdown')"><i class="fas fa-plus" style="font-size:10px"></i><span style="font-size:9px;font-weight:700;position:absolute;bottom:5px;right:5px;color:var(--purple)">M</span></button>
+  <div class="tool-sep"></div>
+  <button class="tool-btn" title="Cut Cell" onclick="cutCell()"><i class="fas fa-cut"></i></button>
+  <button class="tool-btn" title="Copy Cell" onclick="copyCell()"><i class="fas fa-copy"></i></button>
+  <button class="tool-btn" title="Paste Below" onclick="pasteCell()"><i class="fas fa-paste"></i></button>
+  <div class="tool-sep"></div>
+  <button class="tool-btn" title="Move Up" onclick="moveCell(-1)"><i class="fas fa-arrow-up"></i></button>
+  <button class="tool-btn" title="Move Down" onclick="moveCell(1)"><i class="fas fa-arrow-down"></i></button>
+  <div class="tool-sep"></div>
+  <button class="tool-btn" title="Run Cell" onclick="runActiveCell()"><i class="fas fa-play"></i></button>
+  <button class="tool-btn" title="Run & Advance" onclick="runAndAdvance()"><i class="fas fa-forward-step"></i></button>
+  <button class="tool-btn" title="Stop" onclick="stopCell()"><i class="fas fa-stop"></i></button>
+  <div class="tool-sep"></div>
+  <button class="tool-btn" title="Toggle Output" onclick="toggleOutput()"><i class="fas fa-eye"></i></button>
+  <button class="tool-btn" title="Delete Cell" onclick="deleteCell()" style="color:var(--red)"><i class="fas fa-trash-alt"></i></button>
+  <span class="cell-type-badge code" id="cellTypeBadge" onclick="toggleCellType()">CODE</span>
+</nav>
+
+<main id="notebookContainer" role="main" aria-label="Notebook cells">
+</main>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  const avatarColors = ['#e8943a','#5ecc7b','#5da8e8','#b07de8','#e85d5d','#e8c97a','#5de8d4','#e87da8'];
+  const users = ['You','Alex','Sarah','Mike','Priya'];
+
+  let cellIdCounter = 0;
+  let activeCellId = null;
+  let clipboard = null;
+  let execCounter = 0;
+
+  const initialCells = [
+    {
+      type: 'markdown',
+      source: '# Customer Churn Analysis\n\nThis notebook explores the **customer churn dataset** to identify patterns and build a predictive model. We will:\n\n- Load and inspect the data\n- Perform exploratory data analysis\n- Engineer features\n- Train a baseline classifier',
+      comments: [
+        { author: 'Alex', time: '2h ago', text: 'Great intro section. Maybe add the dataset source link?', color: avatarColors[1] },
+        { author: 'Sarah', time: '1h ago', text: 'Looks good to me, approved.', color: avatarColors[2] }
+      ],
+      output: null,
+      execCount: null
+    },
+    {
+      type: 'code',
+      source: 'import pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport seaborn as sns\n\nsns.set_theme(style="darkgrid", palette="muted")\n%matplotlib inline',
+      comments: [
+        { author: 'Mike', time: '45m ago', text: 'Consider adding a random seed for reproducibility.', color: avatarColors[3] }
+      ],
+      output: null,
+      execCount: null
+    },
+    {
+      type: 'code',
+      source: 'df = pd.read_csv("data/customer_churn.csv")\ndf.shape\ndf.head()',
+      comments: [],
+      output: '(3333, 21)\n\n   customerID  gender  SeniorCitizen  ...  MonthlyCharges  TotalCharges  Churn\n0  7590-VHVEG  Female              0  ...           29.85        29.85      No\n1  5575-GNVDE    Male              0  ...           56.95       1889.50      No\n2  3668-QPYBK    Male              0  ...           53.85        108.15     Yes\n3  7795-CFOCW    Male              0  ...           42.30       1840.75      No\n4  9237-HQITU  Female              0  ...           70.70        151.65     Yes\n\n[5 rows x 21 columns]',
+      execCount: 1
+    },
+    {
+      type: 'markdown',
+      source: '## Missing Values\n\nLet\'s check for any missing or anomalous values in the dataset before proceeding with analysis.',
+      comments: [],
+      output: null,
+      execCount: null
+    },
+    {
+      type: 'code',
+      source: 'missing = df.isnull().sum()\nmissing_pct = (missing / len(df) * 100).round(2)\nmissing_df = pd.DataFrame({"Missing": missing, "Pct": missing_pct})\nmissing_df[missing_df["Missing"] > 0]',
+      comments: [
+        { author: 'Priya', time: '20m ago', text: 'TotalCharges has some blank strings — should convert to numeric first.', color: avatarColors[4] },
+        { author: 'You', time: '15m ago', text: 'Good catch, I\'ll add a preprocessing step.', color: avatarColors[0] }
+      ],
+      output: '   Missing  Pct\nTotalCharges      11  0.33',
+      execCount: 2
+    },
+    {
+      type: 'code',
+      source: '# Fix TotalCharges: convert blanks to NaN, then fill with median\ndf["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")\ndf["TotalCharges"].fillna(df["TotalCharges"].median(), inplace=True)\n\n# Encode target\n df["Churn"] = df["Churn"].map({"Yes": 1, "No": 0})\ndf["Churn"].value_counts()',
+      comments: [],
+      output: '0    5174\n1    1869\nName: Churn, dtype: int64',
+      execCount: 3
+    }
+  ];
+
+  let cells = [];
+
+  function init() {
+    initialCells.forEach(c => {
+      const id = cellIdCounter++;
+      cells.push({
+        id,
+        type: c.type,
+        source: c.source,
+        comments: [...c.comments],
+        output: c.output,
+        execCount: c.execCount,
+        outputVisible: !!c.output
+      });
+    });
+    renderAll();
+    if (cells.length > 0) setActiveCell(cells[0].id);
+  }
+
+  function renderAll() {
+    const container = document.getElementById('notebookContainer');
+    container.innerHTML = '';
+    cells.forEach(cell => {
+      container.appendChild(createCellElement(cell));
+    });
+    const addArea = document.createElement('div');
+    addArea.className = 'add-cell-area';
+    addArea.innerHTML = '<i class="fas fa-plus"></i> Add new cell';
+    addArea.onclick = () => addCell('code');
+    addArea.setAttribute('role', 'button');
+    addArea.setAttribute('tabindex', '0');
+    addArea.onkeydown = e => { if(e.key === 'Enter') addCell('code'); };
+    container.appendChild(addArea);
+    updateExecCounters();
+  }
+
+  function createCellElement(cell) {
+    const row = document.createElement('div');
+    row.className = 'cell-row' + (cell.id === activeCellId ? ' active' : '');
+    row.dataset.cellId = cell.id;
+    row.onclick = (e) => {
+      if (!e.target.closest('.comment-input') && !e.target.closest('.comment-send') && !e.target.closest('.comment-action-btn')) {
+        setActiveCell(cell.id);
+      }
+    };
+
+    const panel = document.createElement('div');
+    panel.className = 'cell-panel';
+
+    const gutter = document.createElement('div');
+    gutter.className = 'cell-gutter';
+
+    const execEl = document.createElement('span');
+    execEl.className = 'exec-count' + (cell.execCount !== null ? ' ran' : '');
+    execEl.textContent = cell.execCount !== null ? `[${cell.execCount}]` : '';
+    execEl.dataset.execFor = cell.id;
+
+    const runBtn = document.createElement('button');
+    runBtn.className = 'run-btn';
+    runBtn.innerHTML = '<i class="fas fa-play" style="margin-left:1px"></i>';
+    runBtn.title = 'Run this cell';
+    runBtn.setAttribute('aria-label', 'Run cell');
+    runBtn.onclick = (e) => { e.stopPropagation(); runCell(cell.id); };
+
+    gutter.appendChild(execEl);
+    gutter.appendChild(runBtn);
+    panel.appendChild(gutter);
+
+    const body = document.createElement('div');
+    body.className = 'cell-body';
+
+    if (cell.type === 'markdown' && cell.outputVisible && cell.execCount !== null) {
+      const rendered = document.createElement('div');
+      rendered.className = 'md-rendered';
+      rendered.innerHTML = renderMarkdown(cell.source);
+      rendered.ondblclick = () => { cell.outputVisible = false; renderAll(); setActiveCell(cell.id); };
+      body.appendChild(rendered);
+    } else {
+      const editor = document.createElement('textarea');
+      editor.className = 'cell-editor' + (cell.type === 'markdown' ? ' markdown-editor' : '');
+      editor.value = cell.source;
+      editor.placeholder = cell.type === 'code' ? '# Type code here...' : 'Type markdown here...';
+      editor.spellcheck = false;
+      editor.oninput = () => {
+        cell.source = editor.value;
+        autoResize(editor);
+        markUnsaved();
+      };
+      editor.onfocus = () => setActiveCell(cell.id);
+      editor.onkeydown = (e) => {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          const start = editor.selectionStart;
+          editor.value = editor.value.substring(0, start) + '    ' + editor.value.substring(editor.selectionEnd);
+          editor.selectionStart = editor.selectionEnd = start + 4;
+          cell.source = editor.value;
+        }
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          runCell(cell.id);
+        }
+        if (e.key === 'Enter' && e.shiftKey && cell.type === 'markdown') {
+          e.preventDefault();
+          runCell(cell.id);
+        }
+      };
+      body.appendChild(editor);
+      requestAnimationFrame(() => autoResize(editor));
+    }
+    panel.appendChild(body);
+
+    if (cell.output) {
+      const outputEl = document.createElement('div');
+      outputEl.className = 'cell-output' + (cell.outputVisible ? ' visible' : '');
+      outputEl.dataset.outputFor = cell.id;
+
+      if (cell.output.startsWith('[IMAGE]')) {
+        const imgWrap = document.createElement('div');
+        imgWrap.className = 'output-image';
+        const img = document.createElement('img');
+        img.src = cell.output.replace('[IMAGE]', '');
+        img.alt = 'Output plot';
+        imgWrap.appendChild(img);
+        outputEl.appendChild(imgWrap);
+      } else {
+        const textEl = document.createElement('div');
+        textEl.className = 'output-text' + (cell.output.includes('Error') ? ' output-error' : '');
+        textEl.textContent = cell.output;
+        outputEl.appendChild(textEl);
+      }
+      panel.appendChild(outputEl);
+    }
+
+    row.appendChild(panel);
+
+    const commentsPanel = document.createElement('div');
+    commentsPanel.className = 'comments-panel';
+
+    const cHeader = document.createElement('div');
+    cHeader.className = 'comments-header';
+    const cLabel = document.createElement('span');
+    cLabel.className = 'comments-label';
+    const count = cell.comments.length;
+    cLabel.innerHTML = `<i class="far fa-comment-dots"></i> Comments ${count > 0 ? `<span class="comments-count">${count}</span>` : ''}`;
+    cHeader.appendChild(cLabel);
+    commentsPanel.appendChild(cHeader);
+
+    const cList = document.createElement('div');
+    cList.className = 'comments-list';
+    if (cell.comments.length === 0) {
+      const noC = document.createElement('div');
+      noC.className = 'no-comments';
+      noC.innerHTML = '<i class="far fa-comment-dots"></i>No comments yet';
+      cList.appendChild(noC);
+    } else {
+      cell.comments.forEach((c, idx) => {
+        cList.appendChild(createCommentElement(cell.id, c, idx));
+      });
+    }
+    cList.scrollTop = cList.scrollHeight;
+    commentsPanel.appendChild(cList);
+
+    const inputArea = document.createElement('div');
+    inputArea.className = 'comments-input-area';
+    const inputWrap = document.createElement('div');
+    inputWrap.className = 'comment-input-wrap';
+    const input = document.createElement('textarea');
+    input.className = 'comment-input';
+    input.placeholder = 'Add a comment...';
+    input.rows = 1;
+    input.oninput = () => autoResize(input, 80);
+    input.onkeydown = (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (text) {
+          addComment(cell.id, text);
+          input.value = '';
+          autoResize(input, 80);
+        }
+      }
+      e.stopPropagation();
+    };
+    const sendBtn = document.createElement('button');
+    sendBtn.className = 'comment-send';
+    sendBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
+    sendBtn.setAttribute('aria-label', 'Send comment');
+    sendBtn.onclick = (e) => {
+      e.stopPropagation();
+      const text = input.value.trim();
+      if (text) {
+        addComment(cell.id, text);
+        input.value = '';
+        autoResize(input, 80);
+      }
+    };
+    inputWrap.appendChild(input);
+    inputWrap.appendChild(sendBtn);
+    inputArea.appendChild(inputWrap);
+    commentsPanel.appendChild(inputArea);
+
+    row.appendChild(commentsPanel);
+    return row;
+  }
+
+  function createCommentElement(cellId, comment, idx) {
+    const item = document.createElement('div');
+    item.className = 'comment-item';
+    const initials = comment.author.split(' ').map(w => w[0]).join('').substring(0,2);
+    item.innerHTML = `
+      <div class="comment-avatar" style="background:${comment.color}">${initials}</div>
+      <div class="comment-content">
+        <div class="comment-meta">
+          <span class="comment-author">${comment.author}</span>
+          <span class="comment-time">${comment.time}</span>
+        </div>
+        <div class="comment-text">${escapeHtml(comment.text)}</div>
+        <div class="comment-actions">
+          <button class="comment-action-btn" onclick="event.stopPropagation(); resolveComment(${cellId}, ${idx})"><i class="fas fa-check"></i> Resolve</button>
+          <button class="comment-action-btn delete" onclick="event.stopPropagation(); deleteComment(${cellId}, ${idx})"><i class="fas fa-trash-alt"></i> Delete</button>
+        </div>
+      </div>
+    `;
+    return item;
+  }
+
+  function renderMarkdown(src) {
+    let html = escapeHtml(src);
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+    html = html.replace(/^(?!<[hulo])(.+)$/gm, '<p>$1</p>');
+    html = html.replace(/<p>\s*<\/p>/g, '');
+    return html;
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function setActiveCell(id) {
+    activeCellId = id;
+    document.querySelectorAll('.cell-row').forEach(r => {
+      r.classList.toggle('active', parseInt(r.dataset.cellId) === id);
+    });
+    const cell = cells.find(c => c.id === id);
+    if (cell) {
+      const badge = document.getElementById('cellTypeBadge');
+      badge.textContent = cell.type.toUpperCase();
+      badge.className = 'cell-type-badge ' + cell.type;
+    }
+  }
+
+  function addCell(type) {
+    const id = cellIdCounter++;
+    const activeIdx = cells.findIndex(c => c.id === activeCellId);
+    const newCell = {
+      id, type,
+      source: '',
+      comments: [],
+      output: null,
+      execCount: null,
+      outputVisible: false
+    };
+    if (activeIdx >= 0) {
+      cells.splice(activeIdx + 1, 0, newCell);
+    } else {
+      cells.push(newCell);
+    }
+    renderAll();
+    setActiveCell(id);
+    requestAnimationFrame(() => {
+      const row = document.querySelector(`[data-cell-id="${id}"]`);
+      if (row) {
+        const editor = row.querySelector('.cell-editor');
+        if (editor) editor.focus();
+      }
+    });
+    markUnsaved();
+    showToast('Cell added', 'info');
+  }
+
+  function deleteCell() {
+    if (cells.length <= 1) {
+      showToast('Cannot delete the last cell', 'error');
+      return;
+    }
+    const idx = cells.findIndex(c => c.id === activeCellId);
+    if (idx < 0) return;
+    cells.splice(idx, 1);
+    const newActive = cells[Math.min(idx, cells.length - 1)];
+    renderAll();
+    setActiveCell(newActive.id);
+    markUnsaved();
+    showToast('Cell deleted', 'info');
+  }
+
+  function toggleCellType() {
+    const cell = cells.find(c => c.id === activeCellId);
+    if (!cell) return;
+    cell.type = cell.type === 'code' ? 'markdown' : 'code';
+    cell.output = null;
+    cell.execCount = null;
+    cell.outputVisible = false;
+    renderAll();
+    setActiveCell(cell.id);
+    markUnsaved();
+  }
+
+  function moveCell(dir) {
+    const idx = cells.findIndex(c => c.id === activeCellId);
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= cells.length) return;
+    [cells[idx], cells[newIdx]] = [cells[newIdx], cells[idx]];
+    renderAll();
+    setActiveCell(activeCellId);
+    markUnsaved();
+  }
+
+  function copyCell() {
+    const cell = cells.find(c => c.id === activeCellId);
+    if (!cell) return;
+    clipboard = { type: cell.type, source: cell.source };
+    showToast('Cell copied', 'info');
+  }
+
+  function cutCell() {
+    copyCell();
+    deleteCell();
+  }
+
+  function pasteCell() {
+    if (!clipboard) {
+      showToast('Nothing to paste', 'error');
+      return;
+    }
+    const id = cellIdCounter++;
+    const activeIdx = cells.findIndex(c => c.id === activeCellId);
+    const newCell = {
+      id, type: clipboard.type,
+      source: clipboard.source,
+      comments: [], output: null, execCount: null, outputVisible: false
+    };
+    cells.splice(activeIdx + 1, 0, newCell);
+    renderAll();
+    setActiveCell(id);
+    markUnsaved();
+    showToast('Cell pasted', 'info');
+  }
+
+  function runCell(id) {
+    const cell = cells.find(c => c.id === id);
+    if (!cell || cell.type !== 'code') {
+      if (cell && cell.type === 'markdown') {
+        cell.execCount = ++execCounter;
+        cell.outputVisible = true;
+        renderAll();
+        setActiveCell(id);
+      }
+      return;
+    }
+
+    const row = document.querySelector(`[data-cell-id="${id}"]`);
+    if (row) {
+      const btn = row.querySelector('.run-btn');
+      if (btn) btn.classList.add('running');
+    }
+
+    setTimeout(() => {
+      cell.execCount = ++execCounter;
+      cell.output = simulateOutput(cell.source);
+      cell.outputVisible = true;
+      renderAll();
+      setActiveCell(id);
+      markUnsaved();
+    }, 400 + Math.random() * 600);
+  }
+
+  function runActiveCell() {
+    if (activeCellId !== null) runCell(activeCellId);
+  }
+
+  function runAndAdvance() {
+    if (activeCellId !== null) {
+      runCell(activeCellId);
+      const idx = cells.findIndex(c => c.id === activeCellId);
+      if (idx < cells.length - 1) {
+        setTimeout(() => setActiveCell(cells[idx + 1].id), 500);
+      }
+    }
+  }
+
+  function runAllCells() {
+    cells.forEach((cell, i) => {
+      setTimeout(() => runCell(cell.id), i * 300);
+    });
+  }
+
+  function stopCell() {
+    document.querySelectorAll('.run-btn.running').forEach(b => b.classList.remove('running'));
+    showToast('Execution interrupted', 'error');
+  }
+
+  function clearAllOutputs() {
+    cells.forEach(c => { c.output = null; c.execCount = null; c.outputVisible = false; });
+    execCounter = 0;
+    renderAll();
+    if (activeCellId !== null) setActiveCell(activeCellId);
+    showToast('All outputs cleared', 'info');
+  }
+
+  function toggleOutput() {
+    const cell = cells.find(c => c.id === activeCellId);
+    if (!cell) return;
+    cell.outputVisible = !cell.outputVisible;
+    const outputEl = document.querySelector(`[data-output-for="${cell.id}"]`);
+    if (outputEl) outputEl.classList.toggle('visible', cell.outputVisible);
+  }
+
+  function simulateOutput(source) {
+    const s = source.trim();
+    if (!s) return '';
+    if (s.includes('head()')) return '(3333, 21)\n\n   customerID  gender  ...  Churn\n0  7590-VHVEG  Female  ...     No\n1  5575-GNVDE    Male  ...     No\n2  3668-QPYBK    Male  ...    Yes\n3  7795-CFOCW    Male  ...     No\n4  9237-HQITU  Female  ...    Yes\n\n[5 rows x 21 columns]';
+    if (s.includes('value_counts')) return '0    5174\n1    1869\nName: Churn, dtype: int64';
+    if (s.includes('describe')) return '           SeniorCitizen    MonthlyCharges    TotalCharges       Churn\ncount      3333.000000       3333.000000    3333.000000  3333.000000\nmean           0.162147         64.761692    2283.300441     0.561016\nstd            0.368624         30.085974    2266.771362     0.496338\nmin            0.000000         18.250000      18.800000     0.000000\n25%            0.000000         35.500000     401.450000     0.000000\n50%            0.000000         70.350000    1397.475000     1.000000\n75%            0.000000         89.850000    3794.737500     1.000000\nmax            1.000000        118.750000    8684.800000     1.000000';
+    if (s.includes('isnull') || s.includes('missing')) return '   Missing  Pct\nTotalCharges      11  0.33';
+    if (s.includes('shape')) return '(3333, 21)';
+    if (s.includes('info')) return '<class \'pandas.core.frame.DataFrame\'>\nRangeIndex: 3333 entries, 0 to 3332\nData columns (total 21 columns):\n #   Column            Non-Null Count  Dtype  \n---  ------            --------------  -----  \n 0   customerID        3333 non-null   object \n 1   gender            3333 non-null   object \n 2   SeniorCitizen     3333 non-null   int64  \n 3   Partner           3333 non-null   object \n 4   tenure            3333 non-null   int64  \n 5   MonthlyCharges    3333 non-null   float64\n 6   TotalCharges      3322 non-null   float64\n 7   Churn             3333 non-null   int64  \ndtypes: float64(2), int64(3), object(16)\nmemory usage: 546.5+ KB';
+    if (s.includes('print') || s.includes('plt.') || s.includes('sns.')) return '[IMAGE]https://picsum.photos/seed/churn-plot-' + Math.random().toString(36).substring(7) + '/560/320.jpg';
+    if (s.includes('fit') || s.includes('score') || s.includes('accuracy')) return 'Accuracy: 0.7912\nPrecision: 0.6534\nRecall: 0.5821\nF1-Score: 0.6156\n\n[[945  124]\n [187  260]]';
+    if (s.includes('import')) return '';
+    return `Executed in ${(Math.random() * 0.5 + 0.01).toFixed(3)}s`;
+  }
+
+  function updateExecCounters() {
+    cells.forEach(cell => {
+      const el = document.querySelector(`[data-exec-for="${cell.id}"]`);
+      if (el) {
+        el.textContent = cell.execCount !== null ? `[${cell.execCount}]` : '';
+        el.classList.toggle('ran', cell.execCount !== null);
+      }
+    });
+  }
+
+  function addComment(cellId, text) {
+    const cell = cells.find(c => c.id === cellId);
+    if (!cell) return;
+    cell.comments.push({
+      author: 'You',
+      time: 'Just now',
+      text: text,
+      color: avatarColors[0]
+    });
+    renderAll();
+    setActiveCell(cellId);
+    markUnsaved();
+  }
+
+  function deleteComment(cellId, idx) {
+    const cell = cells.find(c => c.id === cellId);
+    if (!cell) return;
+    cell.comments.splice(idx, 1);
+    renderAll();
+    setActiveCell(cellId);
+    markUnsaved();
+    showToast('Comment removed', 'info');
+  }
+
+  function resolveComment(cellId, idx) {
+    const cell = cells.find(c => c.id === cellId);
+    if (!cell || !cell.comments[idx]) return;
+    cell.comments[idx].text += ' — resolved';
+    cell.comments[idx].color = '#454860';
+    renderAll();
+    setActiveCell(cellId);
+    markUnsaved();
+    showToast('Comment resolved', 'success');
+  }
+
+  function saveNotebook() {
+    const indicator = document.getElementById('saveIndicator');
+    indicator.innerHTML = '<i class="fas fa-check-circle" style="font-size:10px;vertical-align:middle;margin-right:4px"></i>Saved';
+    indicator.classList.add('saved');
+    setTimeout(() => {
+      indicator.innerHTML = '<i class="fas fa-circle" style="font-size:6px;vertical-align:middle;margin-right:4px"></i>Saved';
+    }, 2000);
+    showToast('Notebook saved', 'success');
+  }
+
+  function markUnsaved() {
+    const indicator = document.getElementById('saveIndicator');
+    indicator.innerHTML = '<i class="fas fa-circle" style="font-size:6px;vertical-align:middle;margin-right:4px"></i>Unsaved';
+    indicator.classList.remove('saved');
+  }
+
+  function exportNotebook() {
+    const data = {
+      title: document.getElementById('notebookTitle').value,
+      cells: cells.map(c => ({
+        cell_type: c.type,
+        source: c.source,
+        outputs: c.output ? [c.output] : [],
+        comments: c.comments,
+        execution_count: c.execCount
+      }))
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'notebook.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Notebook exported', 'success');
+  }
+
+  function autoResize(el, maxH = 400) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, maxH) + 'px';
+  }
+
+  function showToast(msg, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    const icons = { success: 'fa-check-circle', info: 'fa-info-circle', error: 'fa-exclamation-circle' };
+    toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i> ${msg}`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+
+    const idx = cells.findIndex(c => c.id === activeCellId);
+
+    if (e.key === 'ArrowUp' && e.altKey && idx > 0) {
+      e.preventDefault();
+      setActiveCell(cells[idx - 1].id);
+    }
+    if (e.key === 'ArrowDown' && e.altKey && idx < cells.length - 1) {
+      e.preventDefault();
+      setActiveCell(cells[idx + 1].id);
+    }
+    if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      addCell('code');
+    }
+    if (e.key === 'b' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      addCell('markdown');
+    }
+    if (e.key === 'd' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      deleteCell();
+    }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      runAndAdvance();
+    }
+    if (e.key === 'm') {
+      const cell = cells.find(c => c.id === activeCellId);
+      if (cell && cell.type !== 'markdown') { e.preventDefault(); toggleCellType(); }
+    }
+    if (e.key === 'y') {
+      const cell = cells.find(c => c.id === activeCellId);
+      if (cell && cell.type !== 'code') { e.preventDefault(); toggleCellType(); }
+    }
+    if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      saveNotebook();
+    }
+  });
+
+  init();
+</script>
+</body>
+</html>

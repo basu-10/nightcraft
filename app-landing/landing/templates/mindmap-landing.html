@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scrapbook — Local-First Spatial Thinking</title>
+    <style>
+        :root {
+            --bg-primary: #09090b;
+            --bg-secondary: #111113;
+            --bg-card: #1a1a1f;
+            --text-primary: #f4f4f5;
+            --text-secondary: #71717a;
+            --accent: #22d3ee;
+            --accent-dim: rgba(34, 211, 238, 0.1);
+            --border: #27272a;
+            --border-light: #3f3f46;
+            
+            /* Mockup specific vars */
+            --mock-canvas-bg: #18181b;
+            --mock-panel-bg: #0f0f11;
+            --mock-node-bg: #1e1e22;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* --- Navigation --- */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 5%;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(9, 9, 11, 0.85);
+            backdrop-filter: blur(12px);
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 28px; height: 28px;
+            border: 2px solid var(--accent);
+            border-radius: 6px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo-icon::after {
+            content: '';
+            width: 12px; height: 12px;
+            border: 1.5px solid var(--accent);
+            border-radius: 3px;
+            opacity: 0.5;
+        }
+
+        .nav-links { display: flex; gap: 30px; list-style: none; }
+        .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+        .nav-links a:hover { color: var(--text-primary); }
+
+        .btn-primary {
+            background: var(--accent); color: #000;
+            padding: 10px 20px; border-radius: 8px;
+            text-decoration: none; font-weight: 600;
+            border: none; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+        .btn-ghost {
+            background: transparent; color: var(--text-primary);
+            padding: 10px 20px; border-radius: 8px;
+            text-decoration: none; font-weight: 500;
+            border: 1px solid var(--border); cursor: pointer;
+        }
+
+        /* --- Hero --- */
+        .hero {
+            padding: 80px 5% 100px;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-block; padding: 6px 14px;
+            border-radius: 50px; background: var(--accent-dim);
+            color: var(--accent); font-size: 0.85rem; font-weight: 500;
+            margin-bottom: 24px; border: 1px solid rgba(34, 211, 238, 0.2);
+        }
+
+        .hero h1 {
+            font-size: 4rem; font-weight: 800;
+            letter-spacing: -2px; line-height: 1.1;
+            margin-bottom: 24px; max-width: 850px; margin-left: auto; margin-right: auto;
+        }
+
+        .hero p {
+            color: var(--text-secondary); font-size: 1.2rem;
+            max-width: 600px; margin: 0 auto 50px;
+        }
+
+        /* --- The Main App Mockup (Hero) --- */
+        .app-mockup-hero {
+            max-width: 1100px; margin: 0 auto;
+            background: var(--mock-panel-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 60px 120px -20px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05) inset;
+            display: flex; flex-direction: column;
+        }
+
+        /* Mock Top Bar */
+        .mock-topbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 16px; background: var(--mock-panel-bg);
+            border-bottom: 1px solid var(--border);
+        }
+        .mock-tabs { display: flex; gap: 2px; }
+        .mock-tab {
+            padding: 6px 12px; font-size: 0.75rem; color: var(--text-secondary);
+            background: transparent; border-radius: 6px; border: none; cursor: default;
+        }
+        .mock-tab.active { background: var(--mock-canvas-bg); color: var(--text-primary); }
+        
+        .mock-actions { display: flex; gap: 8px; align-items: center; }
+        .mock-btn {
+            font-size: 0.75rem; padding: 5px 10px; border-radius: 6px;
+            border: 1px solid var(--border); background: transparent;
+            color: var(--text-secondary); display: flex; align-items: center; gap: 4px;
+        }
+        .mock-btn.primary { background: var(--accent); color: #000; border: none; font-weight: 600; }
+
+        /* Mock Canvas Area */
+        .mock-canvas-area {
+            position: relative; height: 500px; background: var(--mock-canvas-bg);
+            overflow: hidden;
+        }
+
+        .mock-grid {
+            position: absolute; width: 200%; height: 200%; left: -50%; top: -50%;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* Canvas Nodes */
+        .c-node {
+            position: absolute; background: var(--mock-node-bg);
+            border: 1px solid var(--border); border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4); z-index: 2;
+        }
+        .c-node-header {
+            padding: 8px 12px; border-bottom: 1px solid var(--border);
+            font-size: 0.7rem; font-weight: 600; display: flex; justify-content: space-between;
+        }
+        .c-node-body { padding: 12px; font-size: 0.75rem; color: var(--text-secondary); }
+        
+        .c-node-text { width: 240px; top: 20%; left: 15%; }
+        .c-node-image { width: 160px; top: 10%; right: 20%; padding: 0; overflow: hidden;}
+        .c-node-image img { width: 100%; height: 120px; object-fit: cover; display: block;}
+        .c-node-table { width: 280px; bottom: 15%; right: 15%; }
+        .c-node-file { width: 180px; bottom: 20%; left: 20%; display: flex; align-items: center; gap: 10px; padding: 12px; }
+        .file-icon { color: #ef4444; font-size: 1.5rem; }
+        
+        /* Mock Table inside node */
+        .mini-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+        .mini-table th, .mini-table td { border: 1px solid var(--border); padding: 4px 8px; text-align: left; color: var(--text-secondary);}
+        .mini-table th { background: rgba(255,255,255,0.03); color: var(--text-primary); font-weight: 500;}
+
+        /* SVG Arrows */
+        .mock-svg {
+            position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 1;
+            pointer-events: none;
+        }
+        .arrow-line { stroke: #52525b; stroke-width: 2; fill: none; }
+        .arrow-head { fill: #52525b; }
+        .arrow-label {
+            position: absolute; background: var(--mock-panel-bg); border: 1px solid var(--border);
+            padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; color: var(--accent); z-index: 3;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        /* Zoom Controls */
+        .mock-zoom {
+            position: absolute; bottom: 16px; right: 16px; z-index: 4;
+            background: var(--mock-panel-bg); border: 1px solid var(--border);
+            border-radius: 8px; padding: 4px; display: flex; flex-direction: column; gap: 2px;
+        }
+        .zoom-btn { background: transparent; border: none; color: var(--text-secondary); padding: 6px 10px; cursor: default; font-size: 0.8rem; }
+        .zoom-divider { height: 1px; background: var(--border); margin: 2px 0; }
+        .zoom-label { font-size: 0.65rem; text-align: center; padding: 2px 0; color: var(--text-secondary); border-top: 1px solid var(--border);}
+
+
+        /* --- Feature Sections --- */
+        .section { padding: 120px 5%; }
+        .section-alt { background: var(--bg-secondary); }
+
+        .section-header { max-width: 500px; margin-bottom: 60px; }
+        .section-header h2 { font-size: 2.5rem; font-weight: 700; letter-spacing: -1px; margin-bottom: 15px; }
+        .section-header p { color: var(--text-secondary); font-size: 1.1rem; }
+
+        /* Split Layouts */
+        .split { display: grid; grid-template-columns: 1fr 1.2fr; gap: 80px; align-items: center; max-width: 1200px; margin: 0 auto; }
+        .split.reverse { grid-template-columns: 1.2fr 1fr; }
+        .split.reverse > *:first-child { order: 2; }
+        .split.reverse > *:last-child { order: 1; }
+
+        .check-list { list-style: none; }
+        .check-list li { margin-bottom: 20px; display: flex; align-items: flex-start; gap: 12px; color: var(--text-secondary); font-size: 0.95rem; }
+        .check-mark { color: var(--accent); font-weight: bold; margin-top: 2px; flex-shrink: 0; }
+        .check-list strong { color: var(--text-primary); }
+
+        /* --- Specific UI Mockups --- */
+
+        /* Search Sidebar Mockup */
+        .mock-sidebar {
+            background: var(--mock-panel-bg); border: 1px solid var(--border-light);
+            border-radius: 12px; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+        }
+        .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); }
+        .search-input-mock {
+            width: 100%; background: var(--mock-canvas-bg); border: 1px solid var(--border);
+            padding: 8px 12px; border-radius: 6px; color: var(--text-primary); font-size: 0.85rem;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .search-input-mock span { color: var(--text-secondary); }
+        
+        .search-filters { display: flex; gap: 6px; margin-top: 12px; }
+        .filter-pill { font-size: 0.7rem; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border); color: var(--text-secondary); }
+        .filter-pill.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+        .search-results { padding: 12px; }
+        .result-item {
+            padding: 10px; border-radius: 6px; margin-bottom: 4px;
+            border: 1px solid transparent; cursor: default;
+        }
+        .result-item:hover { background: rgba(255,255,255,0.02); border-color: var(--border); }
+        .result-title { font-size: 0.85rem; font-weight: 500; margin-bottom: 2px; }
+        .result-meta { font-size: 0.7rem; color: var(--text-secondary); display: flex; gap: 10px; }
+        .result-meta span { background: var(--mock-canvas-bg); padding: 1px 6px; border-radius: 3px; }
+        .result-dimmed { opacity: 0.5; }
+
+
+        /* Auto-Layout Panel Mockup */
+        .mock-layout-panel {
+            background: var(--mock-panel-bg); border: 1px solid var(--border-light);
+            border-radius: 12px; padding: 24px; box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+        }
+        .panel-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .panel-close { color: var(--text-secondary); background: none; border: none; font-size: 1.2rem;}
+        
+        .layout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .layout-option {
+            background: var(--mock-canvas-bg); border: 1px solid var(--border);
+            padding: 16px; border-radius: 8px; text-align: center; transition: all 0.2s;
+        }
+        .layout-option.active { border-color: var(--accent); background: var(--accent-dim); }
+        .layout-icon { font-size: 1.5rem; margin-bottom: 8px; display: block; }
+        .layout-label { font-size: 0.8rem; font-weight: 500; }
+        
+        .layout-settings { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.85rem; }
+        .setting-label { color: var(--text-secondary); }
+        .setting-select { background: var(--mock-canvas-bg); border: 1px solid var(--border); color: var(--text-primary); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;}
+        
+        .apply-btn { width: 100%; margin-top: 20px; padding: 10px; background: var(--accent); color: #000; border: none; border-radius: 6px; font-weight: 600; }
+
+
+        /* --- CTA --- */
+        .cta-section {
+            text-align: center; padding: 120px 5%;
+            border-top: 1px solid var(--border);
+            background: radial-gradient(circle at top, rgba(34, 211, 238, 0.05) 0%, var(--bg-primary) 70%);
+        }
+        .cta-section h2 { font-size: 3rem; margin-bottom: 20px; letter-spacing: -1px; }
+        .cta-section p { color: var(--text-secondary); margin-bottom: 40px; font-size: 1.1rem; }
+
+        footer { text-align: center; padding: 30px; color: var(--text-secondary); font-size: 0.8rem; border-top: 1px solid var(--border); }
+
+        @media (max-width: 900px) {
+            .hero h1 { font-size: 2.5rem; }
+            .split, .split.reverse { grid-template-columns: 1fr; gap: 40px; }
+            .mock-canvas-area { height: 300px; }
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">
+            <div class="logo-icon"></div>
+            Scrapbook
+        </div>
+        <ul class="nav-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#search">Search</a></li>
+            <li><a href="#layout">Layouts</a></li>
+        </ul>
+        <a href="#launch" class="btn-primary">Launch App</a>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="badge">100% Local &bull; No Cloud Login &bull; Runs in Browser</div>
+        <h1>Map your research spatially. Privately.</h1>
+        <p>A local-first workspace. Drag in files, text, and tables. Connect them with labeled arrows. Search across infinite canvases.</p>
+
+        <!-- Hero UI Mockup -->
+        <div class="app-mockup-hero">
+            <div class="mock-topbar">
+                <div class="mock-tabs">
+                    <button class="mock-tab">📚 Literature Review</button>
+                    <button class="mock-tab active">📑 Chapter 2: Methods</button>
+                    <button class="mock-tab">📑 Raw Data</button>
+                </div>
+                <div class="mock-actions">
+                    <button class="mock-btn">🔍 Search</button>
+                    <button class="mock-btn primary">+ New Card</button>
+                </div>
+            </div>
+            
+            <div class="mock-canvas-area">
+                <div class="mock-grid"></div>
+                
+                <!-- SVG Arrows -->
+                <svg class="mock-svg">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" class="arrow-head" />
+                        </marker>
+                    </defs>
+                    <!-- Arrow from Text to Image -->
+                    <path d="M 390 140 Q 500 100 620 120" class="arrow-line" marker-end="url(#arrowhead)" />
+                    <!-- Arrow from Text to Table -->
+                    <path d="M 300 200 Q 400 350 620 330" class="arrow-line" marker-end="url(#arrowhead)" />
+                </svg>
+                
+                <!-- Arrow Labels -->
+                <div class="arrow-label" style="top: 95px; left: 480px;">source diagram</div>
+                <div class="arrow-label" style="top: 260px; left: 440px;">data extracted to</div>
+
+                <!-- Nodes -->
+                <div class="c-node c-node-text">
+                    <div class="c-node-header">
+                        <span>Neural Network Foundations</span>
+                        <span style="color:var(--text-secondary)">T</span>
+                    </div>
+                    <div class="c-node-body">
+                        Backpropagation adjusts weights based on the error rate. This allows the network to learn from labeled training data...
+                    </div>
+                </div>
+
+                <div class="c-node c-node-image">
+                    <img src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" alt="Abstract neural network representation">
+                    <div class="c-node-header" style="border-top: 1px solid var(--border); border-bottom: none;">
+                        <span>network_topo.png</span>
+                        <span style="color:var(--text-secondary)">I</span>
+                    </div>
+                </div>
+
+                <div class="c-node c-node-table">
+                    <div class="c-node-header">
+                        <span>Training Results</span>
+                        <span style="color:var(--text-secondary)">Tbl</span>
+                    </div>
+                    <table class="mini-table">
+                        <tr><th>Epoch</th><th>Loss</th><th>Accuracy</th></tr>
+                        <tr><td>10</td><td>0.452</td><td>82%</td></tr>
+                        <tr><td>20</td><td>0.213</td><td>91%</td></tr>
+                        <tr><td>30</td><td>0.105</td><td>96%</td></tr>
+                    </table>
+                </div>
+
+                <div class="c-node c-node-file">
+                    <div class="file-icon">PDF</div>
+                    <div>
+                        <div style="font-size: 0.8rem; font-weight: 500;">original_paper.pdf</div>
+                        <div style="font-size: 0.7rem; color: var(--text-secondary);">2.4 MB</div>
+                    </div>
+                </div>
+
+                <!-- Zoom Controls -->
+                <div class="mock-zoom">
+                    <button class="zoom-btn">+</button>
+                    <div class="zoom-divider"></div>
+                    <button class="zoom-btn">−</button>
+                    <div class="zoom-label">85%</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Feature 1: Search & Hierarchy -->
+    <section class="section section-alt" id="search">
+        <div class="split">
+            <div>
+                <div class="section-header" style="margin-bottom: 30px; text-align: left;">
+                    <h2>Find anything across your Book</h2>
+                    <p>Search by title or content. See off-page matches instantly and jump between canvases.</p>
+                </div>
+                <ul class="check-list">
+                    <li><span class="check-mark">✓</span> <strong>Cross-Canvas Search:</strong> Results show which canvas the card lives on.</li>
+                    <li><span class="check-mark">✓</span> <strong>Type Filtering:</strong> Toggle visibility to only show Text, Images, Tables, or Files.</li>
+                    <li><span class="check-mark">✓</span> <strong>Canvas Collections:</strong> Group related pages into collapsible sections in the tab bar.</li>
+                </ul>
+            </div>
+
+            <!-- Search UI Mockup -->
+            <div class="mock-sidebar">
+                <div class="sidebar-header">
+                    <div class="search-input-mock">
+                        🔍 <span>Search "backpropagation"</span>
+                    </div>
+                    <div class="search-filters">
+                        <div class="filter-pill active">All</div>
+                        <div class="filter-pill">Text</div>
+                        <div class="filter-pill">Images</div>
+                        <div class="filter-pill">Tables</div>
+                        <div class="filter-pill">Files</div>
+                    </div>
+                </div>
+                <div class="search-results">
+                    <div class="result-item">
+                        <div class="result-title">Neural Network Foundations</div>
+                        <div class="result-meta">
+                            <span>📑 Chapter 2: Methods</span>
+                            <span style="background: var(--accent-dim); color: var(--accent);">Current</span>
+                        </div>
+                    </div>
+                    <div class="result-item result-dimmed">
+                        <div class="result-title">Mathematical Derivation of Gradients</div>
+                        <div class="result-meta">
+                            <span>📑 Appendix A: Math</span>
+                            <span>Off-page</span>
+                        </div>
+                    </div>
+                    <div class="result-item result-dimmed">
+                        <div class="result-title">original_paper.pdf</div>
+                        <div class="result-meta">
+                            <span>📑 Literature Review</span>
+                            <span>Off-page</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Feature 2: Layouts & Connectors -->
+    <section class="section" id="layout">
+        <div class="split reverse">
+            <div>
+                <div class="section-header" style="margin-bottom: 30px; text-align: left;">
+                    <h2>From chaos to clarity</h2>
+                    <p>Connect cards with labeled relationships, then apply structural layouts with one click.</p>
+                </div>
+                <ul class="check-list">
+                    <li><span class="check-mark">✓</span> <strong>Labeled Connectors:</strong> Double-click arrows to name relationships ("supports", "contradicts").</li>
+                    <li><span class="check-mark">✓</span> <strong>Smart Layouts:</strong> Hierarchical trees, Radial mind-maps, Timelines, and Grid views.</li>
+                    <li><span class="check-mark">✓</span> <strong>Rich Input:</strong> Paste CSV to make tables, paste images, or drop files to create cards instantly.</li>
+                </ul>
+            </div>
+
+            <!-- Layout Panel UI Mockup -->
+            <div class="mock-layout-panel">
+                <div class="panel-title">
+                    Arrange Canvas
+                    <button class="panel-close">✕</button>
+                </div>
+                
+                <div class="layout-grid">
+                    <div class="layout-option">
+                        <span class="layout-icon">⊞</span>
+                        <div class="layout-label">Grid</div>
+                    </div>
+                    <div class="layout-option active">
+                        <span class="layout-icon">⊦</span>
+                        <div class="layout-label">Hierarchical</div>
+                    </div>
+                    <div class="layout-option">
+                        <span class="layout-icon">◎</span>
+                        <div class="layout-label">Radial</div>
+                    </div>
+                    <div class="layout-option">
+                        <span class="layout-icon">☰</span>
+                        <div class="layout-label">Timeline</div>
+                    </div>
+                </div>
+
+                <div class="layout-settings">
+                    <div class="setting-row">
+                        <span class="setting-label">Direction</span>
+                        <select class="setting-select">
+                            <option>Top-Down</option>
+                            <option>Left-Right</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Root Node</span>
+                        <select class="setting-select">
+                            <option>Auto-detect</option>
+                            <option>Neural Network Foundations</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="apply-btn">Apply Layout</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section" id="launch">
+        <h2>Start mapping your research</h2>
+        <p>No sign-up required. Your data stays on your machine.</p>
+        <div style="display: flex; gap: 15px; justify-content: center;">
+            <a href="landing.html" class="btn-primary" style="padding: 15px 30px; font-size: 1.1rem;">Launch Workspace</a>
+        </div>
+    </section>
+
+    <footer>
+        &copy; 2023 Scrapbook. Built to be private, fast, and local.
+    </footer>
+
+</body>
+</html>

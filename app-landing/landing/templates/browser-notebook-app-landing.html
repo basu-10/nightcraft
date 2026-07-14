@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NoteFlow — Collaborative Notebook for Teams</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,900;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root {
+  --bg-deep: #0f1117;
+  --bg-surface: #161820;
+  --bg-cell: #1a1d28;
+  --bg-input: #12141c;
+  --bg-comment: #141620;
+  --border: #2a2d3a;
+  --border-focus: #e8943a;
+  --fg: #e2e4ed;
+  --fg-muted: #6b7089;
+  --fg-dim: #454860;
+  --accent: #e8943a;
+  --accent-glow: rgba(232,148,58,0.15);
+  --accent-soft: rgba(232,148,58,0.08);
+  --green: #5ecc7b;
+  --green-glow: rgba(94,204,123,0.12);
+  --red: #e85d5d;
+  --blue: #5da8e8;
+  --purple: #b07de8;
+  --string: #e8c97a;
+  --keyword: #e8787a;
+  --func: #6cc4e8;
+  --num: #d4976c;
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg-deep);color:var(--fg);overflow-x:hidden;line-height:1.6;}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* ── Background atmosphere ── */
+.bg-glow{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden;}
+.bg-glow .orb{position:absolute;border-radius:50%;filter:blur(120px);opacity:0.5;}
+.bg-glow .orb-1{width:700px;height:700px;background:radial-gradient(circle,rgba(232,148,58,0.07),transparent 70%);top:-300px;right:-200px;animation:float-orb 20s ease-in-out infinite;}
+.bg-glow .orb-2{width:600px;height:600px;background:radial-gradient(circle,rgba(94,204,123,0.04),transparent 70%);bottom:-200px;left:-200px;animation:float-orb 25s ease-in-out infinite reverse;}
+.bg-glow .orb-3{width:400px;height:400px;background:radial-gradient(circle,rgba(93,168,232,0.04),transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);animation:float-orb 18s ease-in-out infinite 5s;}
+@keyframes float-orb{0%,100%{transform:translate(0,0) scale(1);}25%{transform:translate(30px,-40px) scale(1.05);}50%{transform:translate(-20px,30px) scale(0.95);}75%{transform:translate(40px,20px) scale(1.03);};}
+
+/* ── Navigation ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(15,17,23,0.8);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);height:64px;display:flex;align-items:center;padding:0 40px;transition:all 0.3s;}
+nav.scrolled{background:rgba(15,17,23,0.95);box-shadow:0 4px 30px rgba(0,0,0,0.3);}
+.nav-inner{max-width:1280px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.nav-logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),#d47a20);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;}
+.nav-logo-text{font-weight:700;font-size:18px;color:var(--fg);letter-spacing:-0.3px;}
+.nav-links{display:flex;align-items:center;gap:32px;list-style:none;}
+.nav-links a{color:var(--fg-muted);text-decoration:none;font-size:14px;font-weight:500;transition:color 0.2s;position:relative;}
+.nav-links a:hover{color:var(--fg);}
+.nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:2px;background:var(--accent);transition:width 0.3s;border-radius:1px;}
+.nav-links a:hover::after{width:100%;}
+.nav-cta{display:flex;align-items:center;gap:12px;}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 20px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all 0.25s;text-decoration:none;}
+.btn-ghost{background:transparent;color:var(--fg-muted);border:1px solid var(--border);}
+.btn-ghost:hover{color:var(--fg);border-color:var(--fg-dim);background:var(--bg-cell);}
+.btn-primary{background:var(--accent);color:#fff;border:1px solid transparent;}
+.btn-primary:hover{background:#d4832e;transform:translateY(-1px);box-shadow:0 6px 24px rgba(232,148,58,0.3);}
+.btn-primary:active{transform:translateY(0);}
+.btn-lg{padding:14px 32px;font-size:16px;border-radius:var(--radius);}
+.btn-outline-lg{padding:14px 32px;font-size:16px;border-radius:var(--radius);background:transparent;color:var(--fg);border:1px solid var(--border);}
+.btn-outline-lg:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+
+/* ── Sections ── */
+section{position:relative;z-index:1;}
+.container{max-width:1280px;margin:0 auto;padding:0 40px;}
+
+/* ── Hero ── */
+.hero{padding:140px 0 100px;position:relative;overflow:hidden;}
+.hero-grid{display:grid;grid-template-columns:1fr 1.3fr;gap:60px;align-items:center;}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px 6px 8px;background:var(--accent-soft);border:1px solid rgba(232,148,58,0.15);border-radius:30px;font-size:13px;color:var(--accent);font-weight:500;margin-bottom:24px;animation:fade-up 0.6s ease both;}
+.hero-badge-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse-badge 2s ease-in-out infinite;}
+@keyframes pulse-badge{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.8);}}
+.hero h1{font-size:clamp(40px,5vw,64px);font-weight:900;line-height:1.08;letter-spacing:-1.5px;margin-bottom:24px;animation:fade-up 0.6s ease 0.1s both;}
+.hero h1 .accent{color:var(--accent);position:relative;}
+.hero p{font-size:18px;color:var(--fg-muted);max-width:480px;line-height:1.7;margin-bottom:36px;animation:fade-up 0.6s ease 0.2s both;}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;animation:fade-up 0.6s ease 0.3s both;}
+.hero-stats{display:flex;gap:40px;margin-top:48px;animation:fade-up 0.6s ease 0.4s both;}
+.hero-stat-num{font-size:28px;font-weight:900;color:var(--fg);letter-spacing:-0.5px;}
+.hero-stat-label{font-size:13px;color:var(--fg-dim);margin-top:2px;}
+
+/* ── Mock UI (Hero) ── */
+.hero-mock{animation:fade-up 0.8s ease 0.3s both;perspective:1200px;}
+.mock-window{background:var(--bg-surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 20px 80px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.03) inset;transform:rotateY(-4deg) rotateX(2deg);transition:transform 0.5s ease;}
+.mock-window:hover{transform:rotateY(0deg) rotateX(0deg);}
+.mock-titlebar{display:flex;align-items:center;padding:12px 16px;background:var(--bg-cell);border-bottom:1px solid var(--border);gap:8px;}
+.mock-dot{width:10px;height:10px;border-radius:50%;}
+.mock-dot-r{background:#e85d5d;}.mock-dot-y{background:#e8c97a;}.mock-dot-g{background:#5ecc7b;}
+.mock-titlebar-text{flex:1;text-align:center;font-size:12px;color:var(--fg-dim);font-weight:500;}
+.mock-toolbar{display:flex;align-items:center;gap:2px;padding:6px 12px;border-bottom:1px solid var(--border);background:rgba(22,24,32,0.5);}
+.mock-tool{width:24px;height:24px;border-radius:4px;background:rgba(42,45,58,0.5);display:flex;align-items:center;justify-content:center;}
+.mock-tool i{font-size:8px;color:var(--fg-dim);}
+.mock-body{padding:0;min-height:320px;position:relative;overflow:hidden;}
+
+/* Animated cells inside mock */
+.mock-cell{display:grid;grid-template-columns:1fr 130px;border-bottom:1px solid rgba(42,45,58,0.5);animation:cell-appear 0.5s ease both;}
+.mock-cell:nth-child(1){animation-delay:0.5s;}
+.mock-cell:nth-child(2){animation-delay:1.8s;}
+.mock-cell:nth-child(3){animation-delay:3.2s;}
+@keyframes cell-appear{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.mock-cell-main{padding:10px 14px;min-height:60px;position:relative;}
+.mock-gutter{display:flex;flex-direction:column;align-items:center;padding-top:10px;gap:4px;width:40px;flex-shrink:0;}
+.mock-exec{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--fg-dim);}
+.mock-run{width:18px;height:18px;border-radius:50%;background:transparent;border:none;color:var(--fg-dim);font-size:7px;cursor:default;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.3s;}
+.mock-cell:hover .mock-run{opacity:1;}
+.mock-cell-code{font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.7;color:var(--fg-muted);white-space:pre;overflow:hidden;}
+.mock-cell-code .kw{color:var(--keyword);}.mock-cell-code .fn{color:var(--func);}.mock-cell-code .str{color:var(--string);}.mock-cell-code .cm{color:var(--fg-dim);font-style:italic;}.mock-cell-code .num{color:var(--num);}
+.mock-cell-comments{border-left:1px solid rgba(42,45,58,0.5);padding:8px 10px;display:flex;flex-direction:column;gap:6px;justify-content:center;}
+.mock-comment{display:flex;gap:6px;align-items:flex-start;opacity:0;animation:comment-pop 0.4s ease both;}
+.mock-comment:nth-child(1){animation-delay:1.2s;}
+.mock-comment:nth-child(2){animation-delay:1.6s;}
+.mock-comment:nth-child(3){animation-delay:3.6s;}
+@keyframes comment-pop{from{opacity:0;transform:translateX(8px) scale(0.95);}to{opacity:1;transform:translateX(0) scale(1);}}
+.mock-comment-avatar{width:18px;height:18px;border-radius:50%;flex-shrink:0;font-size:7px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;}
+.mock-comment-body{flex:1;min-width:0;}
+.mock-comment-author{font-size:9px;font-weight:600;color:var(--fg);}
+.mock-comment-text{font-size:9px;color:var(--fg-dim);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* Typing cursor */
+.typing-cursor{display:inline-block;width:2px;height:13px;background:var(--accent);margin-left:1px;vertical-align:middle;animation:blink-cursor 0.8s step-end infinite;}
+@keyframes blink-cursor{0%,100%{opacity:1;}50%{opacity:0;}}
+
+/* Output animation */
+.mock-output{margin:0 14px 0 54px;padding:8px 10px;background:var(--bg-input);border-radius:var(--radius-sm);border-left:2px solid var(--green);font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);white-space:pre;line-height:1.5;max-height:0;overflow:hidden;transition:max-height 0.5s ease,opacity 0.5s ease,margin 0.5s ease,padding 0.5s ease;opacity:0;margin-bottom:0;}
+.mock-output.show{max-height:80px;opacity:1;margin-bottom:8px;padding:8px 10px;}
+
+/* ── Logos / Social proof strip ── */
+.logos-strip{padding:60px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);overflow:hidden;}
+.logos-label{text-align:center;font-size:12px;text-transform:uppercase;letter-spacing:2px;color:var(--fg-dim);font-weight:600;margin-bottom:32px;}
+.logos-row{display:flex;align-items:center;justify-content:center;gap:60px;flex-wrap:wrap;opacity:0.4;}
+.logo-item{font-size:20px;font-weight:700;color:var(--fg-muted);letter-spacing:-0.5px;font-family:'DM Sans',sans-serif;}
+.logo-item i{margin-right:8px;font-size:18px;}
+
+/* ── Feature sections ── */
+.features-section{padding:120px 0;}
+.section-label{display:inline-flex;align-items:center;gap:8px;font-size:12px;text-transform:uppercase;letter-spacing:2px;color:var(--accent);font-weight:600;margin-bottom:16px;}
+.section-title{font-size:clamp(32px,4vw,48px);font-weight:900;letter-spacing:-1px;line-height:1.1;margin-bottom:16px;}
+.section-desc{font-size:17px;color:var(--fg-muted);max-width:520px;line-height:1.7;}
+
+/* Feature row: text left, mock right */
+.feature-row{display:grid;grid-template-columns:1fr 1.2fr;gap:80px;align-items:center;margin-bottom:140px;}
+.feature-row.reverse{grid-template-columns:1.2fr 1fr;}
+.feature-row.reverse .feature-text{order:2;}
+.feature-row.reverse .feature-mock{order:1;}
+.feature-text{position:relative;}
+.feature-list{list-style:none;margin-top:28px;display:flex;flex-direction:column;gap:16px;}
+.feature-list li{display:flex;align-items:flex-start;gap:12px;font-size:15px;color:var(--fg-muted);line-height:1.6;}
+.feature-list li i{color:var(--green);margin-top:4px;font-size:14px;flex-shrink:0;}
+
+/* Feature mock cards */
+.feature-mock{position:relative;}
+.feat-mock-window{background:var(--bg-surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 16px 60px rgba(0,0,0,0.4);}
+
+/* ── Feature 1: Inline Comments ── */
+.comments-mock-cell{display:grid;grid-template-columns:1fr 180px;border-bottom:1px solid rgba(42,45,58,0.5);transition:all 0.3s;}
+.comments-mock-cell.active-cell{box-shadow:0 0 0 1px var(--border-focus),0 0 0 3px var(--accent-glow);}
+.comments-mock-main{padding:12px 16px;}
+.comments-mock-sidebar{border-left:1px solid rgba(42,45,58,0.5);padding:10px 12px;display:flex;flex-direction:column;gap:8px;}
+.cm-comment{display:flex;gap:8px;opacity:0;transform:translateX(10px);}
+.cm-comment.visible{opacity:1;transform:translateX(0);transition:all 0.4s ease;}
+.cm-avatar{width:22px;height:22px;border-radius:50%;flex-shrink:0;font-size:8px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;}
+.cm-body{flex:1;}
+.cm-name{font-size:10px;font-weight:600;color:var(--fg);}
+.cm-text{font-size:10px;color:var(--fg-dim);line-height:1.4;}
+.cm-time{font-size:8px;color:var(--fg-dim);opacity:0.6;}
+.cm-input-row{display:flex;gap:6px;margin-top:auto;padding-top:8px;border-top:1px solid rgba(42,45,58,0.3);}
+.cm-input{flex:1;background:var(--bg-input);border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:9px;color:var(--fg-dim);outline:none;font-family:'DM Sans',sans-serif;}
+.cm-input:focus{border-color:var(--accent);}
+.cm-send{width:22px;height:22px;border-radius:4px;background:var(--accent);border:none;color:#fff;font-size:8px;cursor:default;display:flex;align-items:center;justify-content:center;}
+
+/* ── Feature 2: Execution ── */
+.exec-demo{padding:16px;}
+.exec-line{display:flex;gap:8px;margin-bottom:4px;opacity:0;transform:translateY(6px);transition:all 0.3s ease;}
+.exec-line.visible{opacity:1;transform:translateY(0);}
+.exec-gutter-num{width:24px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);user-select:none;flex-shrink:0;}
+.exec-code{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--fg-muted);white-space:pre;}
+.exec-output-box{margin-top:12px;padding:10px 12px;background:var(--bg-input);border-left:2px solid var(--green);border-radius:var(--radius-sm);font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-dim);line-height:1.6;max-height:0;overflow:hidden;opacity:0;transition:all 0.5s ease;}
+.exec-output-box.show{max-height:120px;opacity:1;margin-top:12px;padding:10px 12px;}
+.exec-progress{height:2px;background:var(--border);border-radius:1px;margin-top:8px;overflow:hidden;opacity:0;transition:opacity 0.3s;}
+.exec-progress.show{opacity:1;}
+.exec-progress-bar{height:100%;width:0;background:var(--accent);border-radius:1px;transition:width 1s ease;}
+
+/* ── Feature 3: Cell types ── */
+.celltype-demo{padding:16px;display:flex;flex-direction:column;gap:0;}
+.ct-cell{border:1px solid rgba(42,45,58,0.5);border-radius:8px;overflow:hidden;opacity:0;transform:scale(0.96);transition:all 0.4s ease;}
+.ct-cell.visible{opacity:1;transform:scale(1);}
+.ct-cell.active-ct{border-color:var(--border-focus);box-shadow:0 0 0 2px var(--accent-glow);}
+.ct-header{display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid rgba(42,45,58,0.3);background:rgba(26,29,40,0.5);}
+.ct-badge{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;padding:2px 8px;border-radius:10px;}
+.ct-badge.code-b{background:rgba(93,168,232,0.1);color:var(--blue);border:1px solid rgba(93,168,232,0.2);}
+.ct-badge.md-b{background:rgba(176,125,232,0.1);color:var(--purple);border:1px solid rgba(176,125,232,0.2);}
+.ct-body{padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--fg-muted);line-height:1.6;}
+.ct-body.md-body{font-family:'DM Sans',sans-serif;font-size:11px;}
+.ct-body.md-body strong{color:var(--fg);font-weight:700;}
+
+/* ── Feature 4: Collaboration ── */
+.collab-mock{position:relative;}
+.collab-cell{padding:12px 16px;border-bottom:1px solid rgba(42,45,58,0.5);position:relative;min-height:50px;}
+.collab-cursor{position:absolute;width:2px;height:16px;border-radius:1px;animation:cursor-blink 1.2s step-end infinite;}
+@keyframes cursor-blink{0%,100%{opacity:1;}50%{opacity:0;}}
+.collab-cursor-label{position:absolute;top:-16px;left:0;font-size:8px;font-weight:600;padding:1px 5px;border-radius:3px;color:#fff;white-space:nowrap;}
+.collab-line{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--fg-muted);line-height:1.7;}
+
+/* ── Stats band ── */
+.stats-band{padding:80px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:rgba(22,24,32,0.5);}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:32px;text-align:center;}
+.stat-item{position:relative;}
+.stat-item:not(:last-child)::after{content:'';position:absolute;right:-16px;top:10%;height:80%;width:1px;background:var(--border);}
+.stat-number{font-size:42px;font-weight:900;letter-spacing:-1px;background:linear-gradient(135deg,var(--fg),var(--fg-muted));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.stat-label{font-size:14px;color:var(--fg-dim);margin-top:4px;font-weight:500;}
+
+/* ── CTA Section ── */
+.cta-section{padding:140px 0;text-align:center;position:relative;overflow:hidden;}
+.cta-glow{position:absolute;width:500px;height:500px;background:radial-gradient(circle,rgba(232,148,58,0.1),transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;}
+.cta-section h2{font-size:clamp(36px,4.5vw,56px);font-weight:900;letter-spacing:-1.5px;margin-bottom:20px;position:relative;}
+.cta-section p{font-size:18px;color:var(--fg-muted);max-width:500px;margin:0 auto 40px;position:relative;}
+.cta-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative;}
+
+/* ── Footer ── */
+footer{padding:60px 0 40px;border-top:1px solid var(--border);position:relative;z-index:1;}
+.footer-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px;}
+.footer-brand p{font-size:13px;color:var(--fg-dim);margin-top:12px;line-height:1.7;max-width:280px;}
+.footer-col h4{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--fg-muted);font-weight:600;margin-bottom:16px;}
+.footer-col a{display:block;color:var(--fg-dim);text-decoration:none;font-size:14px;padding:4px 0;transition:color 0.2s;}
+.footer-col a:hover{color:var(--accent);}
+.footer-bottom{border-top:1px solid var(--border);padding-top:24px;display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--fg-dim);}
+.footer-social{display:flex;gap:16px;}
+.footer-social a{color:var(--fg-dim);font-size:16px;transition:color 0.2s;text-decoration:none;}
+.footer-social a:hover{color:var(--accent);}
+
+/* ── Scroll reveal ── */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity 0.7s ease,transform 0.7s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+.reveal-delay-1{transition-delay:0.1s;}
+.reveal-delay-2{transition-delay:0.2s;}
+.reveal-delay-3{transition-delay:0.3s;}
+
+/* ── Animations ── */
+@keyframes fade-up{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── Responsive ── */
+@media(max-width:1024px){
+  .hero-grid{grid-template-columns:1fr;gap:48px;}
+  .hero-mock{max-width:600px;}
+  .feature-row,.feature-row.reverse{grid-template-columns:1fr;gap:48px;}
+  .feature-row.reverse .feature-text{order:1;}
+  .feature-row.reverse .feature-mock{order:2;}
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+  .stat-item:not(:last-child)::after{display:none;}
+  .footer-grid{grid-template-columns:1fr 1fr;gap:32px;}
+  .nav-links{display:none;}
+}
+@media(max-width:640px){
+  .container{padding:0 20px;}
+  nav{padding:0 20px;}
+  .hero{padding:120px 0 60px;}
+  .hero-stats{gap:24px;flex-wrap:wrap;}
+  .stats-grid{grid-template-columns:1fr 1fr;gap:24px;}
+  .footer-grid{grid-template-columns:1fr;}
+  .footer-bottom{flex-direction:column;gap:12px;text-align:center;}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;}
+}
+</style>
+</head>
+<body>
+
+<!-- Background orbs -->
+<div class="bg-glow">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<!-- Navigation -->
+<nav id="mainNav">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-icon"><i class="fas fa-bolt"></i></div>
+      <span class="nav-logo-text">NoteFlow</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#stats">Metrics</a></li>
+      <li><a href="#cta">Pricing</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="#cta" class="btn btn-ghost">Sign In</a>
+      <a href="#cta" class="btn btn-primary">Get Started</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-grid">
+      <div class="hero-text">
+        <div class="hero-badge"><span class="hero-badge-dot"></span> Now in Public Beta</div>
+        <h1>Notebooks built for <span class="accent">team thinking</span></h1>
+        <p>The notebook environment you already love, with inline comments on every cell. Review, discuss, and iterate on analysis — without leaving your workflow.</p>
+        <div class="hero-actions">
+          <a href="#cta" class="btn btn-primary btn-lg"><i class="fas fa-arrow-right"></i> Start Free</a>
+          <a href="#features" class="btn btn-outline-lg"><i class="fas fa-play"></i> See How It Works</a>
+        </div>
+        <div class="hero-stats">
+          <div>
+            <div class="hero-stat-num">12k+</div>
+            <div class="hero-stat-label">Active users</div>
+          </div>
+          <div>
+            <div class="hero-stat-num">480k</div>
+            <div class="hero-stat-label">Cells created</div>
+          </div>
+          <div>
+            <div class="hero-stat-num">98%</div>
+            <div class="hero-stat-label">Satisfaction rate</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-mock">
+        <div class="mock-window">
+          <div class="mock-titlebar">
+            <div class="mock-dot mock-dot-r"></div>
+            <div class="mock-dot mock-dot-y"></div>
+            <div class="mock-dot mock-dot-g"></div>
+            <span class="mock-titlebar-text">NoteFlow — Customer Churn Analysis</span>
+            <div style="width:30px"></div>
+          </div>
+          <div class="mock-toolbar">
+            <div class="mock-tool"><i class="fas fa-plus"></i></div>
+            <div class="mock-tool"><i class="fas fa-cut"></i></div>
+            <div class="mock-tool"><i class="fas fa-copy"></i></div>
+            <div class="mock-tool"><i class="fas fa-paste"></i></div>
+            <div class="mock-tool"><i class="fas fa-play"></i></div>
+            <div class="mock-tool"><i class="fas fa-stop"></i></div>
+            <div class="mock-tool"><i class="fas fa-trash-alt"></i></div>
+          </div>
+          <div class="mock-body" id="heroMockBody">
+            <!-- Cells injected by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Logos strip -->
+<section class="logos-strip">
+  <div class="logos-label">Trusted by teams at</div>
+  <div class="logos-row">
+    <div class="logo-item"><i class="fab fa-stripe"></i>Stripe</div>
+    <div class="logo-item"><i class="fas fa-database"></i>Databricks</div>
+    <div class="logo-item"><i class="fas fa-brain"></i>DeepMind</div>
+    <div class="logo-item"><i class="fas fa-chart-line"></i>Palantir</div>
+    <div class="logo-item"><i class="fas fa-rocket"></i>SpaceX</div>
+    <div class="logo-item"><i class="fas fa-atom"></i>CERN</div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features-section" id="features">
+  <div class="container">
+
+    <!-- Feature 1: Inline Comments -->
+    <div class="feature-row reveal">
+      <div class="feature-text">
+        <div class="section-label"><i class="fas fa-comment-dots"></i> Core Feature</div>
+        <h2 class="section-title">Comments right where they belong</h2>
+        <p class="section-desc">Every cell has its own comment thread, side by side with the code. No more hunting through long Slack threads to find context.</p>
+        <ul class="feature-list">
+          <li><i class="fas fa-check-circle"></i> Per-cell comment panels that stay in context</li>
+          <li><i class="fas fa-check-circle"></i> Thread discussions, resolve when done</li>
+          <li><i class="fas fa-check-circle"></i> Mention teammates to pull them into the review</li>
+          <li><i class="fas fa-check-circle"></i> Comments export with the notebook for full audit trail</li>
+        </ul>
+      </div>
+      <div class="feature-mock">
+        <div class="feat-mock-window" id="commentsDemo">
+          <div class="mock-titlebar">
+            <div class="mock-dot mock-dot-r"></div>
+            <div class="mock-dot mock-dot-y"></div>
+            <div class="mock-dot mock-dot-g"></div>
+            <span class="mock-titlebar-text">notebook.ipynb</span>
+            <div style="width:30px"></div>
+          </div>
+          <div class="comments-mock-cell" id="commentDemoCell">
+            <div class="comments-mock-main">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.7;color:var(--fg-muted);">
+                <span style="color:var(--keyword)">def</span> <span style="color:var(--func)">preprocess</span>(df):<br>
+                &nbsp;&nbsp;df[<span style="color:var(--string)">'TotalCharges'</span>] = pd.<span style="color:var(--func)">to_numeric</span>(<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;df[<span style="color:var(--string)">'TotalCharges'</span>], errors=<span style="color:var(--string)">'coerce'</span>)<br>
+                &nbsp;&nbsp;df.<span style="color:var(--func">fillna</span>(df.<span style="color:var(--func)">median</span>(), inplace=<span style="color:var(--keyword)">True</span>)
+              </div>
+            </div>
+            <div class="comments-mock-sidebar" id="commentDemoSidebar">
+              <!-- Comments injected by JS -->
+            </div>
+          </div>
+          <div class="comments-mock-cell">
+            <div class="comments-mock-main">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.7;color:var(--fg-dim);">
+                model = <span style="color:var(--func)">RandomForestClassifier</span>(n_estimators=<span style="color:var(--num)">100</span>)
+              </div>
+            </div>
+            <div class="comments-mock-sidebar" style="justify-content:center;">
+              <div style="text-align:center;font-size:9px;color:var(--fg-dim);opacity:0.5;"><i class="far fa-comment-dots" style="font-size:14px;display:block;margin-bottom:4px;"></i>No comments</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature 2: Execution -->
+    <div class="feature-row reverse reveal">
+      <div class="feature-text">
+        <div class="section-label"><i class="fas fa-bolt"></i> Execution Engine</div>
+        <h2 class="section-title">Run cells, see results instantly</h2>
+        <p class="section-desc">Full code execution with rich output support — text, tables, and plots all render inline below the cell that produced them.</p>
+        <ul class="feature-list">
+          <li><i class="fas fa-check-circle"></i> Execution counter tracks cell run order</li>
+          <li><i class="fas fa-check-circle"></i> Support for text, dataframes, and image outputs</li>
+          <li><i class="fas fa-check-circle"></i> Run individual cells or all at once</li>
+          <li><i class="fas fa-check-circle"></i> Clear outputs to re-run from a clean state</li>
+        </ul>
+      </div>
+      <div class="feature-mock">
+        <div class="feat-mock-window">
+          <div class="mock-titlebar">
+            <div class="mock-dot mock-dot-r"></div>
+            <div class="mock-dot mock-dot-y"></div>
+            <div class="mock-dot mock-dot-g"></div>
+            <span class="mock-titlebar-text">Execution Demo</span>
+            <div style="width:30px"></div>
+          </div>
+          <div class="exec-demo" id="execDemo">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--fg-dim);">[3]</span>
+              <span style="font-size:10px;color:var(--green);"><i class="fas fa-circle" style="font-size:5px;"></i> Ready</span>
+            </div>
+            <!-- Lines injected by JS -->
+            <div id="execLines"></div>
+            <div class="exec-output-box" id="execOutput">Accuracy: 0.7912
+Precision: 0.6534
+Recall: 0.5821
+F1-Score: 0.6156</div>
+            <div class="exec-progress" id="execProgress"><div class="exec-progress-bar" id="execProgressBar"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature 3: Cell Types -->
+    <div class="feature-row reveal">
+      <div class="feature-text">
+        <div class="section-label"><i class="fas fa-layer-group"></i> Flexibility</div>
+        <h2 class="section-title">Code and markdown, woven together</h2>
+        <p class="section-desc">Mix executable code cells with rich markdown documentation. Narrative and analysis live side by side, just like your thinking process.</p>
+        <ul class="feature-list">
+          <li><i class="fas fa-check-circle"></i> Toggle between code and markdown with one click</li>
+          <li><i class="fas fa-check-circle"></i> Markdown renders in-place on execution</li>
+          <li><i class="fas fa-check-circle"></i> Support for headers, lists, bold, inline code</li>
+          <li><i class="fas fa-check-circle"></i> Double-click rendered markdown to re-edit</li>
+        </ul>
+      </div>
+      <div class="feature-mock">
+        <div class="feat-mock-window">
+          <div class="mock-titlebar">
+            <div class="mock-dot mock-dot-r"></div>
+            <div class="mock-dot mock-dot-y"></div>
+            <div class="mock-dot mock-dot-g"></div>
+            <span class="mock-titlebar-text">Cell Types</span>
+            <div style="width:30px"></div>
+          </div>
+          <div class="celltype-demo" id="celltypeDemo">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature 4: Collaboration -->
+    <div class="feature-row reverse reveal">
+      <div class="feature-text">
+        <div class="section-label"><i class="fas fa-users"></i> Collaboration</div>
+        <h2 class="section-title">See teammates think in real time</h2>
+        <p class="section-desc">Multiple cursors, live edits, and instant comments. NoteFlow turns notebook review from async friction into a fluid conversation.</p>
+        <ul class="feature-list">
+          <li><i class="fas fa-check-circle"></i> Real-time presence indicators per cell</li>
+          <li><i class="fas fa-check-circle"></i> Live cursor tracking across the notebook</li>
+          <li><i class="fas fa-check-circle"></i> Instant comment notifications</li>
+          <li><i class="fas fa-check-circle"></i> Version history with diff view</li>
+        </ul>
+      </div>
+      <div class="feature-mock">
+        <div class="feat-mock-window collab-mock">
+          <div class="mock-titlebar">
+            <div class="mock-dot mock-dot-r"></div>
+            <div class="mock-dot mock-dot-y"></div>
+            <div class="mock-dot mock-dot-g"></div>
+            <span class="mock-titlebar-text">Shared Notebook — 3 online</span>
+            <div style="display:flex;gap:4px;">
+              <div style="width:20px;height:20px;border-radius:50%;background:#e8943a;font-size:7px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;border:2px solid var(--bg-surface);">Y</div>
+              <div style="width:20px;height:20px;border-radius:50%;background:#5da8e8;font-size:7px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;border:2px solid var(--bg-surface);">A</div>
+              <div style="width:20px;height:20px;border-radius:50%;background:#5ecc7b;font-size:7px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;border:2px solid var(--bg-surface);">S</div>
+            </div>
+          </div>
+          <div id="collabDemo">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="stats-band" id="stats">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-item reveal">
+        <div class="stat-number" data-target="12400">0</div>
+        <div class="stat-label">Active Users</div>
+      </div>
+      <div class="stat-item reveal reveal-delay-1">
+        <div class="stat-number" data-target="480000">0</div>
+        <div class="stat-label">Cells Executed</div>
+      </div>
+      <div class="stat-item reveal reveal-delay-2">
+        <div class="stat-number" data-target="89000">0</div>
+        <div class="stat-label">Comments Posted</div>
+      </div>
+      <div class="stat-item reveal reveal-delay-3">
+        <div class="stat-number" data-target="340">0</div>
+        <div class="stat-label">Teams Onboarded</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="cta">
+  <div class="cta-glow"></div>
+  <div class="container">
+    <h2 class="reveal">Start thinking together</h2>
+    <p class="reveal reveal-delay-1">Free for individuals and small teams. No credit card required. Your notebooks, your data, your workflow.</p>
+    <div class="cta-actions reveal reveal-delay-2">
+      <a href="#" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Get Started Free</a>
+      <a href="#" class="btn btn-outline-lg"><i class="fas fa-calendar"></i> Book a Demo</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#" class="nav-logo">
+          <div class="nav-logo-icon"><i class="fas fa-bolt"></i></div>
+          <span class="nav-logo-text">NoteFlow</span>
+        </a>
+        <p>The collaborative notebook environment for data teams. Comment, review, and iterate — right where the code lives.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="#">Features</a>
+        <a href="#">Pricing</a>
+        <a href="#">Changelog</a>
+        <a href="#">Integrations</a>
+        <a href="#">API</a>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <a href="#">Documentation</a>
+        <a href="#">Tutorials</a>
+        <a href="#">Blog</a>
+        <a href="#">Community</a>
+        <a href="#">Support</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="#">About</a>
+        <a href="#">Careers</a>
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Security</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>2025 NoteFlow. All rights reserved.</span>
+      <div class="footer-social">
+        <a href="#"><i class="fab fa-github"></i></a>
+        <a href="#"><i class="fab fa-twitter"></i></a>
+        <a href="#"><i class="fab fa-discord"></i></a>
+        <a href="#"><i class="fab fa-linkedin"></i></a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ── Nav scroll effect ── */
+const nav = document.getElementById('mainNav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 20);
+});
+
+/* ── Scroll reveal (IntersectionObserver) ── */
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      // Trigger feature-specific animations
+      if (e.target.id === 'commentsDemo' || e.target.closest('#commentsDemo')) startCommentsDemo();
+      if (e.target.id === 'execDemo' || e.target.closest('#execDemo')) startExecDemo();
+      if (e.target.id === 'celltypeDemo' || e.target.closest('#celltypeDemo')) startCelltypeDemo();
+      if (e.target.id === 'collabDemo' || e.target.closest('#collabDemo')) startCollabDemo();
+      // Counter animation
+      const counter = e.target.querySelector('.stat-number[data-target]');
+      if (counter) animateCounter(counter);
+    }
+  });
+}, { threshold: 0.2 });
+
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+// Also observe feature mock windows directly
+document.querySelectorAll('.feat-mock-window').forEach(el => revealObserver.observe(el));
+
+/* ── Counter animation ── */
+function animateCounter(el) {
+  if (el.dataset.animated) return;
+  el.dataset.animated = '1';
+  const target = parseInt(el.dataset.target);
+  const duration = 2000;
+  const start = performance.now();
+  function update(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3);
+    const val = Math.round(eased * target);
+    if (target >= 1000000) el.textContent = (val / 1000000).toFixed(1) + 'M';
+    else if (target >= 1000) el.textContent = (val / 1000).toFixed(val >= 10000 ? 0 : 1) + 'k';
+    else el.textContent = val.toLocaleString() + '+';
+    if (t < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+/* ── Hero Mock Animation ── */
+(function initHeroMock() {
+  const body = document.getElementById('heroMockBody');
+
+  const cells = [
+    {
+      code: '<span class="cm"># Load the dataset</span>\n<span class="kw">import</span> pandas <span class="kw">as</span> pd\ndf = pd.<span class="fn">read_csv</span>(<span class="str">"churn.csv"</span>)',
+      comments: [
+        { name: 'Alex', text: 'Add error handling for missing file', color: '#5da8e8', delay: 1200 },
+        { name: 'Sarah', text: 'Looks good', color: '#b07de8', delay: 1600 }
+      ],
+      output: null
+    },
+    {
+      code: 'df.<span class="fn">shape</span>\ndf.<span class="fn">head</span>()',
+      comments: [],
+      output: '(3333, 21)'
+    },
+    {
+      code: 'df[<span class="str">"Churn"</span>].<span class="fn">value_counts</span>()',
+      comments: [
+        { name: 'Mike', text: 'Class imbalance — consider SMOTE', color: '#5ecc7b', delay: 3600 }
+      ],
+      output: '0    5174\n1    1869'
+    }
+  ];
+
+  let html = '';
+  cells.forEach((cell, ci) => {
+    html += `<div class="mock-cell">`;
+    html += `<div class="mock-cell-main">`;
+    html += `<div style="display:flex;gap:0;">`;
+    html += `<div class="mock-gutter"><span class="mock-exec">${cell.output ? '[' + (ci+1) + ']' : ''}</span><button class="mock-run"><i class="fas fa-play" style="margin-left:1px"></i></button></div>`;
+    html += `<div class="mock-cell-code" id="heroCode${ci}">${cell.code}</div>`;
+    html += `</div>`;
+    if (cell.output) {
+      html += `<div class="mock-output" id="heroOutput${ci}">${cell.output}</div>`;
+    }
+    html += `</div>`;
+    html += `<div class="mock-cell-comments">`;
+    cell.comments.forEach((c, coi) => {
+      const initials = c.name[0];
+      html += `<div class="mock-comment" id="heroComment${ci}_${coi}" style="transition-delay:${c.delay}ms">`;
+      html += `<div class="mock-comment-avatar" style="background:${c.color}">${initials}</div>`;
+      html += `<div class="mock-comment-body"><div class="mock-comment-author">${c.name}</div><div class="mock-comment-text">${c.text}</div></div>`;
+      html += `</div>`;
+    });
+    if (cell.comments.length === 0) {
+      html += `<div style="text-align:center;font-size:8px;color:var(--fg-dim);opacity:0.3;margin:auto 0;"><i class="far fa-comment-dots" style="font-size:12px;display:block;margin-bottom:3px;"></i>Empty</div>`;
+    }
+    html += `</div></div>`;
+  });
+  body.innerHTML = html;
+
+  // Animate comments appearing
+  setTimeout(() => {
+    document.querySelectorAll('.mock-comment').forEach(c => c.classList.add('visible'));
+  }, 300);
+
+  // Animate outputs
+  cells.forEach((cell, ci) => {
+    if (cell.output) {
+      setTimeout(() => {
+        const out = document.getElementById('heroOutput' + ci);
+        if (out) out.classList.add('show');
+      }, ci === 1 ? 2400 : ci === 2 ? 3800 : 0);
+    }
+  });
+})();
+
+/* ── Feature 1: Comments Demo ── */
+let commentsDemoStarted = false;
+function startCommentsDemo() {
+  if (commentsDemoStarted) return;
+  commentsDemoStarted = true;
+  const sidebar = document.getElementById('commentDemoSidebar');
+  const cell = document.getElementById('commentDemoCell');
+
+  const comments = [
+    { name: 'Priya', text: 'Should we handle the edge case where median is NaN?', color: '#e85d5d', time: '2m ago' },
+    { name: 'Alex', text: 'Good point. Add a fallback to 0.', color: '#5da8e8', time: '1m ago' },
+    { name: 'You', text: 'Fixed, added a check.', color: '#e8943a', time: 'Just now' }
+  ];
+
+  let html = '';
+  comments.forEach((c, i) => {
+    const initials = c.name.split(' ').map(w=>w[0]).join('');
+    html += `<div class="cm-comment" id="cmComment${i}">`;
+    html += `<div class="cm-avatar" style="background:${c.color}">${initials}</div>`;
+    html += `<div class="cm-body"><div class="cm-name">${c.name} <span class="cm-time">${c.time}</span></div><div class="cm-text">${c.text}</div></div>`;
+    html += `</div>`;
+  });
+  html += `<div class="cm-input-row"><input class="cm-input" placeholder="Reply..." readonly><button class="cm-send"><i class="fas fa-arrow-up"></i></button></div>`;
+  sidebar.innerHTML = html;
+
+  // Activate cell
+  setTimeout(() => cell.classList.add('active-cell'), 200);
+
+  // Stagger comments
+  comments.forEach((_, i) => {
+    setTimeout(() => {
+      const el = document.getElementById('cmComment' + i);
+      if (el) el.classList.add('visible');
+    }, 400 + i * 600);
+  });
+}
+
+/* ── Feature 2: Execution Demo ── */
+let execDemoStarted = false;
+function startExecDemo() {
+  if (execDemoStarted) return;
+  execDemoStarted = true;
+
+  const lines = [
+    { num: 1, code: '<span style="color:var(--keyword)">from</span> sklearn.ensemble <span style="color:var(--keyword)">import</span> RandomForestClassifier' },
+    { num: 2, code: '<span style="color:var(--keyword)">from</span> sklearn.model_selection <span style="color:var(--keyword)">import</span> train_test_split' },
+    { num: 3, code: '' },
+    { num: 4, code: 'X_train, X_test, y_train, y_test = train_test_split(' },
+    { num: 5, code: '&nbsp;&nbsp;X, y, test_size=<span style="color:var(--num)">0.2</span>, random_state=<span style="color:var(--num)">42</span>' },
+    { num: 6, code: ')' },
+    { num: 7, code: '' },
+    { num: 8, code: 'model = RandomForestClassifier(n_estimators=<span style="color:var(--num)">100</span>)' },
+    { num: 9, code: 'model.fit(X_train, y_train)' },
+    { num: 10, code: 'model.score(X_test, y_test)' },
+  ];
+
+  const container = document.getElementById('execLines');
+  lines.forEach((l, i) => {
+    const div = document.createElement('div');
+    div.className = 'exec-line';
+    div.id = 'execLine' + i;
+    div.innerHTML = `<span class="exec-gutter-num">${l.num}</span><span class="exec-code">${l.code || '&nbsp;'}</span>`;
+    container.appendChild(div);
+  });
+
+  // Stagger line appearance
+  lines.forEach((_, i) => {
+    setTimeout(() => {
+      const el = document.getElementById('execLine' + i);
+      if (el) el.classList.add('visible');
+    }, 200 + i * 100);
+  });
+
+  // Show progress then output
+  const totalLineTime = 200 + lines.length * 100;
+  setTimeout(() => {
+    document.getElementById('execProgress').classList.add('show');
+    setTimeout(() => {
+      document.getElementById('execProgressBar').style.width = '100%';
+    }, 50);
+  }, totalLineTime);
+
+  setTimeout(() => {
+    document.getElementById('execOutput').classList.add('show');
+  }, totalLineTime + 1200);
+}
+
+/* ── Feature 3: Cell Types Demo ── */
+let celltypeDemoStarted = false;
+function startCelltypeDemo() {
+  if (celltypeDemoStarted) return;
+  celltypeDemoStarted = true;
+
+  const demo = document.getElementById('celltypeDemo');
+  const cells = [
+    { type: 'markdown', badge: 'Markdown', badgeClass: 'md-b', bodyClass: 'md-body', content: '<strong>Feature Engineering</strong><br>We create polynomial features to capture non-linear relationships in the data.' },
+    { type: 'code', badge: 'Code', badgeClass: 'code-b', bodyClass: '', content: '<span style="color:var(--keyword)">from</span> sklearn.preprocessing <span style="color:var(--keyword)">import</span> PolynomialFeatures\n\npoly = PolynomialFeatures(degree=<span style="color:var(--num)">2</span>)\nX_poly = poly.<span style="color:var(--func)">fit_transform</span>(X)' },
+    { type: 'code', badge: 'Code', badgeClass: 'code-b', bodyClass: '', content: 'X_poly.shape<br><span style="color:var(--cm"># (3333, 231)</span>' }
+  ];
+
+  cells.forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className = 'ct-cell' + (i === 1 ? ' active-ct' : '');
+    div.id = 'ctCell' + i;
+    div.innerHTML = `
+      <div class="ct-header">
+        <span class="ct-badge ${c.badgeClass}">${c.badge}</span>
+        <span style="font-size:9px;color:var(--fg-dim);">${c.type === 'code' ? '[' + (i === 1 ? '4' : '5') + ']' : '[3]'}</span>
+      </div>
+      <div class="ct-body ${c.bodyClass}">${c.content}</div>
+    `;
+    demo.appendChild(div);
+  });
+
+  cells.forEach((_, i) => {
+    setTimeout(() => {
+      const el = document.getElementById('ctCell' + i);
+      if (el) el.classList.add('visible');
+    }, 300 + i * 400);
+  });
+}
+
+/* ── Feature 4: Collaboration Demo ── */
+let collabDemoStarted = false;
+function startCollabDemo() {
+  if (collabDemoStarted) return;
+  collabDemoStarted = true;
+
+  const demo = document.getElementById('collabDemo');
+
+  const cell1 = document.createElement('div');
+  cell1.className = 'collab-cell';
+  cell1.style.position = 'relative';
+  cell1.innerHTML = `
+    <div class="collab-line"><span style="color:var(--keyword)">def</span> <span style="color:var(--func)">calculate_churn_rate</span>(df, group_col):</div>
+    <div class="collab-line">&nbsp;&nbsp;rates = df.<span style="color:var(--func)">groupby</span>(group_col)[<span style="color:var(--string)">'Churn'</span>].<span style="color:var(--func)">mean</span>()</div>
+    <div class="collab-line">&nbsp;&nbsp;<span style="color:var(--keyword)">return</span> rates.<span style="color:var(--func)">sort_values</span>(ascending=<span style="color:var(--keyword)">False</span>)</div>
+    <div class="collab-cursor" id="cursorAlex" style="left:180px;top:34px;background:#5da8e8;">
+      <div class="collab-cursor-label" style="background:#5da8e8;">Alex</div>
+    </div>
+  `;
+  demo.appendChild(cell1);
+
+  const cell2 = document.createElement('div');
+  cell2.className = 'collab-cell';
+  cell2.style.position = 'relative';
+  cell2.innerHTML = `
+    <div class="collab-line">result = <span style="color:var(--func)">calculate_churn_rate</span>(df, <span style="color:var(--string)">'Contract'</span>)</div>
+    <div class="collab-line">result.<span style="color:var(--func)">plot</span>(kind=<span style="color:var(--string)">'bar'</span>, color=<span style="color:var(--string)">'#e8943a'</span><span id="sarahTyping"></span>)</div>
+    <div class="collab-cursor" id="cursorSarah" style="left:200px;top:34px;background:#5ecc7b;opacity:0;">
+      <div class="collab-cursor-label" style="background:#5ecc7b;">Sarah</div>
+    </div>
+  `;
+  demo.appendChild(cell2);
+
+  // Animate cursors
+  const cursorAlex = document.getElementById('cursorAlex');
+  const cursorSarah = document.getElementById('cursorSarah');
+  const sarahTyping = document.getElementById('sarahTyping');
+
+  // Alex typing
+  let alexPositions = [{l:180,t:34},{l:210,t:34},{l:240,t:34},{l:270,t:34},{l:290,t:52},{l:310,t:52},{l:340,t:52}];
+  let alexIdx = 0;
+  const alexInterval = setInterval(() => {
+    if (alexIdx >= alexPositions.length) { clearInterval(alexInterval); return; }
+    cursorAlex.style.left = alexPositions[alexIdx].l + 'px';
+    cursorAlex.style.top = alexPositions[alexIdx].t + 'px';
+    alexIdx++;
+  }, 500);
+
+  // Sarah appears after 2s
+  setTimeout(() => {
+    cursorSarah.style.opacity = '1';
+    let sarahText = '';
+    const sarahChars = ['c', 'o', 'l', 'o', 'r', '=', "'", '#', '5', 'e', 'c', 'c', '7', 'b', "'"];
+    let si = 0;
+    const sarahInterval = setInterval(() => {
+      if (si >= sarahChars.length) { clearInterval(sarahInterval); return; }
+      sarahText += sarahChars[si];
+      sarahTyping.textContent = sarahText;
+      si++;
+    }, 80);
+  }, 2000);
+}
+
+/* ── Smooth scroll for anchor links ── */
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+</body>
+</html>
