@@ -412,7 +412,7 @@ function buildToolbar(editor) {
     imagePicker.value = '';
     if (!file) return;
     if (!file.type || !file.type.startsWith('image/')) {
-      window.alert('Please choose an image file.');
+      showAlert('Please choose an image file.');
       return;
     }
 

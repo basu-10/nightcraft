@@ -92,6 +92,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/ui/dialog.js') }}"></script>
 <script>
   const scriptRoot = window.NOTESTACK_SCRIPT_ROOT || '';
   const apiRoot = window.NOTESTACK_API_ROOT || (scriptRoot + '/api');
@@ -146,7 +147,7 @@
       window.URL.revokeObjectURL(url);
       a.remove();
     } catch (err) {
-      alert('Export failed: ' + err.message);
+      await showAlert('Export failed: ' + err.message);
     } finally {
       btn.textContent = origText;
       btn.disabled = false;
@@ -223,7 +224,7 @@
       credentials: 'include',
     });
     if (!response.ok) {
-      alert('Token generation failed.');
+      await showAlert('Token generation failed.');
       return;
     }
     await loadApiToken();
@@ -235,24 +236,24 @@
       credentials: 'include',
     });
     if (!response.ok) {
-      alert('Token revoke failed.');
+      await showAlert('Token revoke failed.');
       return;
     }
     await loadApiToken();
   });
 
   document.getElementById('delete-all-btn').addEventListener('click', async () => {
-    const confirmed = window.confirm(
+    const confirmed = await showConfirm(
       'This will permanently delete ALL your notes, folders, tags, and trash. ' +
       'This action cannot be undone. Are you sure you want to continue?'
     );
     if (!confirmed) return;
 
-    const finalConfirm = window.prompt(
+    const finalConfirm = await showPrompt(
       'Type DELETE to confirm deletion of all your NoteStack data:'
     );
     if (finalConfirm !== 'DELETE') {
-      if (finalConfirm !== null) alert('Deletion cancelled: confirmation text did not match.');
+      if (finalConfirm !== null) await showAlert('Deletion cancelled: confirmation text did not match.');
       return;
     }
 

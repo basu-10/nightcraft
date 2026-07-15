@@ -74,7 +74,7 @@
                       <button class="btn btn--ghost btn--sm" type="submit">Reset Password</button>
                     </form>
 
-                    <form action="{{ url_for('main.admin_delete_user', target_user_id=u.id) }}" method="post" class="admin-inline-form" onsubmit="return confirm('Delete user {{ u.username }} and all their data? This cannot be undone.');">
+                    <form action="{{ url_for('main.admin_delete_user', target_user_id=u.id) }}" method="post" class="admin-inline-form" data-confirm="Delete user {{ u.username }} and all their data? This cannot be undone." data-confirm-danger>
                       <button class="btn btn--danger btn--sm" type="submit">Delete User</button>
                     </form>
                   </div>

@@ -196,10 +196,10 @@ function buildTableMenu(editor, cellKey, menu, close) {
 
 function buildImageMenu(editor, nodeKey, imgEl, triggerReplace, menu, close) {
   addTitle(menu, 'Image');
-  addItem(menu, '✏', 'Edit alt text', () => {
+  addItem(menu, '✏', 'Edit alt text', async () => {
     close();
     const cur    = imgEl.alt || '';
-    const newAlt = window.prompt('Alt text:', cur);
+    const newAlt = await showPrompt('Alt text:', cur);
     if (newAlt !== null) setImageAlt(editor, nodeKey, newAlt);
   });
   addItem(menu, '🔄', 'Replace image', () => { close(); triggerReplace(nodeKey); });

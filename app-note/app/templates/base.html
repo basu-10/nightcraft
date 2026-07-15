@@ -105,6 +105,6 @@
     })();
   </script>
 
-  {% block scripts %}{% endblock %}
+  {% block scripts %}<script src="{{ url_for('static', filename='js/ui/dialog.js') }}"></script>{% endblock %}
 </body>
 </html>

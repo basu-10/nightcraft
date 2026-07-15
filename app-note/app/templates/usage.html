@@ -103,7 +103,7 @@
         <div class="usage-toolbar__actions">
           <a class="btn btn--ghost btn--sm" href="{{ url_for('main.admin_usage_export', format='csv', **filters) }}">Download CSV</a>
           <a class="btn btn--ghost btn--sm" href="{{ url_for('main.admin_usage_export', format='json', **filters) }}">Download JSON</a>
-          <form action="{{ url_for('main.admin_usage_clear') }}" method="post" class="admin-inline-form" onsubmit="return confirm('Clear usage events matching the current filters? This cannot be undone.');">
+          <form action="{{ url_for('main.admin_usage_clear') }}" method="post" class="admin-inline-form" data-confirm="Clear usage events matching the current filters? This cannot be undone." data-confirm-danger>
             <input type="hidden" name="user_id" value="{{ filters.user_id }}" />
             <input type="hidden" name="event_type" value="{{ filters.event_type }}" />
             <input type="hidden" name="date_from" value="{{ filters.date_from }}" />
@@ -150,7 +150,7 @@
                 <td class="form-hint">{{ e.ip_address or '—' }}</td>
                 <td class="form-hint">{{ e.status_code or '—' }}</td>
                 <td>
-                  <form action="{{ url_for('main.admin_usage_delete_event', event_id=e.id) }}" method="post" class="admin-inline-form" onsubmit="return confirm('Delete this usage event?');">
+                  <form action="{{ url_for('main.admin_usage_delete_event', event_id=e.id) }}" method="post" class="admin-inline-form" data-confirm="Delete this usage event?" data-confirm-danger>
                     <button class="btn btn--ghost btn--sm" type="submit">Delete</button>
                   </form>
                 </td>

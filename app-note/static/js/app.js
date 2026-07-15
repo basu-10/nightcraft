@@ -247,11 +247,11 @@
   async function createTag() {
     const name = normalizeTagName($("tag-new-input").value);
     if (!name) {
-      alert("Please enter a tag name");
+      await showAlert("Please enter a tag name");
       return;
     }
     if (state.tags.some((t) => t.name.toLowerCase() === name.toLowerCase())) {
-      alert(`Tag "${name}" already exists`);
+      await showAlert(`Tag "${name}" already exists`);
       return;
     }
     try {
@@ -262,18 +262,18 @@
       await loadTags();
       _refreshTagListManage();
     } catch (err) {
-      alert("Failed to create tag");
+      await showAlert("Failed to create tag");
     }
   }
 
   async function deleteTag(tagId, tagName) {
-    if (!confirm(`Delete tag "${tagName}"?`)) return;
+    if (!(await showConfirm(`Delete tag "${tagName}"?`))) return;
     try {
       await api("DELETE", `/tags/${tagId}`);
       await loadTags();
       _refreshTagListManage();
     } catch (err) {
-      alert("Failed to delete tag");
+      await showAlert("Failed to delete tag");
     }
   }
 
@@ -349,7 +349,7 @@
         !window.NoteStackGuestStore ||
         typeof window.NoteStackGuestStore.create !== "function"
       ) {
-        alert(
+        await showAlert(
           "Guest mode could not start local storage. Please reload the page.",
         );
         return;
@@ -660,7 +660,7 @@
     state.editorDirty = false;
     await Promise.all([loadFolders(), loadTags()]);
     await loadNotes({ reset: true });
-    alert("Guest backup imported.");
+    await showAlert("Guest backup imported.");
   }
 
   function _folderDepthLookup(folders) {
@@ -2099,7 +2099,7 @@
       noteTitle.select();
     } catch (err) {
       console.error("Create note from clipboard failed:", err);
-      alert("Could not create note. " + (err?.message || "Please try again."));
+      await showAlert("Could not create note. " + (err?.message || "Please try again."));
     }
   }
 
@@ -2132,14 +2132,14 @@
           return;
         } catch (retryErr) {
           console.error("Create note retry failed:", retryErr);
-          alert(
+          await showAlert(
             "Could not create a new note. " +
               (retryErr?.message || "Please try again."),
           );
           return;
         }
       }
-      alert(
+      await showAlert(
         "Could not create a new note. " + (err?.message || "Please try again."),
       );
     } finally {
@@ -2257,14 +2257,14 @@
       _hideFolderModal();
       return;
     }
-    const createBeforeClose = confirm(
+    const createBeforeClose = await showConfirm(
       "You have unsaved folder details. Create the folder before closing?\n\nPress OK to create, Cancel for more options.",
     );
     if (createBeforeClose) {
       await saveFolder();
       return;
     }
-    const discard = confirm("Discard unsaved folder details?");
+    const discard = await showConfirm("Discard unsaved folder details?");
     if (discard) _hideFolderModal();
   }
 
@@ -2294,7 +2294,7 @@
       await loadFolders();
       await loadNotes({ reset: true });
     } catch (err) {
-      alert(
+      await showAlert(
         "Failed to create folder. " + (err?.message || "Please try again."),
       );
     }
@@ -2328,9 +2328,9 @@
     const folder = state.folders.find((f) => f.id === folderId);
     if (!folder) return;
     if (
-      !confirm(
+      !(await showConfirm(
         `Delete folder "${folder.name}"? Notes inside will become unfoldered.`,
-      )
+      ))
     )
       return;
     await api("DELETE", `/folders/${folderId}`);
@@ -2592,7 +2592,7 @@
   }
 
   async function deleteSingleNote(noteId) {
-    if (!confirm("Move this note to trash?")) return;
+    if (!(await showConfirm("Move this note to trash?"))) return;
     await api("DELETE", `/notes/${noteId}`);
     if (state.activeNoteId === noteId) closeEditor();
     await loadNotes({ reset: true });
@@ -2714,7 +2714,7 @@
         try {
           await exportGuestBackup();
         } catch (err) {
-          alert("Failed to export guest backup.");
+          await showAlert("Failed to export guest backup.");
         }
       });
       btnGuestImport?.addEventListener("click", () => {
@@ -2726,7 +2726,7 @@
         try {
           await importGuestBackupFile(file);
         } catch (err) {
-          alert(String(err?.message || "Failed to import backup"));
+          await showAlert(String(err?.message || "Failed to import backup"));
         } finally {
           event.target.value = "";
         }

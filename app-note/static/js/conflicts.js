@@ -77,7 +77,7 @@ const ConflictUI = (() => {
       const conflict = _openConflicts.find(c => c.id === conflictId);
       if (!conflict) return;
       // Prompt the user to merge in a simple textarea dialog
-      const merged = prompt(
+      const merged = await showPrompt(
         'Edit the merged content (title stays as server version):',
         conflict.server_content
       );

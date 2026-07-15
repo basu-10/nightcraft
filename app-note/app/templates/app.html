@@ -409,17 +409,5 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/ui/dialog.js') }}"></script>
 <script>
-  window.NOTESTACK_IS_GUEST = {{ (is_guest or false)|tojson }};
-  window.NOTESTACK_LOGIN_URL = {{ url_for('auth.login', next=request.path)|tojson }};
-  window.NOTESTACK_USER_TIMEZONE = {{ (user.timezone if user and user.timezone else 'UTC')|tojson }};
-</script>
-<script src="{{ url_for('static', filename='js/guest_store.js') }}"></script>
-<script src="{{ url_for('static', filename='js/file-parser.js') }}"></script>
-<script src="{{ url_for('static', filename='js/drag-drop-handler.js') }}"></script>
-<script type="module" src="{{ url_for('static', filename='js/lexical_editor.js') }}"></script>
-<script src="{{ url_for('static', filename='js/conflicts.js') }}"></script>
-<script src="{{ url_for('static', filename='js/ui/context_menu.js') }}"></script>
-<script src="{{ url_for('static', filename='js/ui/fab_menu.js') }}"></script>
-<script src="{{ url_for('static', filename='js/app.js') }}"></script>
-{% endblock %}
