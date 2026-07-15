@@ -46,7 +46,12 @@ EOF
     # Ensure it is NOT enabled (so it stays down until first request). Idempotent:
     # does not stop a currently-running service, just removes the boot enable.
     systemctl disable "${service}" >/dev/null 2>&1 || true
-    log "  -> on_demand: installed Restart=no drop-in + disabled (manager controls it)"
+    # Stop any running instance so the manager cleanly owns the lifecycle. This
+    # also frees the port: otherwise the manager's first `systemctl start`
+    # collides with the old instance ("Address already in use") and the unit is
+    # left `failed` while an untracked orphan keeps serving traffic.
+    systemctl stop "${service}" >/dev/null 2>&1 || true
+    log "  -> on_demand: installed Restart=no drop-in + disabled + stopped (manager controls it)"
   else
     systemctl enable "${service}"
     # Remove any stale on_demand drop-in so a reverted product auto-restarts.
