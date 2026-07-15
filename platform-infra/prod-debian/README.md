@@ -20,12 +20,69 @@ Production routing on the server is path-based on the single host `31.70.85.89`:
 - `http://31.70.85.89/notestack` -> app-note (NoteStack)
 - `http://31.70.85.89/admin` -> app-admin
 - `http://31.70.85.89/platform-admin` -> app-landing (central admin hub)
+- `http://31.70.85.89/pledge` and `/green-pledge` -> app-pledge (Green Pledge, `AUTH_MODE=sso`, **on_demand**)
 
 All setup, deploy, seed, start, stop, and backup operations are script-driven from `platform-infra/prod-debian/scripts`.
 
 Primary operations can be run through the single dispatcher command `serverctl` in that folder.
 
 Deployment runs are logged on the VPS under `/var/log/nightcraft-deploy/`, and each bootstrap run appends a CSV summary to `/runtime/deploy-history.csv`.
+
+## Product Manifest & On-Demand Runtime Manager
+
+Product runtime policy is now driven by a single manifest, `products.yml`, instead of being
+hard-coded per script. Every script that needs a product's policy, service, port, upstream,
+workers, or idle timeout reads it through `scripts/products.py` (stdlib + PyYAML) via the
+`nc_*` helpers in `common.sh`.
+
+Two policies exist:
+
+- `always_on` — the service is `systemctl enable`d and (re)started on every deploy, exactly
+  as before. All products except Green Pledge use this today.
+- `on_demand` — the service is **not** enabled and is started lazily by a always-on
+  **Runtime Manager** on the first request, then auto-stopped after an idle timeout
+  (`idle_timeout`, e.g. `15m`). Green Pledge (`green`) is the first `on_demand` product.
+
+### Runtime Manager (`nightcraft-runtime-manager`)
+
+An always-on daemon (root, `Restart=always`, listens on `127.0.0.1:5700`) that owns the
+lifecycle of `on_demand` products. It is installed by `install-systemd.sh` to
+`/opt/nightcraft/runtime-manager/nightcraft-runtime-manager.py` and reads `/etc/nightcraft/products.yml`.
+
+- `GET/POST /touch/<slug>` — records last access and, if the service is inactive, spawns a
+  background `systemctl start <service>` (idempotent; a `starting` flag prevents repeats).
+- `GET /healthz` — liveness check.
+- A background sweep every 30s stops any active `on_demand` service whose idle window has elapsed.
+- `last_access` is persisted to `/runtime/nightcraft/manager/last_access.json`; on startup it reseeds
+  timers for services that are already running, so a manager restart will not wrongly stop them.
+
+### nginx on-demand wiring
+
+`scripts/gen-nginx-on-demand.sh` reads `products.yml` and writes
+`/etc/nginx/sites-include/on-demand.conf` (plus the shared loader at
+`/runtime/nightcraft/loaders/on-demand.html`). It is run from `install-nginx.sh` (before `nginx -t`)
+and `deploy-all.sh`. For a product that declares `public_paths` it emits, per path:
+
+- a bare redirect (`/pledge` -> `/pledge/`),
+- a proxy block (`/pledge/` -> upstream) with the correct `X-Forwarded-Prefix` and a `mirror /_nc_touch_<slug>`,
+- for `on_demand`: an `error_page 502/503/504` that 302s to a branded loading page, plus a
+  readiness probe `location = /_nc_probe/<slug>` that also mirrors (so it self-heals the start).
+
+Cold-start flow: a request to a down `on_demand` app returns 502 -> nginx 302s to
+`/_nc_loading?slug=<slug>&next=<path>`; the loader polls `/_nc_probe/<slug>`, which both
+probes the app and re-touches the manager; once the app is up the probe returns 200 and the
+browser is redirected to `next`. The user never sees a raw 502.
+
+### Important deployment notes
+
+- `on_demand` services are installed with a `Restart=no` drop-in
+  (`/etc/systemd/system/<service>.d/nightcraft-on-demand.conf`) so the manager's idle
+  `systemctl stop` sticks (otherwise the base unit's `Restart=always` would resurrect it).
+  They are also `systemctl disable`d so they stay down until first request.
+- The manager and `products.py` use the **system** Python (`/usr/bin/python3`), not an app
+  venv, so they require the system package `python3-yaml`. `install-systemd.sh` and
+  `gen-nginx-on-demand.sh` self-heal this via `nc_ensure_yaml()`; `setup-host.sh` also
+  lists it. A venv `requirements.txt` entry will **not** satisfy this dependency.
 
 ## Single-Command Server Bootstrap
 
@@ -69,7 +126,13 @@ platform-infra/prod-debian/scripts/status-deploys.sh
 
 ## Folder Layout
 
-- `nginx/nightcraft.conf`: reverse proxy config for landing/auth/devradio/neera/notestack/admin
+- `products.yml`: authoritative product/runtime-policy manifest (source of truth for `common.sh`, `install-systemd.sh`, `deploy-all.sh`, `start-all.sh`, and the Runtime Manager). `green` is `on_demand`; everything else is `always_on`.
+- `scripts/products.py`: stdlib + PyYAML reader for `products.yml`; exposes `get`/`public_paths`/`slugs` for the bash `nc_*` helpers and is also imported by the Runtime Manager.
+- `scripts/gen-nginx-on-demand.sh`: generates `/etc/nginx/sites-include/on-demand.conf` and `/runtime/nightcraft/loaders/on-demand.html` from `products.yml`; run by `install-nginx.sh` and `deploy-all.sh`.
+- `nginx/nightcraft.conf`: reverse proxy config for landing/auth/devradio/neera/notestack/admin, plus an `include` of the generated on-demand blocks
+- `nginx/loaders/on-demand.html`: shared branded loading page shown during `on_demand` cold starts (polled by the nginx probe redirects)
+- `runtime-manager/nightcraft-runtime-manager.py`: always-on daemon that owns the lifecycle of `on_demand` products
+- `systemd/nightcraft-runtime-manager.service`: always-on (root, `Restart=always`) unit for the Runtime Manager
 - `systemd/nightcraft-auth.service`: Gunicorn service for auth
 - `systemd/nightcraft-radio.service`: Gunicorn service for radio
 - `systemd/nightcraft-neera.service`: Gunicorn service for NEERA
@@ -84,6 +147,7 @@ platform-infra/prod-debian/scripts/status-deploys.sh
 - `env-examples/app-landing.env`: exact file for `/etc/nightcraft/app-landing.env`
 - `env-examples/app-admin.env`: exact file for `/etc/nightcraft/app-admin.env`
 - `env-examples/app-note.env`: exact file for `/etc/nightcraft/app-note.env`
+- `env-examples/pledge.env.example`: template for `/etc/nightcraft/app-pledge.env` (Green Pledge, `on_demand`)
 - `env-examples/*.env.example`: alternate template variants if needed
 - `scripts/setup-host.sh`: Debian package/bootstrap setup
 - `scripts/setup-postgres.sh`: create postgres users + databases
@@ -101,10 +165,12 @@ platform-infra/prod-debian/scripts/status-deploys.sh
   - Requires `NOTESTACK_DB_BACKEND=postgres` in `/etc/nightcraft/app-note.env`.
   - If `DATABASE_URL` is absent, derives it from the default NoteStack PostgreSQL role/database/password and writes it back to `/etc/nightcraft/app-note.env`.
   - Sync logs live under `/runtime/shared/app-note/localappdata/ABasu_apps/NoteStack/sync.log`; sync-log page creation/read failures are handled without returning 502.
+- `scripts/deploy-pledge.sh`: release deploy for app-pledge (Green Pledge, `on_demand`); installs venv + gunicorn unit but does not enable it — the Runtime Manager starts it on first request
+- `scripts/seed-pledge-client.sh`: seed OAuth client/user for Green Pledge callback
 - `scripts/seed-auth-users.sh`: seed one service-auth user and one admin user
 - `scripts/seed-auth-client.sh`: seed OAuth client/user for radio callback
 - `scripts/seed-neera-client.sh`: seed OAuth client/user for neera callback
-- `scripts/deploy-all.sh`: landing + auth + radio + NEERA + admin + notestack deploy + seed + restart
+- `scripts/deploy-all.sh`: deploys all products + seeds clients, then installs `products.yml`, regenerates on-demand nginx blocks, restarts the Runtime Manager and `always_on` services, and reloads nginx (leaves `on_demand` services stopped for the manager to start on first request)
 - `scripts/start-all.sh`: start landing + auth + radio + NEERA + admin + notestack
 - `scripts/stop-all.sh`: stop landing + auth + radio + NEERA + admin + notestack
 - `scripts/restart-all.sh`: restart landing + auth + radio + NEERA + admin + notestack + reload nginx
@@ -127,6 +193,7 @@ Apps run directly from the source checkout under `/nightcraft-source-code`:
 - `/nightcraft-source-code/app-admin`
 - `/nightcraft-source-code/app-game`
 - `/nightcraft-source-code/app-note`
+- `/nightcraft-source-code/app-pledge`
 
 Each app uses:
 
@@ -137,11 +204,19 @@ Each app uses:
   - `/runtime/venvs/app-artsy`
   - `/runtime/venvs/app-admin`
   - `/runtime/venvs/app-note`
+  - `/runtime/venvs/app-pledge`
 - Runtime state under `/runtime/shared/`
   - `/runtime/shared/service-auth`
   - `/runtime/shared/dev-podcast-app`, including `instance/uploads/works` and `instance/automation_logs`
   - `/runtime/shared/app-artsy`, including `instance/uploads/works`
   - `/runtime/shared/app-note`
+  - `/runtime/shared/app-pledge`
+- Runtime Manager (always-on daemon, owns `on_demand` lifecycles)
+  - `/opt/nightcraft/runtime-manager/nightcraft-runtime-manager.py`: installed manager code
+  - `/runtime/nightcraft/manager`: working dir + persisted `last_access.json`
+  - `/etc/nightcraft/products.yml`: deployed product manifest (source of truth)
+  - `/etc/nginx/sites-include/on-demand.conf`: generated nginx blocks for `on_demand` products
+  - `/runtime/nightcraft/loaders/on-demand.html`: shared cold-start loading page
 
 ## Expected Server Baseline
 
@@ -185,6 +260,7 @@ The command above installs these exact filenames under `/etc/nightcraft`:
 - `/etc/nightcraft/app-landing.env`
 - `/etc/nightcraft/app-admin.env`
 - `/etc/nightcraft/app-note.env`
+- `/etc/nightcraft/app-pledge.env`
 
 `install-env.sh` accepts required and optional env targets. Required services fail if no template exists; optional services keep an existing env file or skip creation when no template is present. Each target accepts a primary `*.env` template plus optional `*.env.example` fallback candidates, keeps existing files by default, normalizes CRLF line endings, and only overwrites when `OVERWRITE=1` or `--overwrite` is supplied.
 
@@ -197,6 +273,7 @@ sudo nano /etc/nightcraft/app-radio.env
 sudo nano /etc/nightcraft/app-neera.env
 sudo nano /etc/nightcraft/app-admin.env
 sudo nano /etc/nightcraft/app-note.env
+sudo nano /etc/nightcraft/app-pledge.env
 ```
 
 1. Create DB users and databases.
@@ -296,6 +373,15 @@ In `/etc/nightcraft/app-admin.env`:
 - `FLASK_SECRET_KEY`
 - `ADMIN_AUTH_URL=/auth/login`
 - `ADMIN_RETURN_PATH=/admin`
+
+In `/etc/nightcraft/app-pledge.env` (Green Pledge, `on_demand`, served under `/pledge` and `/green-pledge`):
+
+- `FLASK_SECRET_KEY`
+- `FLASK_AUTH_MODE=sso`
+- `FLASK_AUTH_SERVICE_URL=http://31.70.85.89/auth`
+- `FLASK_AUTHLIB_CLIENT_ID=green-pledge-app`
+- `FLASK_AUTHLIB_CLIENT_SECRET`
+- `FLASK_SQLALCHEMY_DATABASE_URI` (postgres URL for green_pledge DB)
 
 In `/etc/nightcraft/app-note.env`:
 
