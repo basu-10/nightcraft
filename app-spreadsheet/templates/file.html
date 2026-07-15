@@ -8,9 +8,16 @@
     <script>window.BASE_PATH = "{{ request.script_root }}";</script>
 </head>
 <body>
-    <div id="app">
+        <div id="app">
         <div class="top-bar">
             <div class="top-bar-left">
+                <a href="{{ request.script_root }}/" class="app-logo" title="tinyXL — Spreadsheet Workspace">
+                    <div class="app-logo-icon">T</div>
+                    <div>
+                        <div class="app-logo-text">tinyXL</div>
+                        <div class="app-logo-sub">spreadsheet workspace</div>
+                    </div>
+                </a>
                 <button id="btn-home" class="nav-btn">Home</button>
                 <button id="btn-new" class="nav-btn">New</button>
                 <button id="btn-upload" class="nav-btn primary">Upload</button>
