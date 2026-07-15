@@ -25,8 +25,8 @@ At server provisioning time, the default seeded auth users are:
 - seedadmin (admin role)
   Source: seed-auth-users.sh:25
 
-- devuser (non-admin OAuth seed user reused for app clients: radio, Neera, seeksage, game)
-  Sources: seed-auth-client.sh:23, seed-Neera-client.sh:22, seed-seeksage-client.sh:22, seed-game-client.sh:22
+- devuser (non-admin OAuth seed user reused for app clients: radio, Neera, game)
+  Sources: seed-auth-client.sh:23, seed-Neera-client.sh:22, seed-game-client.sh:22
 
 Provisioning path that runs these seed scripts: deploy-all.sh:19
 

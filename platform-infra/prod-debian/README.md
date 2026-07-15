@@ -8,7 +8,6 @@ Current target in this phase:
 - `service-auth` (OIDC/SSO provider)
 - `app-radio` (DevRadio client app, `AUTH_MODE=sso`, routed under `/devradio`)
 - `app-artsy` (NEERA client app, `AUTH_MODE=sso`, routed under `/neera`)
-- `app-researchAgent/seeksage/backend` (SeekSage app API, `AUTH_MODE=sso`, routed under `/seeksage`)
 - `app-note` (NoteStack app, shared-session auth via `service-auth`, routed under `/notestack`)
 - `app-admin` (admin login handoff app)
 
@@ -18,7 +17,6 @@ Production routing on the server is path-based on the single host `31.70.85.89`:
 - `http://31.70.85.89/auth` -> service-auth
 - `http://31.70.85.89/devradio` -> app-radio
 - `http://31.70.85.89/neera` -> app-artsy (Neera)
-- `http://31.70.85.89/seeksage` -> app-researchAgent/seeksage/backend (SeekSage)
 - `http://31.70.85.89/notestack` -> app-note (NoteStack)
 - `http://31.70.85.89/admin` -> app-admin
 - `http://31.70.85.89/platform-admin` -> app-landing (central admin hub)
@@ -71,11 +69,10 @@ platform-infra/prod-debian/scripts/status-deploys.sh
 
 ## Folder Layout
 
-- `nginx/nightcraft.conf`: reverse proxy config for landing/auth/devradio/neera/seeksage/notestack/admin
+- `nginx/nightcraft.conf`: reverse proxy config for landing/auth/devradio/neera/notestack/admin
 - `systemd/nightcraft-auth.service`: Gunicorn service for auth
 - `systemd/nightcraft-radio.service`: Gunicorn service for radio
 - `systemd/nightcraft-neera.service`: Gunicorn service for NEERA
-- `systemd/nightcraft-seeksage.service`: Gunicorn service for SeekSage
 - `systemd/nightcraft-landing.service`: Gunicorn service for landing
 - `systemd/nightcraft-admin.service`: Gunicorn service for admin handoff
 - `systemd/nightcraft-note.service`: Gunicorn service for NoteStack
@@ -84,7 +81,6 @@ platform-infra/prod-debian/scripts/status-deploys.sh
 - `env-examples/service-auth.env`: exact file for `/etc/nightcraft/service-auth.env`
 - `env-examples/app-radio.env`: exact file for `/etc/nightcraft/app-radio.env`
 - `env-examples/app-neera.env`: exact file for `/etc/nightcraft/app-neera.env`
-- `env-examples/app-seeksage.env`: exact file for `/etc/nightcraft/app-seeksage.env`
 - `env-examples/app-landing.env`: exact file for `/etc/nightcraft/app-landing.env`
 - `env-examples/app-admin.env`: exact file for `/etc/nightcraft/app-admin.env`
 - `env-examples/app-note.env`: exact file for `/etc/nightcraft/app-note.env`
@@ -99,9 +95,6 @@ platform-infra/prod-debian/scripts/status-deploys.sh
   - Keeps runtime instance data under `/runtime/shared/dev-podcast-app/instance`, including uploads and automation logs.
 - `scripts/deploy-neera.sh`: release deploy for app-artsy; syncs PostgreSQL provisioning from `/etc/nightcraft/app-neera.env` before Flask setup
 - `scripts/reset-neera-password.sh`: rotate neera PostgreSQL password and resync `/etc/nightcraft/app-neera.env`
-- `scripts/deploy-seeksage.sh`: release deploy for seeksage backend
-  - Builds the React Workspace frontend when `npm` is available by running `npm ci` with fallback to `npm install`, then `VITE_BASE_PATH=/seeksage/ npm run build`; if the build is skipped, Flask UI falls back to the dashboard.
-  - The built SPA is served from `app-researchAgent/seeksage/frontend/dist` through Flask; nginx exposes it at `/seeksage/ui` while Flask API routes stay under `/seeksage/api`.
 - `scripts/deploy-landing.sh`: release deploy for app-landing
 - `scripts/deploy-admin.sh`: release deploy for app-admin
 - `scripts/deploy-note.sh`: release deploy for app-note
@@ -111,11 +104,10 @@ platform-infra/prod-debian/scripts/status-deploys.sh
 - `scripts/seed-auth-users.sh`: seed one service-auth user and one admin user
 - `scripts/seed-auth-client.sh`: seed OAuth client/user for radio callback
 - `scripts/seed-neera-client.sh`: seed OAuth client/user for neera callback
-- `scripts/seed-seeksage-client.sh`: seed OAuth client/user for SeekSage callback
-- `scripts/deploy-all.sh`: landing + auth + radio + NEERA + seeksage + admin + notestack deploy + seed + restart
-- `scripts/start-all.sh`: start landing + auth + radio + NEERA + seeksage + admin + notestack
-- `scripts/stop-all.sh`: stop landing + auth + radio + NEERA + seeksage + admin + notestack
-- `scripts/restart-all.sh`: restart landing + auth + radio + NEERA + seeksage + admin + notestack + reload nginx
+- `scripts/deploy-all.sh`: landing + auth + radio + NEERA + admin + notestack deploy + seed + restart
+- `scripts/start-all.sh`: start landing + auth + radio + NEERA + admin + notestack
+- `scripts/stop-all.sh`: stop landing + auth + radio + NEERA + admin + notestack
+- `scripts/restart-all.sh`: restart landing + auth + radio + NEERA + admin + notestack + reload nginx
 - `scripts/status-all.sh`: service status overview; `systemctl status` is non-fatal so one stopped service does not hide the rest of the stack
 - `scripts/backup-postgres.sh`: logical postgres backups
 - `scripts/backup-all.sh`: backup postgres + `/etc/nightcraft` + `/runtime/shared/*`
@@ -132,7 +124,6 @@ Apps run directly from the source checkout under `/nightcraft-source-code`:
 - `/nightcraft-source-code/service-auth`
 - `/nightcraft-source-code/app-radio`
 - `/nightcraft-source-code/app-artsy`
-- `/nightcraft-source-code/app-researchAgent/seeksage`
 - `/nightcraft-source-code/app-admin`
 - `/nightcraft-source-code/app-game`
 - `/nightcraft-source-code/app-note`
@@ -144,14 +135,12 @@ Each app uses:
   - `/runtime/venvs/service-auth`
   - `/runtime/venvs/dev-podcast-app`
   - `/runtime/venvs/app-artsy`
-  - `/runtime/venvs/seeksage-backend`
   - `/runtime/venvs/app-admin`
   - `/runtime/venvs/app-note`
 - Runtime state under `/runtime/shared/`
   - `/runtime/shared/service-auth`
   - `/runtime/shared/dev-podcast-app`, including `instance/uploads/works` and `instance/automation_logs`
   - `/runtime/shared/app-artsy`, including `instance/uploads/works`
-  - `/runtime/shared/seeksage-backend`, including `instance`
   - `/runtime/shared/app-note`
 
 ## Expected Server Baseline
@@ -193,7 +182,6 @@ The command above installs these exact filenames under `/etc/nightcraft`:
 - `/etc/nightcraft/service-auth.env`
 - `/etc/nightcraft/app-radio.env`
 - `/etc/nightcraft/app-neera.env`
-- `/etc/nightcraft/app-seeksage.env`
 - `/etc/nightcraft/app-landing.env`
 - `/etc/nightcraft/app-admin.env`
 - `/etc/nightcraft/app-note.env`
@@ -207,17 +195,16 @@ sudo nano /etc/nightcraft/app-landing.env
 sudo nano /etc/nightcraft/service-auth.env
 sudo nano /etc/nightcraft/app-radio.env
 sudo nano /etc/nightcraft/app-neera.env
-sudo nano /etc/nightcraft/app-seeksage.env
 sudo nano /etc/nightcraft/app-admin.env
 sudo nano /etc/nightcraft/app-note.env
 ```
 
 1. Create DB users and databases.
 
-`setup-postgres.sh` now provisions and grants for auth, radio, NEERA, seeksage, and notestack.
-For NEERA/seeksage/notestack it reads `/etc/nightcraft/app-neera.env`,
-`/etc/nightcraft/app-seeksage.env`, and `/etc/nightcraft/app-note.env`
-`DATABASE_URL` values when explicit `NEERA_DB_*`/`SEEKSAGE_DB_*`/`NOTESTACK_DB_*` vars are not provided.
+`setup-postgres.sh` now provisions and grants for auth, radio, NEERA, and notestack.
+For NEERA/notestack it reads `/etc/nightcraft/app-neera.env` and
+`/etc/nightcraft/app-note.env`
+`DATABASE_URL` values when explicit `NEERA_DB_*`/`NOTESTACK_DB_*` vars are not provided.
 Existing role passwords are synchronized on each run.
 The script preflights SQL templates for required `\set ON_ERROR_STOP on`, orphan backslash lines, malformed `\ gexec` spacing, and missing files before invoking psql.
 It also accepts `postgresql+psycopg://`, `postgresql://`, and `postgres://` URLs and normalizes the first two forms to `postgresql+psycopg://` for SQLAlchemy/psycopg v3.
@@ -291,7 +278,6 @@ In `/etc/nightcraft/app-landing.env`:
 - `LANDING_ADMIN_URL=/platform-admin`
 - `LANDING_DEVRADIO_URL=/devradio`
 - `LANDING_NEERA_URL=/neera`
-- `LANDING_SEEKSAGE_URL=/seeksage`
 - `LANDING_NOTESTACK_URL=/notestack`
 
 In `/etc/nightcraft/app-neera.env`:
@@ -303,16 +289,6 @@ In `/etc/nightcraft/app-neera.env`:
 - `FLASK_AUTHLIB_CLIENT_ID=neera-app`
 - `FLASK_AUTHLIB_CLIENT_SECRET`
 - `DATABASE_URL` (postgres URL for NEERA DB)
-
-In `/etc/nightcraft/app-seeksage.env`:
-
-- `FLASK_ENV=production`
-- `SECRET_KEY`
-- `AUTH_MODE=sso`
-- `AUTH_SERVICE_URL=http://31.70.85.89/auth`
-- `AUTHLIB_CLIENT_ID=seeksage-app`
-- `AUTHLIB_CLIENT_SECRET`
-- `DATABASE_URL` (postgres URL for seeksage DB)
 
 In `/etc/nightcraft/app-admin.env`:
 
@@ -507,4 +483,4 @@ This structure supports your staged delivery model:
 - Option 2 (auth + single app): implemented here for `service-auth + app-radio`.
 - Option 3 (full server stack): this folder is the base pattern to extend with additional app units/env/scripts.
 
-When you are ready, upload `app-landing`, `app-admin`, `app-radio`, `app-artsy`, `app-researchAgent`, `service-auth`, and `platform-infra/prod-debian` to the server and run the steps above.
+When you are ready, upload `app-landing`, `app-admin`, `app-radio`, `app-artsy`, `service-auth`, and `platform-infra/prod-debian` to the server and run the steps above.

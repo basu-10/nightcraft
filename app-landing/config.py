@@ -40,7 +40,6 @@ class Config:
     ADMIN_URL: str = os.environ.get("LANDING_ADMIN_URL", "/platform-admin")
     DEVRADIO_URL: str = os.environ.get("LANDING_DEVRADIO_URL", "/devradio")
     NEERA_URL: str = os.environ.get("LANDING_NEERA_URL", "/neera")
-    SEEKSAGE_URL: str = os.environ.get("LANDING_SEEKSAGE_URL", "/seeksage")
     GAME_URL: str = os.environ.get("LANDING_GAME_URL", "/game")
     NOTESTACK_URL: str = os.environ.get("LANDING_NOTESTACK_URL", "/notestack")
     ALFRED_URL: str = os.environ.get("LANDING_ALFRED_URL", "/alfred")

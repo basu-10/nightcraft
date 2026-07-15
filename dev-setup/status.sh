@@ -11,7 +11,6 @@ SERVICES=(
   "landing:5400:app-landing"
   "admin:5500:app-admin"
   "neera:5600:app-neera"
-  "seeksage:5000:seeksage-backend"
   "game:5800:app-game"
   "note:5900:app-note"
   "mindmap:8000:app-mindmap"

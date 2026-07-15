@@ -77,9 +77,6 @@ copy_env "${ENV_TARGET_DIR}/app-radio.env" 1 \
 copy_env "${ENV_TARGET_DIR}/app-neera.env" 1 \
   "${ENV_SRC_DIR}/app-neera.env" \
   "${ENV_SRC_DIR}/neera.env.example"
-copy_env "${ENV_TARGET_DIR}/app-seeksage.env" 1 \
-  "${ENV_SRC_DIR}/app-seeksage.env" \
-  "${ENV_SRC_DIR}/seeksage.env.example"
 copy_env "${ENV_TARGET_DIR}/app-admin.env" 1 \
   "${ENV_SRC_DIR}/app-admin.env" \
   "${ENV_SRC_DIR}/admin.env.example"

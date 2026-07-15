@@ -93,7 +93,6 @@ log "Updated ${NEERA_ENV_FILE} with a new neera DB password"
 AUTH_DB_PASSWORD="${AUTH_DB_PASSWORD:-auth_app_db_2026_prod_secret}" \
 RADIO_DB_PASSWORD="${RADIO_DB_PASSWORD:-radio_app_db_2026_prod_secret}" \
 NEERA_DB_PASSWORD="${NEERA_NEW_PASSWORD}" \
-SEEKSAGE_DB_PASSWORD="${SEEKSAGE_DB_PASSWORD:-}" \
 NOTESTACK_DB_PASSWORD="${NOTESTACK_DB_PASSWORD:-}" \
   "${SCRIPT_DIR}/setup-postgres.sh"
 

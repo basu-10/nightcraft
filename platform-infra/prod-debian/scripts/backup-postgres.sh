@@ -7,7 +7,6 @@ TS="$(date +%Y%m%d-%H%M%S)"
 AUTH_DB_NAME="${AUTH_DB_NAME:-auth_db}"
 RADIO_DB_NAME="${RADIO_DB_NAME:-radio_db}"
 NEERA_DB_NAME="${NEERA_DB_NAME:-neera_db}"
-SEEKSAGE_DB_NAME="${SEEKSAGE_DB_NAME:-seeksage_db}"
 NOTESTACK_DB_NAME="${NOTESTACK_DB_NAME:-notestack_db}"
 
 if [[ "${EUID}" -ne 0 ]]; then
@@ -20,7 +19,6 @@ install -d -m 0750 "${BACKUP_ROOT}"
 sudo -u postgres pg_dump -Fc "${AUTH_DB_NAME}" > "${BACKUP_ROOT}/${AUTH_DB_NAME}-${TS}.dump"
 sudo -u postgres pg_dump -Fc "${RADIO_DB_NAME}" > "${BACKUP_ROOT}/${RADIO_DB_NAME}-${TS}.dump"
 sudo -u postgres pg_dump -Fc "${NEERA_DB_NAME}" > "${BACKUP_ROOT}/${NEERA_DB_NAME}-${TS}.dump"
-sudo -u postgres pg_dump -Fc "${SEEKSAGE_DB_NAME}" > "${BACKUP_ROOT}/${SEEKSAGE_DB_NAME}-${TS}.dump"
 sudo -u postgres pg_dump -Fc "${NOTESTACK_DB_NAME}" > "${BACKUP_ROOT}/${NOTESTACK_DB_NAME}-${TS}.dump"
 
 echo "Backups written to ${BACKUP_ROOT}"

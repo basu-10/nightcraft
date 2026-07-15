@@ -124,7 +124,6 @@ def test_admin_route_renders_admin_cards_for_admin_user():
     assert "Open DevRadio Admin" in html
     assert "Open Neera Admin" in html
     assert "Open NoteStack Admin" in html
-    assert "Open SeekSage Admin" not in html
 
 
 def test_experimental_route_renders_sections_and_apps():
@@ -145,7 +144,6 @@ def test_experimental_route_renders_sections_and_apps():
     assert "FOSSil" in html
     assert "Neera" in html
     assert "(proof of concept only / local accounts only)" in html
-    assert "SeekSage" not in html
 
 
 def test_fossil_library_renders_landing_page():

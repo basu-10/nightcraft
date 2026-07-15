@@ -10,8 +10,7 @@ global environment**:
   fresh machine later.
 
 > No `apt`/`sudo` installs of `python`, `postgresql-client`, `redis-tools`, or `node`
-> are performed by these scripts. The SeekSage **React frontend** is intentionally
-> out of scope (it needs Node); the SeekSage **backend** at `:5000` is fully usable.
+> are performed by these scripts.
 
 ---
 
@@ -22,9 +21,8 @@ global environment**:
  -----------------------------             -----------------------------
  service-auth    (uv venv :5100)  ─┐
  app-radio       (uv venv :5333)  ─┤
- app-artsy       (uv venv :5600)  ─┼─▶ 127.0.0.1:5432  postgres  (auth_db, radio_db,
- app-seeksage    (uv venv :5000)  ─┤                                  neera_db, seeksage_db,
- app-note        (uv venv :5900)  ─┤                                  notestack_db)
+  app-artsy       (uv venv :5600)  ─┼─▶ 127.0.0.1:5432  postgres  (auth_db, radio_db,
+  app-note        (uv venv :5900)  ─┤                                  neera_db, notestack_db)
  app-game        (uv venv :5800)  ─┤             :6379  redis    (game sessions)
  app-landing     (uv venv :5400)  ─┤
  app-admin       (uv venv :5500)  ─┘
@@ -132,7 +130,6 @@ plus the `${NIGHTCRAFT_SHARED_DIR}` placeholder).
 | Landing (`app-landing`) | http://127.0.0.1:5400 | — |
 | Admin (`app-admin`) | http://127.0.0.1:5500/admin | — |
 | Neera (`app-artsy`) | http://127.0.0.1:5600/neera | `neera_db` |
-| SeekSage (`app-researchAgent`) | http://127.0.0.1:5000/seeksage | `seeksage_db` |
 | Game (`app-game`) | http://127.0.0.1:5800/game | Redis (sqlite emulator db) |
 | NoteStack (`app-note`) | http://127.0.0.1:5900/notestack | `notestack_db` |
 | Mindmap (`app-mindmap`) | http://127.0.0.1:8000 | — |
@@ -144,7 +141,6 @@ plus the `${NIGHTCRAFT_SHARED_DIR}` placeholder).
 | `auth_db` | `auth_app` | `auth_app_db_2026_prod_secret` |
 | `radio_db` | `radio_app` | `radio_app_db_2026_prod_secret` |
 | `neera_db` | `neera_app` | `neera_app_db_2026_prod_secret` |
-| `seeksage_db` | `seeksage_app` | `seeksage_app_db_2026_prod_secret` |
 | `notestack_db` | `notestack_app` | `notestack_app_db_2026_prod_secret` |
 
 Connection string form (SQLAlchemy): `postgresql+psycopg://<role>:<pw>@127.0.0.1:5432/<db>`.
@@ -160,18 +156,13 @@ All Postgres-backed apps create their tables inside their Flask app factory
 therefore drives schema creation by **importing each factory with the app's dev env
 loaded** — this reuses the app's own, authoritative schema logic and is safe to re-run.
 
-> **SeekSage note:** although SeekSage ships a `migrations/` directory, `init-dbs.sh`
-> uses the factory (like the other apps) rather than `flask db upgrade`. Loading the
-> app for `flask db upgrade` triggers `db.create_all()` first, which then collides with
-> the migration's `ADD COLUMN`. The factory path is idempotent and correct for dev.
-
 ---
 
 ## Seed credentials
 
 - Users: `seeduser` / `seeduser123` (user), `seedadmin` / `seedadmin123` (admin)
 - Dev OAuth user: `devuser` / `devpass123`
-- OAuth clients: `radio-app`, `neera-app`, `seeksage-app`, `game-app`
+- OAuth clients: `radio-app`, `neera-app`, `game-app`
 
 ---
 
@@ -206,7 +197,7 @@ export NIGHTCRAFT_SHARED_DIR="$PWD/.nightcraft-shared"
 | `check-deps.sh` says Docker not reachable | Start the daemon (`sudo systemctl start docker`) or pass `--install-docker`. |
 | `uv: command not found` in a new shell | `export PATH="$HOME/.local/bin:$PATH"`. |
 | Service won't start / port already in use | `bash dev-setup/stop-all.sh`, then retry. |
-| Seek/Note tables missing | Re-run `bash dev-setup/init-dbs.sh` (idempotent). |
+| NoteStack tables missing | Re-run `bash dev-setup/init-dbs.sh` (idempotent). |
 | NoteStack errors on connect | Ensure its `DATABASE_URL` uses `postgresql://` (raw `psycopg`), not `postgresql+psycopg://`. |
 | Game 500 / `unable to open database file` | Ensure `GAME_SHARED_DIR` is set (template default points under `.nightcraft-shared/app-game`, created at start). |
 | Paths with spaces break `source` of env files | Values referencing the shared dir are quoted in the templates; keep them quoted if you edit. |
@@ -215,6 +206,5 @@ export NIGHTCRAFT_SHARED_DIR="$PWD/.nightcraft-shared"
 
 ## Out of scope
 
-- **SeekSage React frontend** (`app-researchAgent/seeksage/frontend`) — needs Node; add later as a `node:alpine` Docker service if desired. The backend at `:5000` is fully testable.
 - **app-pledge** — not started by `start-all.sh` and has no DB created here.
 - Installing Docker itself — treated as a one-time manual prerequisite.

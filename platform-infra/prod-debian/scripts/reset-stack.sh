@@ -84,7 +84,6 @@ SERVICES=(
   nightcraft-auth.service
   nightcraft-radio.service
   nightcraft-neera.service
-  nightcraft-seeksage.service
   nightcraft-landing.service
   nightcraft-admin.service
   nightcraft-game.service
@@ -99,13 +98,13 @@ done
 
 if [[ "${REMOVE_SHARED_DATA}" -eq 1 ]]; then
   log "Removing runtime shared data directories"
-  rm -rf "${AUTH_SHARED_DIR}" "${RADIO_SHARED_DIR}" "${NEERA_SHARED_DIR}" "${SEEKSAGE_SHARED_DIR}" "${LANDING_SHARED_DIR}" "${ADMIN_SHARED_DIR}" "${GAME_SHARED_DIR}" "${NOTE_SHARED_DIR}" "${PLEDGE_SHARED_DIR}"
+  rm -rf "${AUTH_SHARED_DIR}" "${RADIO_SHARED_DIR}" "${NEERA_SHARED_DIR}" "${LANDING_SHARED_DIR}" "${ADMIN_SHARED_DIR}" "${GAME_SHARED_DIR}" "${NOTE_SHARED_DIR}" "${PLEDGE_SHARED_DIR}"
 else
   log "Keeping runtime shared data directories under ${SHARED_ROOT}"
 fi
 
 log "Removing virtualenv trees"
-  rm -rf "${AUTH_VENV_DIR}" "${RADIO_VENV_DIR}" "${NEERA_VENV_DIR}" "${SEEKSAGE_VENV_DIR}" "${LANDING_VENV_DIR}" "${ADMIN_VENV_DIR}" "${NOTE_VENV_DIR}" "${PLEDGE_VENV_DIR}"
+  rm -rf "${AUTH_VENV_DIR}" "${RADIO_VENV_DIR}" "${NEERA_VENV_DIR}" "${LANDING_VENV_DIR}" "${ADMIN_VENV_DIR}" "${NOTE_VENV_DIR}" "${PLEDGE_VENV_DIR}"
 
 if [[ "${WITH_ENV}" -eq 1 ]]; then
   log "Removing env files under /etc/nightcraft"
@@ -113,7 +112,6 @@ if [[ "${WITH_ENV}" -eq 1 ]]; then
     /etc/nightcraft/service-auth.env \
     /etc/nightcraft/app-radio.env \
     /etc/nightcraft/app-neera.env \
-    /etc/nightcraft/app-seeksage.env \
     /etc/nightcraft/app-landing.env \
     /etc/nightcraft/app-admin.env \
     /etc/nightcraft/app-note.env
@@ -130,7 +128,6 @@ if [[ "${WITH_SYSTEMD}" -eq 1 ]]; then
     /etc/systemd/system/nightcraft-auth.service \
     /etc/systemd/system/nightcraft-radio.service \
     /etc/systemd/system/nightcraft-neera.service \
-    /etc/systemd/system/nightcraft-seeksage.service \
     /etc/systemd/system/nightcraft-landing.service \
     /etc/systemd/system/nightcraft-admin.service \
     /etc/systemd/system/nightcraft-game.service \

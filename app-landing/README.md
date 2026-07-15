@@ -6,7 +6,7 @@ Landing app for the multi-product portfolio hub.
 
 - Serves the root route (`/`) as a product launchpad
 - Uses a clean index-style homepage layout with search bar, philosophy panel, and product registry rows
-- Links to DevRadio, NEERA, SeekSage, NoteStack, central auth sign-in/sign-up, and admin
+- Links to DevRadio, NEERA, NoteStack, central auth sign-in/sign-up, and admin
 - Serves a central admin entry page at `/platform-admin` for cross-product admin navigation
 - Shows a welcome banner (`Hi, <username> welcome`) when the shared auth session is active
 - Keeps sign-in and sign-up entry points on the landing homepage
@@ -42,7 +42,6 @@ Default local URL: `http://127.0.0.1:5400`
 - `LANDING_ADMIN_URL` (default `/platform-admin`)
 - `LANDING_DEVRADIO_URL` (default `/devradio`)
 - `LANDING_NEERA_URL` (default `/neera`)
-- `LANDING_SEEKSAGE_URL` (default `/seeksage`)
 - `LANDING_NOTESTACK_URL` (default `/notestack`)
 - `LANDING_FOSSIL_URL` (default `/fossil`)
 - `LANDING_FOSSIL_GITHUB_URL` (default empty; FOSSil "View on GitHub"/Docs links fall back to `LANDING_FOSSIL_URL`)

@@ -39,12 +39,11 @@ Runtime folders like:
 | **landing**   | 5400 | app-landing        | none                        | nightcraft-landing.service  | `wsgi:application` |
 | **admin**     | 5500 | app-admin          | none                        | nightcraft-admin.service    | `wsgi:application` |
 | **NEERA**     | 5600 | app-artsy          | PostgreSQL (`DATABASE_URL`) | nightcraft-neera.service    | `run:app`          |
-| **seeksage**  | 5700 | `seeksage-backend` | PostgreSQL (`DATABASE_URL`) | nightcraft-seeksage.service | `run:app`          |
 | **game**      | 5800 | app-game           | none                        | nightcraft-game.service     | `wsgi:app`         |
 | **notestack** | 5900 | app-note           | none                        | nightcraft-note.service     | `wsgi:application` |
 
 - Landing & Game are standalone (no `After=` dependency on auth/PostgreSQL).
-- Auth, Radio, NEERA, Admin, SeekSage, and NoteStack declare `After=postgresql.service` and/or `After=nightcraft-auth.service` as needed.
+- Auth, Radio, NEERA, Admin, and NoteStack declare `After=postgresql.service` and/or `After=nightcraft-auth.service` as needed.
 - All use **Gunicorn** with 2–3 workers, bound to `127.0.0.1:<port>`.
 
 ### 4. PostgreSQL
@@ -52,12 +51,12 @@ Runtime folders like:
 - Two roles: `auth_app` / `radio_app` (each with a login password).
 - Two databases: `auth_db` (owned by `auth_app`) / `radio_db` (owned by `radio_app`).
 - Auth and radio are primary PostgreSQL-backed services.
-- NEERA and SeekSage are now PostgreSQL-backed via `DATABASE_URL`.
+- NEERA is now PostgreSQL-backed via `DATABASE_URL`.
 - Landing, admin, and game do not require PostgreSQL.
 - NoteStack is the remaining legacy exception with app-local SQLite internals (PostgreSQL migration is in progress).
 - Connectivity: `127.0.0.1:5432` via psycopg v3 (`postgresql+psycopg://`).
 - `setup-postgres.sh` preflights SQL templates for required `\set ON_ERROR_STOP on`, orphan backslash lines, and malformed `\ gexec` spacing before invoking psql.
-- If explicit DB role variables are omitted, `setup-postgres.sh` derives NEERA/SeekSage/NoteStack role names, passwords, and database names from the corresponding env files.
+- If explicit DB role variables are omitted, `setup-postgres.sh` derives NEERA/NoteStack role names, passwords, and database names from the corresponding env files.
 
 ### 5. Nginx Reverse Proxy
 
@@ -68,9 +67,8 @@ Runtime folders like:
   - `/auth/` → auth (5100)
   - `/admin/` → admin (5500)
   - `/devradio/` → radio (5333)
-  - `/neera/` → NEERA (5600)
-  - `/seeksage/` → seeksage (5700)
-  - `/game/` → game (5800)
+   - `/neera/` → NEERA (5600)
+   - `/game/` → game (5800)
   - `/notestack/` → notestack (5900)
 - Trailing-slash redirects exist for each path root.
 - Game uses lightweight client polling (no SSE); nginx `/game/` keeps `client_max_body_size 64m` for EmulatorJS ROM uploads.
@@ -97,16 +95,15 @@ The final status command used by `deploy-all.sh` and `status-all.sh` is intentio
 4. Each deploy script (deploy-auth.sh, etc.) does:
    - Uses the source checkout already present under `/nightcraft-source-code/<app>/`
    - Sets up virtualenv under `/runtime/venvs/<slug>/` + `pip install -r requirements.txt`
-   - Ensures runtime shared dirs exist under `/runtime/shared/<slug>/`
-   - Chowns runtime shared & venv dirs to `dev:dev`
-   - `deploy-seeksage.sh` builds the React Workspace SPA with `VITE_BASE_PATH=/seeksage/` when npm is available, otherwise Flask UI falls back to the dashboard
-   - `deploy-note.sh` requires `NOTESTACK_DB_BACKEND=postgres`; if `DATABASE_URL` is absent it derives the default NoteStack PostgreSQL URL and writes it to `/etc/nightcraft/app-note.env`; sync logs are kept under `/runtime/shared/app-note/localappdata/ABasu_apps/NoteStack/sync.log`
+    - Ensures runtime shared dirs exist under `/runtime/shared/<slug>/`
+    - Chowns runtime shared & venv dirs to `dev:dev`
+    - `deploy-note.sh` requires `NOTESTACK_DB_BACKEND=postgres`; if `DATABASE_URL` is absent it derives the default NoteStack PostgreSQL URL and writes it to `/etc/nightcraft/app-note.env`; sync logs are kept under `/runtime/shared/app-note/localappdata/ABasu_apps/NoteStack/sync.log`
    - `deploy-neera.sh` resyncs PostgreSQL provisioning from `/etc/nightcraft/app-neera.env` before running NEERA setup
 
 ### 7. Key OAuth/SSO Details
 
 - Auth service acts as **OIDC provider** at `http://31.70.85.89/auth`.
-- deploy-all.sh seeds OAuth clients (auth, NEERA, seeksage, game) and user accounts after code deployment.
+- deploy-all.sh seeds OAuth clients (auth, NEERA, game) and user accounts after code deployment.
 - NoteStack uses shared session bridging against `/auth/session/me`, so it does not require a separate OAuth client seed step.
 - Post-login `next` URLs are preserved for cross-app destinations. Absolute/open redirects are rejected, and `X-Forwarded-Prefix` is applied only to auth-internal paths such as `/oauth/`, `/login`, `/register`, `/logout`, `/session/`, and `/healthz`.
 

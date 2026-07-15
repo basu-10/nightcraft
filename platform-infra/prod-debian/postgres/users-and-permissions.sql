@@ -4,7 +4,6 @@
 --   auth_db_user, auth_db_password,
 --   radio_db_user, radio_db_password,
 --   neera_db_user, neera_db_password,
---   seeksage_db_user, seeksage_db_password,
 --   notestack_db_user, notestack_db_password,
 --   green_pledge_db_user, green_pledge_db_password
 SELECT format(
@@ -39,16 +38,6 @@ WHERE NOT EXISTS (
     ) \gexec
 SELECT format(
         'CREATE ROLE %I LOGIN PASSWORD %L',
-        :'seeksage_db_user',
-        :'seeksage_db_password'
-    )
-WHERE NOT EXISTS (
-        SELECT 1
-        FROM pg_roles
-        WHERE rolname = :'seeksage_db_user'
-    ) \gexec
-SELECT format(
-        'CREATE ROLE %I LOGIN PASSWORD %L',
         :'notestack_db_user',
         :'notestack_db_password'
     )
@@ -71,11 +60,6 @@ SELECT format(
         'ALTER ROLE %I WITH LOGIN PASSWORD %L',
         :'neera_db_user',
         :'neera_db_password'
-    ) \gexec
-SELECT format(
-        'ALTER ROLE %I WITH LOGIN PASSWORD %L',
-        :'seeksage_db_user',
-        :'seeksage_db_password'
     ) \gexec
 SELECT format(
         'ALTER ROLE %I WITH LOGIN PASSWORD %L',

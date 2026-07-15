@@ -157,7 +157,6 @@ main() {
   echo "    http://127.0.0.1:5400            (Landing page)"
   echo "    http://127.0.0.1:5500/admin      (Admin panel)"
   echo "    http://127.0.0.1:5600/neera      (Neera)"
-  echo "    http://127.0.0.1:5000/seeksage   (SeekSage)"
   echo "    http://127.0.0.1:5800/game       (Game)"
   echo "    http://127.0.0.1:5900/notestack  (NoteStack)"
   echo "    http://127.0.0.1:8000            (Mindmap)"

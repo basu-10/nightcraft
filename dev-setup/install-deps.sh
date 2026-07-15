@@ -19,9 +19,6 @@ setup_venv_and_deps "${RADIO_VENV}" "${RADIO_SRC_DIR}"
 log "  app-neera..."
 setup_venv_and_deps "${NEERA_VENV}" "${NEERA_SRC_DIR}"
 
-log "  app-seeksage (backend)..."
-setup_venv_and_deps "${SEEKSAGE_VENV}" "${SEEKSAGE_SRC_DIR}/backend"
-
 log "  app-landing..."
 setup_venv_and_deps "${LANDING_VENV}" "${LANDING_SRC_DIR}"
 

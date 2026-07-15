@@ -10,7 +10,6 @@ log "Starting all services in background"
 ensure_dir "${RADIO_SHARED}/instance"
 ensure_dir "${AUTH_SHARED}/keys"
 ensure_dir "${NEERA_SHARED}/instance/uploads/works"
-ensure_dir "${SEEKSAGE_SHARED}/instance"
 ensure_dir "${SHARED_DIR}/app-game"
 
 mkdir -p "$(dirname "${LOG_DIR}")"
@@ -86,7 +85,6 @@ start_service "landing" "app-landing"   "${LANDING_SRC_DIR}"           "${LANDIN
 start_service "admin"   "app-admin"     "${ADMIN_SRC_DIR}"             "${ADMIN_VENV}"  5500
 start_service "game"    "app-game"      "${GAME_SRC_DIR}"              "${GAME_VENV}"   5800
 start_service "note"    "app-note"      "${NOTE_SRC_DIR}"              "${NOTE_VENV}"   5900
-start_service "seeksage" "app-seeksage" "${SEEKSAGE_SRC_DIR}/backend"  "${SEEKSAGE_VENV}" 5000
 
 log "  mindmap (FastAPI)..."
 MINDMAP_PID=""

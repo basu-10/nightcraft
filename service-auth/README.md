@@ -74,7 +74,7 @@ Default URL: `http://localhost:5100`
 `service-auth` accepts a `next` query/form value from app login handoffs and preserves it after successful registration, login, or Google callback.
 The redirect target must be path-relative; absolute URLs and open redirects are rejected and replaced with the safe default target.
 When nginx sets `X-Forwarded-Prefix: /auth`, the prefix is applied only to auth-internal paths such as `/oauth/`, `/login`, `/register`, `/logout`, `/session/`, and `/healthz`.
-Cross-app destinations such as `/neera/me`, `/notestack/app`, or `/seeksage/ui` are left intact so the OIDC callback can return users to the original product route.
+Cross-app destinations such as `/neera/me` or `/notestack/app` are left intact so the OIDC callback can return users to the original product route.
 
 ## Migration Workflow (Flask-Migrate)
 

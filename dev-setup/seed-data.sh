@@ -62,14 +62,6 @@ safe_seed "OAuth client: neera-app" seed-dev \
   --client-secret "neera-app-client-secret-2026" \
   --redirect-uri "http://127.0.0.1:5600/neera/auth/callback"
 
-safe_seed "OAuth client: seeksage-app" seed-dev \
-  --username "devuser" \
-  --email "devuser@example.com" \
-  --password "devpass123" \
-  --client-id "seeksage-app" \
-  --client-secret "seeksage-app-client-secret-2026" \
-  --redirect-uri "http://127.0.0.1:5000/seeksage/auth/sso/callback"
-
 safe_seed "OAuth client: game-app" seed-dev \
   --username "devuser" \
   --email "devuser@example.com" \

@@ -19,7 +19,6 @@ exec 2>&1
 AUTH_SRC_DIR="${REPO_ROOT}/service-auth"
 RADIO_SRC_DIR="${REPO_ROOT}/app-radio"
 NEERA_SRC_DIR="${REPO_ROOT}/app-artsy"
-SEEKSAGE_SRC_DIR="${REPO_ROOT}/app-researchAgent/seeksage"
 LANDING_SRC_DIR="${REPO_ROOT}/app-landing"
 ADMIN_SRC_DIR="${REPO_ROOT}/app-admin"
 GAME_SRC_DIR="${REPO_ROOT}/app-game"
@@ -29,7 +28,6 @@ MINDMAP_SRC_DIR="${REPO_ROOT}/app-mindmap/backend"
 AUTH_VENV="${VENV_DIR}/service-auth"
 RADIO_VENV="${VENV_DIR}/dev-podcast-app"
 NEERA_VENV="${VENV_DIR}/app-artsy"
-SEEKSAGE_VENV="${VENV_DIR}/seeksage-backend"
 LANDING_VENV="${VENV_DIR}/app-landing"
 ADMIN_VENV="${VENV_DIR}/app-admin"
 GAME_VENV="${VENV_DIR}/app-game"
@@ -39,7 +37,6 @@ MINDMAP_VENV="${VENV_DIR}/app-mindmap"
 RADIO_SHARED="${SHARED_DIR}/dev-podcast-app"
 AUTH_SHARED="${SHARED_DIR}/service-auth"
 NEERA_SHARED="${SHARED_DIR}/app-artsy"
-SEEKSAGE_SHARED="${SHARED_DIR}/seeksage-backend"
 
 log()  { printf '[nightcraft-dev] %s\n' "$*"; }
 warn() { printf '[nightcraft-dev] WARN: %s\n' "$*" >&2; }

@@ -73,7 +73,7 @@ UsePAM yes
 | --- | --- | --- | --- |
 | [ ] | Enable a host firewall. | Only intended ports should be reachable. | `sudo ufw status verbose`. |
 | [ ] | Allow SSH and HTTP/HTTPS only from the internet. | Public server should not expose app/DB ports. | `sudo ufw status numbered`. |
-| [ ] | Deny direct access to Gunicorn ports `5100,5333,5400,5500,5600,5700,5800,5900`. | nginx should be the only public entrypoint. | `sudo ss -lntup`. |
+| [ ] | Deny direct access to Gunicorn ports `5100,5333,5400,5500,5600,5800,5900`. | nginx should be the only public entrypoint. | `sudo ss -lntup`. |
 | [ ] | Keep PostgreSQL bound to localhost only. | Database must not be internet-facing. | `sudo ss -lntup \| grep 5432`. |
 
 Example baseline firewall:
@@ -193,7 +193,6 @@ ProtectHome=yes
 ReadWritePaths=/runtime/shared/service-auth
 ReadWritePaths=/runtime/shared/dev-podcast-app
 ReadWritePaths=/runtime/shared/app-artsy
-ReadWritePaths=/runtime/shared/seeksage-backend
 ReadWritePaths=/runtime/shared/app-note
 RestrictSUIDSGID=yes
 LockPersonality=yes
@@ -294,7 +293,7 @@ sudo platform-infra/prod-debian/scripts/serverctl backup
 | [ ] | Replace all seed users with real production users. | Seed accounts are public knowledge from docs. | `seeduser`, `seedadmin`, and `devuser` should not be used as real admin accounts. |
 | [ ] | Rotate `SECRET_KEY`, OIDC keys, and OAuth client secrets. | Secret rotation reduces exposure window. | Review `/etc/nightcraft/service-auth.env` and app env files. |
 | [ ] | Use long random values for signing/session secrets. | Weak secrets allow forgery. | Generate with `openssl rand -hex 32` or stronger. |
-| [ ] | Revoke existing sessions after secret rotation. | Old sessions may remain valid. | Test logout/login across `/auth`, `/neera`, `/seeksage`, `/game`, `/notestack`. |
+| [ ] | Revoke existing sessions after secret rotation. | Old sessions may remain valid. | Test logout/login across `/auth`, `/neera`, `/game`, `/notestack`. |
 | [ ] | Review password reset rate limits. | Prevents abuse. | Manual reset attempts and auth service logs. |
 | [ ] | Confirm session cookies use `HttpOnly`, `Secure` after HTTPS, and `SameSite=Lax` or `Strict`. | Reduces session theft. | Browser devtools cookie inspection. |
 
@@ -302,7 +301,7 @@ sudo platform-infra/prod-debian/scripts/serverctl backup
 
 | Status | Check | Why | Verification |
 | --- | --- | --- | --- |
-| [ ] | Audit OAuth clients for radio, NEERA, SeekSage, and game. | Unused clients expand attack surface. | Auth service admin/database client table. |
+| [ ] | Audit OAuth clients for radio, NEERA, and game. | Unused clients expand attack surface. | Auth service admin/database client table. |
 | [ ] | Restrict redirect URIs to exact approved URLs. | Prevents code/token theft. | Auth service OAuth client config. |
 | [ ] | Rotate client secrets after any GitHub/deploy exposure. | Client secrets can impersonate apps. | App env files and auth DB. |
 | [ ] | Remove unused OAuth clients. | Least privilege. | Compare seeded clients to deployed apps. |
@@ -338,7 +337,7 @@ sudo platform-infra/prod-debian/scripts/serverctl backup
 | [ ] | Monitor service health. | Detects outages quickly. | `platform-infra/prod-debian/scripts/serverctl status`. |
 | [ ] | Monitor nginx access/error logs. | Finds attacks and broken routes. | `/var/log/nginx/access.log`, `/var/log/nginx/error.log`. |
 | [ ] | Monitor app logs by service. | Captures auth failures and app errors. | `sudo journalctl -u nightcraft-auth -n 100 --no-pager`. |
-| [ ] | Add uptime monitoring for public URLs. | External visibility into availability. | Test `/`, `/auth/`, `/admin/`, `/neera/`, `/seeksage/`, `/notestack/`. |
+| [ ] | Add uptime monitoring for public URLs. | External visibility into availability. | Test `/`, `/auth/`, `/admin/`, `/neera/`, `/notestack/`. |
 | [ ] | Alert on disk, memory, failed logins, and service restarts. | Prevents silent degradation. | Monitoring provider or cron-based checks. |
 
 Useful commands:
@@ -407,7 +406,6 @@ Smoke-test:
 /admin/
 /devradio/
 /neera/
-/seeksage/
 /notestack/
 ```
 

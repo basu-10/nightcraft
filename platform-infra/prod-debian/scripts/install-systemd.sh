@@ -12,7 +12,6 @@ fi
 install -m 0644 "${PROD_DEBIAN_DIR}/systemd/nightcraft-auth.service" /etc/systemd/system/nightcraft-auth.service
 install -m 0644 "${PROD_DEBIAN_DIR}/systemd/nightcraft-radio.service" /etc/systemd/system/nightcraft-radio.service
 install -m 0644 "${PROD_DEBIAN_DIR}/systemd/nightcraft-neera.service" /etc/systemd/system/nightcraft-neera.service
-install -m 0644 "${PROD_DEBIAN_DIR}/systemd/nightcraft-seeksage.service" /etc/systemd/system/nightcraft-seeksage.service
 install -m 0644 "${PROD_DEBIAN_DIR}/systemd/nightcraft-landing.service" /etc/systemd/system/nightcraft-landing.service
 install -m 0644 "${PROD_DEBIAN_DIR}/systemd/nightcraft-admin.service" /etc/systemd/system/nightcraft-admin.service
 install -m 0644 "${PROD_DEBIAN_DIR}/systemd/nightcraft-game.service" /etc/systemd/system/nightcraft-game.service
@@ -26,7 +25,6 @@ systemctl daemon-reload
 systemctl enable nightcraft-auth.service
 systemctl enable nightcraft-radio.service
 systemctl enable nightcraft-neera.service
-systemctl enable nightcraft-seeksage.service
 systemctl enable nightcraft-landing.service
 systemctl enable nightcraft-admin.service
 systemctl enable nightcraft-game.service

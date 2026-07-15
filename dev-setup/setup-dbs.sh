@@ -22,8 +22,6 @@ docker_cmd exec -i nightcraft-postgres psql -U postgres \
   -v radio_db_password="radio_app_db_2026_prod_secret" \
   -v neera_db_user="neera_app" \
   -v neera_db_password="neera_app_db_2026_prod_secret" \
-  -v seeksage_db_user="seeksage_app" \
-  -v seeksage_db_password="seeksage_app_db_2026_prod_secret" \
   -v notestack_db_user="notestack_app" \
   -v notestack_db_password="notestack_app_db_2026_prod_secret" \
   -v green_pledge_db_user="green_pledge_app" \
@@ -37,8 +35,6 @@ docker_cmd exec -i nightcraft-postgres psql -U postgres \
   -v radio_db_user="radio_app" \
   -v neera_db_name="neera_db" \
   -v neera_db_user="neera_app" \
-  -v seeksage_db_name="seeksage_db" \
-  -v seeksage_db_user="seeksage_app" \
   -v notestack_db_name="notestack_db" \
   -v notestack_db_user="notestack_app" \
   -v green_pledge_db_name="green_pledge_db" \
