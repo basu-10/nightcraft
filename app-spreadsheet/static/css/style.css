@@ -489,7 +489,7 @@ body {
     background-color: white;
     box-shadow: var(--txl-shadow-md);
     border-radius: 10px;
-    overflow: hidden;
+    overflow: clip;
     table-layout: fixed;
 }
 
