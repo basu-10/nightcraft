@@ -19,6 +19,7 @@ PROD_DEBIAN_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 source "${SCRIPT_DIR}/common.sh"
 
 require_cmd python3
+nc_ensure_yaml
 
 OUT_DIR="${OUT_DIR:-/etc/nginx/sites-include}"
 OUT_FILE="${OUT_DIR}/on-demand.conf"

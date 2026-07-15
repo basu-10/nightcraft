@@ -17,6 +17,7 @@ fi
 source "${SCRIPT_DIR}/common.sh"
 
 require_cmd python3
+nc_ensure_yaml
 
 ensure_dir /etc/nightcraft
 ensure_dir /etc/systemd/system/nightcraft-pledge.service.d

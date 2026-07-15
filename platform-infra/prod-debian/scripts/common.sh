@@ -138,3 +138,16 @@ nc_slugs() {
 nc_is_on_demand() {
   [[ "$(nc_policy "$1")" == "on_demand" ]]
 }
+
+# The runtime manager and products.py use the SYSTEM Python (/usr/bin/python3),
+# not an app venv, so PyYAML must be installed at the system level. The
+# bootstrap may skip setup-host.sh on an already-provisioned box, so ensure it
+# here (idempotent) wherever it is actually needed.
+nc_ensure_yaml() {
+  if ! python3 -c "import yaml" >/dev/null 2>&1; then
+    log "PyYAML missing on system Python; installing python3-yaml"
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update >/dev/null 2>&1 || true
+    apt-get install -y python3-yaml
+  fi
+}
