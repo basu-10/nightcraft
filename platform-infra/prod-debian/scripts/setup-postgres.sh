@@ -205,6 +205,8 @@ fi
 echo "[setup-postgres] NoteStack PostgreSQL provisioning enabled for ${NOTESTACK_DB_USER}@${NOTESTACK_DB_NAME}."
 
 NEERA_DB_NAME="${NEERA_DB_NAME:-neera_db}"
+
+sudo -u postgres psql \
   -v auth_db_user="${AUTH_DB_USER}" \
   -v auth_db_password="${AUTH_DB_PASSWORD}" \
   -v radio_db_user="${RADIO_DB_USER}" \
