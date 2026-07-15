@@ -1,0 +1,103 @@
+# Nightcraft product registry — authoritative source for runtime policy.
+#
+# Only `green` (Green Pledge) is `on_demand` for now. Everything else stays
+# `always_on` and is unaffected. To migrate another product to on_demand later,
+# give it a `public_paths` entry and flip its `runtime.policy`.
+#
+# Schema:
+#   products.<slug>:
+#     display_name: Human label
+#     slug:          short id (matches manifest helpers / unit suffixes)
+#     public_paths:  [optional] nginx prefixes served by this product
+#     runtime:
+#       policy:       always_on | on_demand
+#       service:      systemd unit file name
+#       port:         localhost port the app binds
+#       upstream:     nginx upstream{} name (defined in nightcraft.conf)
+#       workers:      gunicorn worker count (informational; the .service file is authoritative)
+#       idle_timeout: [on_demand only] e.g. 15m / 1h / 1d
+
+products:
+  auth:
+    display_name: Authentication
+    slug: auth
+    runtime:
+      policy: always_on
+      service: nightcraft-auth.service
+      port: 5100
+      upstream: service_auth_upstream
+      workers: 3
+  green:
+    display_name: Green Pledge
+    slug: green
+    public_paths: [/pledge, /green-pledge]
+    runtime:
+      policy: on_demand
+      service: nightcraft-pledge.service
+      port: 5300
+      upstream: app_pledge_upstream
+      workers: 3
+      idle_timeout: 15m
+  radio:
+    display_name: DevRadio
+    slug: radio
+    runtime:
+      policy: always_on
+      service: nightcraft-radio.service
+      port: 5333
+      upstream: app_radio_upstream
+      workers: 1
+  neera:
+    display_name: Artsy
+    slug: neera
+    runtime:
+      policy: always_on
+      service: nightcraft-neera.service
+      port: 5600
+      upstream: app_neera_upstream
+      workers: 2
+  landing:
+    display_name: Landing
+    slug: landing
+    runtime:
+      policy: always_on
+      service: nightcraft-landing.service
+      port: 5400
+      upstream: app_landing_upstream
+      workers: 2
+  admin:
+    display_name: Admin
+    slug: admin
+    runtime:
+      policy: always_on
+      service: nightcraft-admin.service
+      port: 5500
+      upstream: app_admin_upstream
+      workers: 2
+  game:
+    display_name: Game
+    slug: game
+    runtime:
+      policy: always_on
+      service: nightcraft-game.service
+      port: 5800
+      upstream: app_game_upstream
+      workers: 2
+  note:
+    display_name: NoteStack
+    slug: note
+    runtime:
+      policy: always_on
+      service: nightcraft-note.service
+      port: 5900
+      upstream: app_note_upstream
+      workers: 2
+  tinyxl:
+    display_name: TinyXL
+    slug: tinyxl
+    runtime:
+      policy: always_on
+      service: nightcraft-tinyxl.service
+      port: 5200
+      upstream: app_tinyxl_upstream
+      workers: 2

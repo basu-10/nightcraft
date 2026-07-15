@@ -98,3 +98,43 @@ chown_tree() {
     chown -R "${APP_USER}:${APP_GROUP}" "${target_dir}"
   fi
 }
+
+# --- Product manifest helpers (source of truth: products.yml) ---
+# Reads via scripts/products.py so bash and the runtime manager share one source.
+
+PRODUCTS_PY="${SCRIPT_DIR}/products.py"
+
+nc_products_manifest() {
+  # Prefer an explicit env override, then the deployed path, then repo copy.
+  if [[ -n "${NC_PRODUCTS_YML:-}" ]]; then
+    echo "${NC_PRODUCTS_YML}"
+  elif [[ -f /etc/nightcraft/products.yml ]]; then
+    echo /etc/nightcraft/products.yml
+  else
+    echo "${PROD_DEBIAN_DIR}/products.yml"
+  fi
+}
+
+nc_field() {
+  local slug="$1" field="$2"
+  python3 "${PRODUCTS_PY}" --manifest "$(nc_products_manifest)" get "${slug}" "${field}"
+}
+
+nc_policy()      { nc_field "$1" runtime.policy; }
+nc_service()     { nc_field "$1" runtime.service; }
+nc_port()        { nc_field "$1" runtime.port; }
+nc_workers()     { nc_field "$1" runtime.workers; }
+nc_upstream()    { nc_field "$1" runtime.upstream; }
+nc_idle()        { nc_field "$1" runtime.idle_timeout; }
+
+nc_public_paths() {
+  python3 "${PRODUCTS_PY}" --manifest "$(nc_products_manifest)" public_paths "$1"
+}
+
+nc_slugs() {
+  python3 "${PRODUCTS_PY}" --manifest "$(nc_products_manifest)" slugs "$@"
+}
+
+nc_is_on_demand() {
+  [[ "$(nc_policy "$1")" == "on_demand" ]]
+}

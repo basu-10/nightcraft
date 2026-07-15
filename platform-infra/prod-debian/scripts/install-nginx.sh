@@ -16,6 +16,9 @@ if [[ -L /etc/nginx/sites-enabled/default ]]; then
   rm -f /etc/nginx/sites-enabled/default
 fi
 
+# Generate on-demand product blocks (Green Pledge etc.) before validating.
+"${SCRIPT_DIR}/gen-nginx-on-demand.sh"
+
 nginx -t
 systemctl reload nginx
 

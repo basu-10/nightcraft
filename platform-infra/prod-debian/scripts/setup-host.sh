@@ -20,6 +20,7 @@ apt-get install -y \
   python3 \
   python3-venv \
   python3-dev \
+  python3-yaml \
   build-essential \
   nginx \
   postgresql \
