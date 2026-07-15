@@ -50,12 +50,14 @@ products:
   neera:
     display_name: Artsy
     slug: neera
+    public_paths: [/neera]
     runtime:
-      policy: always_on
+      policy: on_demand
       service: nightcraft-neera.service
       port: 5600
       upstream: app_neera_upstream
       workers: 2
+      idle_timeout: 30m
   landing:
     display_name: Landing
     slug: landing

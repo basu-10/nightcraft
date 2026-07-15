@@ -49,6 +49,8 @@ EOF
     log "  -> on_demand: installed Restart=no drop-in + disabled (manager controls it)"
   else
     systemctl enable "${service}"
+    # Remove any stale on_demand drop-in so a reverted product auto-restarts.
+    rm -f "/etc/systemd/system/${service}.d/nightcraft-on-demand.conf"
     log "  -> always_on: enabled"
   fi
 done < <(nc_slugs)
