@@ -10,6 +10,17 @@ from .models import Asset, ChatSession
 
 bp = Blueprint("main", __name__, url_prefix="/alfred")
 
+# Root route (no prefix). The on-demand runtime manager probes `GET /` to
+# decide when the service is ready; without this the probe gets a 404 and the
+# branded loader page polls forever. It also serves as a friendly landing that
+# hands off to the /alfred marketing page.
+_root_bp = Blueprint("main_root", __name__)
+
+
+@_root_bp.route("/")
+def root():
+    return redirect(url_for("main.marketing"))
+
 
 @bp.route("/")
 def marketing():
