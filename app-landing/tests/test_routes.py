@@ -138,7 +138,7 @@ def test_experimental_route_renders_sections_and_apps():
     assert "TinyXL" in html
     assert "TexTrace" in html
     assert "Lazy Games" in html
-    assert "ScrapBook" in html
+    assert "ScratchPad" in html
     assert "NoteFlow" in html
     assert "QuickPost" in html
     assert "FOSSil" in html

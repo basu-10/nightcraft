@@ -343,7 +343,7 @@ def experimental_apps():
                     "stack": "Planned",
                 },
                 {
-                    "name": "ScrapBook",
+                    "name": "ScratchPad",
                     "tagline": "Mind maps that grow with your ideas.",
                     "description": "A mindmap app for visually organizing thoughts, notes, and the connections between them.",
                     "url": current_app.config["SCRATCHPAD_URL"],

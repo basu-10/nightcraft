@@ -89,6 +89,9 @@ copy_env "${ENV_TARGET_DIR}/app-note.env" 1 \
 copy_env "${ENV_TARGET_DIR}/app-pledge.env" 1 \
   "${ENV_SRC_DIR}/app-pledge.env" \
   "${ENV_SRC_DIR}/pledge.env.example"
+copy_env "${ENV_TARGET_DIR}/app-alfred.env" 1 \
+  "${ENV_SRC_DIR}/app-alfred.env" \
+  "${ENV_SRC_DIR}/alfred.env.example"
 copy_env "${ENV_TARGET_DIR}/tinyxl.env" 1 \
   "${ENV_SRC_DIR}/tinyxl.env" \
   "${ENV_SRC_DIR}/tinyxl.env.example"
