@@ -207,6 +207,18 @@ QUICKPOSTS_ENV_FILE="${QUICKPOSTS_ENV_FILE:-/etc/nightcraft/app-quickposts.env}"
 NOTEFLOW_ENV_FILE="${NOTEFLOW_ENV_FILE:-/etc/nightcraft/app-noteflow.env}"
 SCRATCHPAD_ENV_FILE="${SCRATCHPAD_ENV_FILE:-/etc/nightcraft/app-scratchpad.env}"
 
+QUICKPOSTS_DB_NAME="${QUICKPOSTS_DB_NAME:-quickposts_db}"
+QUICKPOSTS_DB_USER="${QUICKPOSTS_DB_USER:-quickposts_app}"
+QUICKPOSTS_DB_PASSWORD="${QUICKPOSTS_DB_PASSWORD:-quickposts_app_db_2026_prod_secret}"
+
+NOTEFLOW_DB_NAME="${NOTEFLOW_DB_NAME:-noteflow_db}"
+NOTEFLOW_DB_USER="${NOTEFLOW_DB_USER:-noteflow_app}"
+NOTEFLOW_DB_PASSWORD="${NOTEFLOW_DB_PASSWORD:-noteflow_app_db_2026_prod_secret}"
+
+SCRATCHPAD_DB_NAME="${SCRATCHPAD_DB_NAME:-scratchpad_db}"
+SCRATCHPAD_DB_USER="${SCRATCHPAD_DB_USER:-scratchpad_app}"
+SCRATCHPAD_DB_PASSWORD="${SCRATCHPAD_DB_PASSWORD:-scratchpad_app_db_2026_prod_secret}"
+
 if [[ -z "${QUICKPOSTS_DB_USER}" || -z "${QUICKPOSTS_DB_NAME}" || -z "${QUICKPOSTS_DB_PASSWORD}" ]]; then
   if quickposts_url="$(_extract_database_url_from_env_file "${QUICKPOSTS_ENV_FILE}" 2>/dev/null)"; then
     _set_db_values_from_url "${quickposts_url}" "QUICKPOSTS" || true
@@ -232,18 +244,6 @@ NOTESTACK_DB_PASSWORD="${NOTESTACK_DB_PASSWORD:-notestack_app_db_2026_prod_secre
 ALFRED_DB_NAME="${ALFRED_DB_NAME:-alfred_db}"
 ALFRED_DB_USER="${ALFRED_DB_USER:-alfred_app}"
 ALFRED_DB_PASSWORD="${ALFRED_DB_PASSWORD:-alfred_app_db_2026_prod_secret}"
-
-QUICKPOSTS_DB_NAME="${QUICKPOSTS_DB_NAME:-quickposts_db}"
-QUICKPOSTS_DB_USER="${QUICKPOSTS_DB_USER:-quickposts_app}"
-QUICKPOSTS_DB_PASSWORD="${QUICKPOSTS_DB_PASSWORD:-quickposts_app_db_2026_prod_secret}"
-
-NOTEFLOW_DB_NAME="${NOTEFLOW_DB_NAME:-noteflow_db}"
-NOTEFLOW_DB_USER="${NOTEFLOW_DB_USER:-noteflow_app}"
-NOTEFLOW_DB_PASSWORD="${NOTEFLOW_DB_PASSWORD:-noteflow_app_db_2026_prod_secret}"
-
-SCRATCHPAD_DB_NAME="${SCRATCHPAD_DB_NAME:-scratchpad_db}"
-SCRATCHPAD_DB_USER="${SCRATCHPAD_DB_USER:-scratchpad_app}"
-SCRATCHPAD_DB_PASSWORD="${SCRATCHPAD_DB_PASSWORD:-scratchpad_app_db_2026_prod_secret}"
 
 if [[ -z "${ALFRED_DB_PASSWORD}" ]]; then
   echo "[setup-postgres] Alfred PostgreSQL password is empty." >&2
