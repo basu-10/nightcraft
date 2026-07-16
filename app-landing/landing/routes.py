@@ -200,7 +200,7 @@ def home():
 
 @main_bp.get("/alfred")
 def alfred_home():
-    return render_template("alfred.html")
+    return redirect(current_app.config["ALFRED_URL"])
 
 
 @main_bp.get("/texttrace")

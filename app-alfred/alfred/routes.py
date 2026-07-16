@@ -12,6 +12,18 @@ bp = Blueprint("main", __name__, url_prefix="/alfred")
 
 
 @bp.route("/")
+def marketing():
+    """Public landing page for the online Alfred workspace.
+
+    If the user is already signed in, send them straight to the app.
+    """
+    user = get_current_user()
+    if user.is_authenticated:
+        return redirect(url_for("main.home"))
+    return render_template("alfred/marketing.html")
+
+
+@bp.route("/home")
 @auth_required
 def home():
     user = get_current_user()
