@@ -76,6 +76,18 @@ products:
       port: 5500
       upstream: app_admin_upstream
       workers: 2
+  alfred:
+    display_name: Alfred
+    slug: alfred
+    public_paths: [/alfred]
+    runtime:
+      policy: on_demand
+      service: nightcraft-alfred.service
+      port: 5950
+      upstream: app_alfred_upstream
+      workers: 2
+      idle_timeout: 30m
+      workers: 2
   game:
     display_name: Game
     slug: game

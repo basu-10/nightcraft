@@ -1,0 +1,19 @@
+# Local development image for Alfred (app-alfred).
+# Build context is the repo root (..).
+FROM python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY app-alfred/requirements.txt /tmp/alfred-requirements.txt
+RUN pip install --upgrade pip wheel setuptools \
+    && pip install -r /tmp/alfred-requirements.txt gunicorn
+
+# The repo is mounted as a volume at /app, so no app copy is needed at build time.
+CMD ["gunicorn", "--workers", "2", "--bind", "0.0.0.0:5950", "run:app"]

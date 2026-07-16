@@ -19,12 +19,14 @@ source "${SCRIPT_DIR}/common.sh"
 "${SCRIPT_DIR}/deploy-game.sh"
 "${SCRIPT_DIR}/deploy-note.sh"
 "${SCRIPT_DIR}/deploy-pledge.sh"
+"${SCRIPT_DIR}/deploy-alfred.sh"
 "${SCRIPT_DIR}/deploy-tinyxl.sh"
 "${SCRIPT_DIR}/seed-auth-users.sh"
 "${SCRIPT_DIR}/seed-auth-client.sh"
 "${SCRIPT_DIR}/seed-neera-client.sh"
 "${SCRIPT_DIR}/seed-game-client.sh"
 "${SCRIPT_DIR}/seed-pledge-client.sh"
+"${SCRIPT_DIR}/seed-alfred-client.sh"
 
 # (a) Push the latest manifest so the manager picks up policy changes.
 install -m 0644 "${PROD_DEBIAN_DIR}/products.yml" /etc/nightcraft/products.yml

@@ -192,9 +192,28 @@ if [[ -z "${PLEDGE_DB_USER}" || -z "${PLEDGE_DB_NAME}" || -z "${PLEDGE_DB_PASSWO
   fi
 fi
 
+ALFRED_ENV_FILE="${ALFRED_ENV_FILE:-/etc/nightcraft/app-alfred.env}"
+if [[ -z "${ALFRED_DB_USER}" || -z "${ALFRED_DB_NAME}" || -z "${ALFRED_DB_PASSWORD}" ]]; then
+  if alfred_url="$(_extract_database_url_from_env_file "${ALFRED_ENV_FILE}" 2>/dev/null)"; then
+    _set_db_values_from_url "${alfred_url}" "ALFRED" || true
+  fi
+fi
+
 NOTESTACK_DB_NAME="${NOTESTACK_DB_NAME:-notestack_db}"
 NOTESTACK_DB_USER="${NOTESTACK_DB_USER:-notestack_app}"
 NOTESTACK_DB_PASSWORD="${NOTESTACK_DB_PASSWORD:-notestack_app_db_2026_prod_secret}"
+
+ALFRED_DB_NAME="${ALFRED_DB_NAME:-alfred_db}"
+ALFRED_DB_USER="${ALFRED_DB_USER:-alfred_app}"
+ALFRED_DB_PASSWORD="${ALFRED_DB_PASSWORD:-alfred_app_db_2026_prod_secret}"
+
+if [[ -z "${ALFRED_DB_PASSWORD}" ]]; then
+  echo "[setup-postgres] Alfred PostgreSQL password is empty." >&2
+  echo "[setup-postgres] Set DATABASE_URL in ${ALFRED_ENV_FILE} with credentials or pass ALFRED_DB_PASSWORD." >&2
+  exit 1
+fi
+
+echo "[setup-postgres] Alfred PostgreSQL provisioning enabled for ${ALFRED_DB_USER}@${ALFRED_DB_NAME}."
 
 if [[ -z "${NOTESTACK_DB_PASSWORD}" ]]; then
   echo "[setup-postgres] NoteStack PostgreSQL password is empty." >&2
@@ -217,6 +236,8 @@ sudo -u postgres psql \
   -v notestack_db_password="${NOTESTACK_DB_PASSWORD}" \
   -v green_pledge_db_user="${PLEDGE_DB_USER}" \
   -v green_pledge_db_password="${PLEDGE_DB_PASSWORD}" \
+  -v alfred_db_user="${ALFRED_DB_USER}" \
+  -v alfred_db_password="${ALFRED_DB_PASSWORD}" \
   < "${USERS_SQL}"
 
 sudo -u postgres psql \
@@ -230,6 +251,8 @@ sudo -u postgres psql \
   -v notestack_db_user="${NOTESTACK_DB_USER}" \
   -v green_pledge_db_name="${PLEDGE_DB_NAME}" \
   -v green_pledge_db_user="${PLEDGE_DB_USER}" \
+  -v alfred_db_name="${ALFRED_DB_NAME}" \
+  -v alfred_db_user="${ALFRED_DB_USER}" \
   < "${DBS_SQL}"
 
 echo "PostgreSQL roles and databases are ready."
