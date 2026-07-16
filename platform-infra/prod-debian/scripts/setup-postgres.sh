@@ -192,6 +192,10 @@ if [[ -z "${PLEDGE_DB_USER}" || -z "${PLEDGE_DB_NAME}" || -z "${PLEDGE_DB_PASSWO
   fi
 fi
 
+ALFRED_DB_NAME="${ALFRED_DB_NAME:-alfred_db}"
+ALFRED_DB_USER="${ALFRED_DB_USER:-alfred_app}"
+ALFRED_DB_PASSWORD="${ALFRED_DB_PASSWORD:-alfred_app_db_2026_prod_secret}"
+
 ALFRED_ENV_FILE="${ALFRED_ENV_FILE:-/etc/nightcraft/app-alfred.env}"
 if [[ -z "${ALFRED_DB_USER}" || -z "${ALFRED_DB_NAME}" || -z "${ALFRED_DB_PASSWORD}" ]]; then
   if alfred_url="$(_extract_database_url_from_env_file "${ALFRED_ENV_FILE}" 2>/dev/null)"; then
@@ -202,10 +206,6 @@ fi
 NOTESTACK_DB_NAME="${NOTESTACK_DB_NAME:-notestack_db}"
 NOTESTACK_DB_USER="${NOTESTACK_DB_USER:-notestack_app}"
 NOTESTACK_DB_PASSWORD="${NOTESTACK_DB_PASSWORD:-notestack_app_db_2026_prod_secret}"
-
-ALFRED_DB_NAME="${ALFRED_DB_NAME:-alfred_db}"
-ALFRED_DB_USER="${ALFRED_DB_USER:-alfred_app}"
-ALFRED_DB_PASSWORD="${ALFRED_DB_PASSWORD:-alfred_app_db_2026_prod_secret}"
 
 if [[ -z "${ALFRED_DB_PASSWORD}" ]]; then
   echo "[setup-postgres] Alfred PostgreSQL password is empty." >&2
