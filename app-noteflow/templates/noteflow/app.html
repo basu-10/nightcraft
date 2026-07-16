@@ -796,6 +796,9 @@
     <button class="header-btn" onclick="exportNotebook()"><i class="fas fa-download"></i> Export</button>
   </div>
   <div class="header-right">
+    <form method="post" action="/noteflow/auth/logout?next=/noteflow" style="display:inline;margin-right:8px">
+      <button class="header-btn" type="submit" title="Log out of all apps"><i class="fas fa-sign-out-alt"></i> Log out</button>
+    </form>
     <span class="save-indicator" id="saveIndicator"><i class="fas fa-circle" style="font-size:6px;vertical-align:middle;margin-right:4px"></i>Unsaved</span>
     <div class="kernel-status">
       <span class="kernel-dot"></span>
@@ -839,7 +842,7 @@
   let clipboard = null;
   let execCounter = 0;
 
-  const initialCells = [
+  const initialCells = window.__ncInitialCells || [
     {
       type: 'markdown',
       source: '# Customer Churn Analysis\n\nThis notebook explores the **customer churn dataset** to identify patterns and build a predictive model. We will:\n\n- Load and inspect the data\n- Perform exploratory data analysis\n- Engineer features\n- Train a baseline classifier',
@@ -893,6 +896,7 @@
   ];
 
   let cells = [];
+  let currentNotebookId = null;
 
   function init() {
     initialCells.forEach(c => {
@@ -909,6 +913,7 @@
     });
     renderAll();
     if (cells.length > 0) setActiveCell(cells[0].id);
+    ncLoad();
   }
 
   function renderAll() {
@@ -1384,6 +1389,59 @@
       indicator.innerHTML = '<i class="fas fa-circle" style="font-size:6px;vertical-align:middle;margin-right:4px"></i>Saved';
     }, 2000);
     showToast('Notebook saved', 'success');
+    ncSaveAsync();
+  }
+
+  async function ncSaveAsync() {
+    try {
+      const payload = {
+        title: document.getElementById('notebookTitle').value || 'Untitled',
+        cells_json: JSON.stringify(cells.map(c => ({
+          type: c.type,
+          source: c.source,
+          comments: c.comments,
+          output: c.output,
+          execCount: c.execCount
+        })))
+      };
+      const url = currentNotebookId
+        ? '/api/notebook/' + currentNotebookId
+        : '/api/notebook';
+      const method = currentNotebookId ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      currentNotebookId = data.id;
+    } catch (e) { /* best-effort persistence */ }
+  }
+
+  async function ncLoad() {
+    try {
+      const res = await fetch('/api/notebook');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.items || !data.items.length) return;
+      const it = data.items[0];
+      currentNotebookId = it.id;
+      const parsed = JSON.parse(it.cells_json || '[]');
+      cells = parsed.map(c => ({
+        id: cellIdCounter++,
+        type: c.type || 'code',
+        source: c.source || '',
+        comments: c.comments || [],
+        output: c.output || null,
+        execCount: c.execCount || null,
+        outputVisible: !!c.output
+      }));
+      const titleEl = document.getElementById('notebookTitle');
+      if (titleEl) titleEl.value = it.title || 'Untitled';
+      renderAll();
+      if (cells.length > 0) setActiveCell(cells[0].id);
+    } catch (e) { /* best-effort load */ }
   }
 
   function markUnsaved() {

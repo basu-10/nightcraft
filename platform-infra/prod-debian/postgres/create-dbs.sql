@@ -6,7 +6,10 @@
 --   neera_db_name, neera_db_user,
 --   notestack_db_name, notestack_db_user,
 --   green_pledge_db_name, green_pledge_db_user,
---   alfred_db_name, alfred_db_user
+--   alfred_db_name, alfred_db_user,
+--   quickposts_db_name, quickposts_db_user,
+--   noteflow_db_name, noteflow_db_user,
+--   scratchpad_db_name, scratchpad_db_user
 SELECT format(
         'CREATE DATABASE %I OWNER %I ENCODING ''UTF8''',
         :'auth_db_name',
@@ -96,4 +99,49 @@ SELECT format(
         'GRANT ALL PRIVILEGES ON DATABASE %I TO %I',
         :'green_pledge_db_name',
         :'green_pledge_db_user'
+    ) \gexec
+SELECT format(
+        'CREATE DATABASE %I OWNER %I ENCODING ''UTF8''',
+        :'quickposts_db_name',
+        :'quickposts_db_user'
+    )
+WHERE NOT EXISTS (
+        SELECT 1
+        FROM pg_database
+        WHERE datname = :'quickposts_db_name'
+    ) \gexec
+SELECT format(
+        'GRANT ALL PRIVILEGES ON DATABASE %I TO %I',
+        :'quickposts_db_name',
+        :'quickposts_db_user'
+    ) \gexec
+SELECT format(
+        'CREATE DATABASE %I OWNER %I ENCODING ''UTF8''',
+        :'noteflow_db_name',
+        :'noteflow_db_user'
+    )
+WHERE NOT EXISTS (
+        SELECT 1
+        FROM pg_database
+        WHERE datname = :'noteflow_db_name'
+    ) \gexec
+SELECT format(
+        'GRANT ALL PRIVILEGES ON DATABASE %I TO %I',
+        :'noteflow_db_name',
+        :'noteflow_db_user'
+    ) \gexec
+SELECT format(
+        'CREATE DATABASE %I OWNER %I ENCODING ''UTF8''',
+        :'scratchpad_db_name',
+        :'scratchpad_db_user'
+    )
+WHERE NOT EXISTS (
+        SELECT 1
+        FROM pg_database
+        WHERE datname = :'scratchpad_db_name'
+    ) \gexec
+SELECT format(
+        'GRANT ALL PRIVILEGES ON DATABASE %I TO %I',
+        :'scratchpad_db_name',
+        :'scratchpad_db_user'
     ) \gexec

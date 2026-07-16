@@ -1,0 +1,19 @@
+[Unit]
+Description=Nightcraft Noteflow App (Gunicorn)
+After=network.target postgresql.service nightcraft-auth.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=dev
+Group=dev
+WorkingDirectory=/nightcraft-source-code/app-noteflow
+EnvironmentFile=/etc/nightcraft/app-noteflow.env
+ExecStart=/runtime/venvs/app-noteflow/bin/python -m gunicorn   --workers 2   --bind 127.0.0.1:5320   --access-logfile -   --error-logfile -   run:app
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

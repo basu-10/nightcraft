@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuickPosts — Text-to-Post Editor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Lato', sans-serif; }
+    .font-display { font-family: 'Cinzel', serif; }
+  </style>
+</head>
+<body class="bg-stone-950 text-stone-200 min-h-screen">
+  <header class="flex items-center justify-between px-6 py-4 border-b border-stone-800">
+    <div class="flex items-center gap-3">
+      <div class="font-display text-xl font-semibold text-amber-300">QuickPosts</div>
+      <input id="postTitle" class="bg-stone-900 border border-stone-700 rounded px-3 py-1 text-sm" placeholder="Untitled" value="Untitled">
+    </div>
+    <div class="flex items-center gap-3">
+      <select id="postLayout" class="bg-stone-900 border border-stone-700 rounded px-2 py-1 text-sm">
+        <option value="post">Post</option>
+        <option value="slides">Slides</option>
+        <option value="edits">Edits</option>
+        <option value="collages">Collages</option>
+      </select>
+      <span id="saveBadge" class="text-xs text-stone-500">Unsaved</span>
+      <button onclick="ncSave()" class="bg-amber-500 hover:bg-amber-400 text-stone-900 font-semibold rounded px-3 py-1 text-sm">Save</button>
+      <form method="post" action="/quickposts/auth/logout?next=/quickposts" style="display:inline;">
+        <button type="submit" class="border border-stone-700 rounded px-3 py-1 text-sm hover:bg-stone-800">Log out</button>
+      </form>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-6 py-8">
+    <p class="text-stone-400 text-sm mb-4">Draft your text below. It is saved privately to your account and restored the next time you open QuickPosts.</p>
+    <textarea id="postBody" class="w-full h-[60vh] bg-stone-900 border border-stone-700 rounded p-4 text-stone-100 text-base leading-relaxed focus:outline-none focus:border-amber-500" placeholder="Paste or write the text you want to turn into posts, slides, or edits..."></textarea>
+  </main>
+
+  <script>
+    let currentPostId = null;
+
+    async function ncSave() {
+      const payload = {
+        title: document.getElementById('postTitle').value || 'Untitled',
+        body: document.getElementById('postBody').value,
+        layout: document.getElementById('postLayout').value
+      };
+      const url = currentPostId ? '/api/quickpost/' + currentPostId : '/api/quickpost';
+      const method = currentPostId ? 'PUT' : 'POST';
+      const badge = document.getElementById('saveBadge');
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) { badge.textContent = 'Save failed'; return; }
+        const data = await res.json();
+        currentPostId = data.id;
+        badge.textContent = 'Saved';
+      } catch (e) {
+        badge.textContent = 'Save failed';
+      }
+    }
+
+    async function ncLoad() {
+      try {
+        const res = await fetch('/api/quickpost');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.items || !data.items.length) return;
+        const it = data.items[0];
+        currentPostId = it.id;
+        document.getElementById('postTitle').value = it.title || 'Untitled';
+        document.getElementById('postBody').value = it.body || '';
+        if (it.layout) document.getElementById('postLayout').value = it.layout;
+        document.getElementById('saveBadge').textContent = 'Saved';
+      } catch (e) { /* best-effort load */ }
+    }
+
+    document.getElementById('postBody').addEventListener('input', () => {
+      document.getElementById('saveBadge').textContent = 'Unsaved';
+    });
+
+    ncLoad();
+  </script>
+</body>
+</html>

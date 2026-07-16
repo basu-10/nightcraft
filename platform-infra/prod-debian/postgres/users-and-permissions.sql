@@ -6,7 +6,10 @@
 --   neera_db_user, neera_db_password,
 --   notestack_db_user, notestack_db_password,
 --   green_pledge_db_user, green_pledge_db_password,
---   alfred_db_user, alfred_db_password
+--   alfred_db_user, alfred_db_password,
+--   quickposts_db_user, quickposts_db_password,
+--   noteflow_db_user, noteflow_db_password,
+--   scratchpad_db_user, scratchpad_db_password
 SELECT format(
         'CREATE ROLE %I LOGIN PASSWORD %L',
         :'auth_db_user',
@@ -96,4 +99,49 @@ SELECT format(
         'ALTER ROLE %I WITH LOGIN PASSWORD %L',
         :'green_pledge_db_user',
         :'green_pledge_db_password'
+    ) \gexec
+SELECT format(
+        'CREATE ROLE %I LOGIN PASSWORD %L',
+        :'quickposts_db_user',
+        :'quickposts_db_password'
+    )
+WHERE NOT EXISTS (
+        SELECT 1
+        FROM pg_roles
+        WHERE rolname = :'quickposts_db_user'
+    ) \gexec
+SELECT format(
+        'ALTER ROLE %I WITH LOGIN PASSWORD %L',
+        :'quickposts_db_user',
+        :'quickposts_db_password'
+    ) \gexec
+SELECT format(
+        'CREATE ROLE %I LOGIN PASSWORD %L',
+        :'noteflow_db_user',
+        :'noteflow_db_password'
+    )
+WHERE NOT EXISTS (
+        SELECT 1
+        FROM pg_roles
+        WHERE rolname = :'noteflow_db_user'
+    ) \gexec
+SELECT format(
+        'ALTER ROLE %I WITH LOGIN PASSWORD %L',
+        :'noteflow_db_user',
+        :'noteflow_db_password'
+    ) \gexec
+SELECT format(
+        'CREATE ROLE %I LOGIN PASSWORD %L',
+        :'scratchpad_db_user',
+        :'scratchpad_db_password'
+    )
+WHERE NOT EXISTS (
+        SELECT 1
+        FROM pg_roles
+        WHERE rolname = :'scratchpad_db_user'
+    ) \gexec
+SELECT format(
+        'ALTER ROLE %I WITH LOGIN PASSWORD %L',
+        :'scratchpad_db_user',
+        :'scratchpad_db_password'
     ) \gexec

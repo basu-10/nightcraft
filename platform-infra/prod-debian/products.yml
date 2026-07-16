@@ -115,3 +115,36 @@ products:
       port: 5200
       upstream: app_tinyxl_upstream
       workers: 2
+  quickposts:
+    display_name: QuickPosts
+    slug: quickposts
+    public_paths: [/quickposts]
+    runtime:
+      policy: on_demand
+      service: nightcraft-quickposts.service
+      port: 5310
+      upstream: app_quickposts_upstream
+      workers: 2
+      idle_timeout: 15m
+  noteflow:
+    display_name: NoteFlow
+    slug: noteflow
+    public_paths: [/noteflow]
+    runtime:
+      policy: on_demand
+      service: nightcraft-noteflow.service
+      port: 5320
+      upstream: app_noteflow_upstream
+      workers: 2
+      idle_timeout: 15m
+  scratchpad:
+    display_name: ScratchPad
+    slug: scratchpad
+    public_paths: [/scratchpad]
+    runtime:
+      policy: on_demand
+      service: nightcraft-scratchpad.service
+      port: 5330
+      upstream: app_scratchpad_upstream
+      workers: 2
+      idle_timeout: 15m

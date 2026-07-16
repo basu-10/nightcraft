@@ -1,0 +1,19 @@
+[Unit]
+Description=Nightcraft Scratchpad App (Gunicorn)
+After=network.target postgresql.service nightcraft-auth.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=dev
+Group=dev
+WorkingDirectory=/nightcraft-source-code/app-scratchpad
+EnvironmentFile=/etc/nightcraft/app-scratchpad.env
+ExecStart=/runtime/venvs/app-scratchpad/bin/python -m gunicorn   --workers 2   --bind 127.0.0.1:5330   --access-logfile -   --error-logfile -   run:app
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

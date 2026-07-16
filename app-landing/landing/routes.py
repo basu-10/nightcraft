@@ -213,44 +213,85 @@ def texttrace_home():
     )
 
 
-@main_bp.get("/scrapbook")
-def scrapbook_landing():
-    return render_template("mindmap-landing.html")
+@main_bp.get("/quickposts")
+def quickposts_landing():
+    shared_user = _fetch_shared_auth_user()
+    return_url = current_app.config["QUICKPOSTS_URL"]
+    if shared_user:
+        open_url = return_url
+    else:
+        open_url = build_auth_handoff_url(
+            current_app.config["AUTH_URL"],
+            return_url,
+            current_app.config["AUTH_RETURN_PARAM"],
+        )
+    return render_template(
+        "product-redirect.html",
+        name="QuickPosts",
+        tagline="Text-to-post pipeline for quick sharing.",
+        description="Turn drafts into posts, slides, and edits with a lightweight local-first pipeline.",
+        open_url=open_url,
+        is_authenticated=bool(shared_user),
+        logout_url=build_auth_handoff_url(
+            current_app.config["LOGOUT_URL"],
+            "/",
+            current_app.config["AUTH_RETURN_PARAM"],
+        ),
+    )
 
 
-@main_bp.get("/scrapbook/app")
-def scrapbook_app():
-    return render_template("mindmap-app.html")
+@main_bp.get("/noteflow")
+def noteflow_landing():
+    shared_user = _fetch_shared_auth_user()
+    return_url = current_app.config["NOTEFLOW_URL"]
+    if shared_user:
+        open_url = return_url
+    else:
+        open_url = build_auth_handoff_url(
+            current_app.config["AUTH_URL"],
+            return_url,
+            current_app.config["AUTH_RETURN_PARAM"],
+        )
+    return render_template(
+        "product-redirect.html",
+        name="NoteFlow",
+        tagline="A Jupyter-notebook inspired text app.",
+        description="An interactive document app that mixes prose and runnable blocks for quick experiments.",
+        open_url=open_url,
+        is_authenticated=bool(shared_user),
+        logout_url=build_auth_handoff_url(
+            current_app.config["LOGOUT_URL"],
+            "/",
+            current_app.config["AUTH_RETURN_PARAM"],
+        ),
+    )
 
 
-@main_bp.get("/miobook")
-def notebook_landing():
-    return render_template("browser-notebook-app-landing.html")
-
-
-@main_bp.get("/miobook/app")
-def notebook_app():
-    return render_template("browser-notebook-app.html")
-
-
-@main_bp.get("/quickpost")
-def quickpost_landing():
-    return render_template("quickposts-landing.html")
-
-
-@main_bp.get("/quickpost/quickcollages")
-def quickpost_quickcollages():
-    return render_template("quickposts-app-quickcollages.html")
-
-
-@main_bp.get("/quickpost/quickedits")
-def quickpost_quickedits():
-    return render_template("quickposts-app-quickedits.html")
-
-
-@main_bp.get("/quickpost/quickslides")
-def quickpost_quickslides():
-    return render_template("quickposts-app-quickslides.html")
+@main_bp.get("/scratchpad")
+def scratchpad_landing():
+    shared_user = _fetch_shared_auth_user()
+    return_url = current_app.config["SCRATCHPAD_URL"]
+    if shared_user:
+        open_url = return_url
+    else:
+        open_url = build_auth_handoff_url(
+            current_app.config["AUTH_URL"],
+            return_url,
+            current_app.config["AUTH_RETURN_PARAM"],
+        )
+    return render_template(
+        "product-redirect.html",
+        name="ScratchPad",
+        tagline="Mind maps that grow with your ideas.",
+        description="A mindmap app for visually organizing thoughts, notes, and the connections between them.",
+        open_url=open_url,
+        is_authenticated=bool(shared_user),
+        logout_url=build_auth_handoff_url(
+            current_app.config["LOGOUT_URL"],
+            "/",
+            current_app.config["AUTH_RETURN_PARAM"],
+        ),
+    )
 
 
 @main_bp.get("/experimental")
@@ -305,16 +346,16 @@ def experimental_apps():
                     "name": "ScrapBook",
                     "tagline": "Mind maps that grow with your ideas.",
                     "description": "A mindmap app for visually organizing thoughts, notes, and the connections between them.",
-                    "url": current_app.config["SCRAPBOOK_URL"],
-                    "status": "In Development",
+                    "url": current_app.config["SCRATCHPAD_URL"],
+                    "status": "Active",
                     "stack": "JavaScript, Canvas",
                 },
                 {
                     "name": "NoteFlow",
                     "tagline": "A Jupyter-notebook inspired text app.",
                     "description": "An interactive document app that mixes prose and runnable blocks for quick experiments.",
-                    "url": current_app.config["NOTEBOOK_URL"],
-                    "status": "In Development",
+                    "url": current_app.config["NOTEFLOW_URL"],
+                    "status": "Active",
                     "stack": "Python, Web",
                 },
             ],
@@ -339,8 +380,8 @@ def experimental_apps():
                     "name": "QuickPost",
                     "tagline": "Text-to-post pipeline for quick sharing.",
                     "description": "Turn drafts into posts, slides, and edits with a lightweight local-first pipeline.",
-                    "url": current_app.config["QUICKPOST_URL"],
-                    "status": "In Development",
+                    "url": current_app.config["QUICKPOSTS_URL"],
+                    "status": "Active",
                     "stack": "Python, Web",
                 },
             ],

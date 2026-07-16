@@ -144,6 +144,66 @@ def test_experimental_route_renders_sections_and_apps():
     assert "FOSSil" in html
     assert "Neera" in html
     assert "(proof of concept only / local accounts only)" in html
+    assert "href=\"/scratchpad\"" in html
+    assert "href=\"/noteflow\"" in html
+    assert "href=\"/quickposts\"" in html
+
+
+def test_quickposts_landing_renders_redirect_card():
+    client = _client()
+
+    response = client.get("/quickposts")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "QuickPosts" in html
+    assert "next=" in html
+    assert "quickposts" in html
+
+
+def test_noteflow_landing_renders_redirect_card():
+    client = _client()
+
+    response = client.get("/noteflow")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "NoteFlow" in html
+    assert "next=" in html
+    assert "noteflow" in html
+
+
+def test_scratchpad_landing_renders_redirect_card():
+    client = _client()
+
+    response = client.get("/scratchpad")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "ScratchPad" in html
+    assert "next=" in html
+    assert "scratchpad" in html
+
+
+def test_legacy_quickpost_route_returns_404():
+    client = _client()
+
+    response = client.get("/quickpost")
+    assert response.status_code == 404
+
+
+def test_legacy_scrapbook_route_returns_404():
+    client = _client()
+
+    response = client.get("/scrapbook")
+    assert response.status_code == 404
+
+
+def test_legacy_miobook_route_returns_404():
+    client = _client()
+
+    response = client.get("/miobook")
+    assert response.status_code == 404
 
 
 def test_fossil_library_renders_landing_page():

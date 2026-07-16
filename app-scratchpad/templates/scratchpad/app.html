@@ -171,16 +171,20 @@
 
     <!-- Top Bar -->
     <div class="topbar" id="topbar">
-        <div class="topbar-left">
-            <div class="topbar-title">📚 <span>Machine Learning Study Guide</span></div>
-            <div class="save-badge">SAVED</div>
-            <div class="tabs">
+    <div class="topbar-left">
+        <div class="topbar-title">📚 <input id="padTitle" value="Machine Learning Study Guide" style="background:transparent;border:none;color:var(--text-primary);font:inherit;font-weight:600;outline:none;width:260px;"></div>
+        <div class="save-badge" id="saveBadge">SAVED</div>
+        <div class="tabs">
                 <button class="tab" data-tab="tab1">📑 1. Fundamentals</button>
                 <button class="tab active" data-tab="tab2">📑 2. Neural Networks</button>
                 <button class="tab" data-tab="tab3">📑 3. NLP Basics</button>
             </div>
         </div>
         <div class="topbar-actions">
+            <button class="z-btn" onclick="ncSave()" style="border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; font-size: 12px; color: var(--text-secondary); background: var(--bg-card); cursor: pointer;">💾 Save</button>
+            <form method="post" action="/scratchpad/auth/logout?next=/scratchpad" style="display:inline;">
+                <button class="z-btn" type="submit" style="border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; font-size: 12px; color: var(--text-secondary); background: var(--bg-card); cursor: pointer;">🚪 Log out</button>
+            </form>
             <div class="search-box">🔍 <span><mark>backprop</mark></span></div>
             <button class="z-btn" style="border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; font-size: 12px; color: var(--text-secondary); background: var(--bg-card); cursor: pointer;">⊞ Fit</button>
             <button class="z-btn" style="border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; font-size: 12px; color: var(--text-secondary); background: var(--bg-card); cursor: pointer;">⧉ Layout</button>
@@ -522,6 +526,63 @@ optimizer.step()</pre>
 
         // Initialize
         updateTransform();
-    </script>
+        ncLoad();
+
+        async function ncSave() {
+            try {
+                const payload = {
+                    title: (document.getElementById('padTitle') || {}).value || 'Untitled',
+                    content_json: JSON.stringify({
+                        html: world.innerHTML,
+                        panX: panX,
+                        panY: panY,
+                        scale: scale
+                    })
+                };
+                const url = window.__ncPadId ? '/api/pad/' + window.__ncPadId : '/api/pad';
+                const method = window.__ncPadId ? 'PUT' : 'POST';
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                window.__ncPadId = data.id;
+                const badge = document.getElementById('saveBadge');
+                if (badge) badge.textContent = 'SAVED';
+                showToast('Pad saved', 'success');
+            } catch (e) { /* best-effort persistence */ }
+        }
+        window.ncSave = ncSave;
+
+        async function ncLoad() {
+            try {
+                const res = await fetch('/api/pad');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data.items || !data.items.length) return;
+                const it = data.items[0];
+                window.__ncPadId = it.id;
+                const parsed = JSON.parse(it.content_json || '{}');
+                if (parsed.html) world.innerHTML = parsed.html;
+                if (typeof parsed.panX === 'number') panX = parsed.panX;
+                if (typeof parsed.panY === 'number') panY = parsed.panY;
+                if (typeof parsed.scale === 'number') scale = parsed.scale;
+                const titleEl = document.getElementById('padTitle');
+                if (titleEl && it.title) titleEl.value = it.title;
+                updateTransform();
+                // Rebind card selection handlers after restoring DOM.
+                document.querySelectorAll('.card').forEach(card => {
+                    card.addEventListener('mousedown', (e) => {
+                        if (e.target.classList.contains('port')) return;
+                        document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        sidebar.classList.remove('collapsed');
+                    });
+                });
+            } catch (e) { /* best-effort load */ }
+        }
+
 </body>
 </html>

@@ -199,6 +199,28 @@ if [[ -z "${ALFRED_DB_USER}" || -z "${ALFRED_DB_NAME}" || -z "${ALFRED_DB_PASSWO
   fi
 fi
 
+QUICKPOSTS_ENV_FILE="${QUICKPOSTS_ENV_FILE:-/etc/nightcraft/app-quickposts.env}"
+NOTEFLOW_ENV_FILE="${NOTEFLOW_ENV_FILE:-/etc/nightcraft/app-noteflow.env}"
+SCRATCHPAD_ENV_FILE="${SCRATCHPAD_ENV_FILE:-/etc/nightcraft/app-scratchpad.env}"
+
+if [[ -z "${QUICKPOSTS_DB_USER}" || -z "${QUICKPOSTS_DB_NAME}" || -z "${QUICKPOSTS_DB_PASSWORD}" ]]; then
+  if quickposts_url="$(_extract_database_url_from_env_file "${QUICKPOSTS_ENV_FILE}" 2>/dev/null)"; then
+    _set_db_values_from_url "${quickposts_url}" "QUICKPOSTS" || true
+  fi
+fi
+
+if [[ -z "${NOTEFLOW_DB_USER}" || -z "${NOTEFLOW_DB_NAME}" || -z "${NOTEFLOW_DB_PASSWORD}" ]]; then
+  if noteflow_url="$(_extract_database_url_from_env_file "${NOTEFLOW_ENV_FILE}" 2>/dev/null)"; then
+    _set_db_values_from_url "${noteflow_url}" "NOTEFLOW" || true
+  fi
+fi
+
+if [[ -z "${SCRATCHPAD_DB_USER}" || -z "${SCRATCHPAD_DB_NAME}" || -z "${SCRATCHPAD_DB_PASSWORD}" ]]; then
+  if scratchpad_url="$(_extract_database_url_from_env_file "${SCRATCHPAD_ENV_FILE}" 2>/dev/null)"; then
+    _set_db_values_from_url "${scratchpad_url}" "SCRATCHPAD" || true
+  fi
+fi
+
 NOTESTACK_DB_NAME="${NOTESTACK_DB_NAME:-notestack_db}"
 NOTESTACK_DB_USER="${NOTESTACK_DB_USER:-notestack_app}"
 NOTESTACK_DB_PASSWORD="${NOTESTACK_DB_PASSWORD:-notestack_app_db_2026_prod_secret}"
@@ -206,6 +228,18 @@ NOTESTACK_DB_PASSWORD="${NOTESTACK_DB_PASSWORD:-notestack_app_db_2026_prod_secre
 ALFRED_DB_NAME="${ALFRED_DB_NAME:-alfred_db}"
 ALFRED_DB_USER="${ALFRED_DB_USER:-alfred_app}"
 ALFRED_DB_PASSWORD="${ALFRED_DB_PASSWORD:-alfred_app_db_2026_prod_secret}"
+
+QUICKPOSTS_DB_NAME="${QUICKPOSTS_DB_NAME:-quickposts_db}"
+QUICKPOSTS_DB_USER="${QUICKPOSTS_DB_USER:-quickposts_app}"
+QUICKPOSTS_DB_PASSWORD="${QUICKPOSTS_DB_PASSWORD:-quickposts_app_db_2026_prod_secret}"
+
+NOTEFLOW_DB_NAME="${NOTEFLOW_DB_NAME:-noteflow_db}"
+NOTEFLOW_DB_USER="${NOTEFLOW_DB_USER:-noteflow_app}"
+NOTEFLOW_DB_PASSWORD="${NOTEFLOW_DB_PASSWORD:-noteflow_app_db_2026_prod_secret}"
+
+SCRATCHPAD_DB_NAME="${SCRATCHPAD_DB_NAME:-scratchpad_db}"
+SCRATCHPAD_DB_USER="${SCRATCHPAD_DB_USER:-scratchpad_app}"
+SCRATCHPAD_DB_PASSWORD="${SCRATCHPAD_DB_PASSWORD:-scratchpad_app_db_2026_prod_secret}"
 
 if [[ -z "${ALFRED_DB_PASSWORD}" ]]; then
   echo "[setup-postgres] Alfred PostgreSQL password is empty." >&2
@@ -223,6 +257,30 @@ fi
 
 echo "[setup-postgres] NoteStack PostgreSQL provisioning enabled for ${NOTESTACK_DB_USER}@${NOTESTACK_DB_NAME}."
 
+if [[ -z "${QUICKPOSTS_DB_PASSWORD}" ]]; then
+  echo "[setup-postgres] QuickPosts PostgreSQL password is empty." >&2
+  echo "[setup-postgres] Set DATABASE_URL in ${QUICKPOSTS_ENV_FILE} with credentials or pass QUICKPOSTS_DB_PASSWORD." >&2
+  exit 1
+fi
+
+echo "[setup-postgres] QuickPosts PostgreSQL provisioning enabled for ${QUICKPOSTS_DB_USER}@${QUICKPOSTS_DB_NAME}."
+
+if [[ -z "${NOTEFLOW_DB_PASSWORD}" ]]; then
+  echo "[setup-postgres] NoteFlow PostgreSQL password is empty." >&2
+  echo "[setup-postgres] Set DATABASE_URL in ${NOTEFLOW_ENV_FILE} with credentials or pass NOTEFLOW_DB_PASSWORD." >&2
+  exit 1
+fi
+
+echo "[setup-postgres] NoteFlow PostgreSQL provisioning enabled for ${NOTEFLOW_DB_USER}@${NOTEFLOW_DB_NAME}."
+
+if [[ -z "${SCRATCHPAD_DB_PASSWORD}" ]]; then
+  echo "[setup-postgres] ScratchPad PostgreSQL password is empty." >&2
+  echo "[setup-postgres] Set DATABASE_URL in ${SCRATCHPAD_ENV_FILE} with credentials or pass SCRATCHPAD_DB_PASSWORD." >&2
+  exit 1
+fi
+
+echo "[setup-postgres] ScratchPad PostgreSQL provisioning enabled for ${SCRATCHPAD_DB_USER}@${SCRATCHPAD_DB_NAME}."
+
 NEERA_DB_NAME="${NEERA_DB_NAME:-neera_db}"
 
 sudo -u postgres psql \
@@ -238,6 +296,12 @@ sudo -u postgres psql \
   -v green_pledge_db_password="${PLEDGE_DB_PASSWORD}" \
   -v alfred_db_user="${ALFRED_DB_USER}" \
   -v alfred_db_password="${ALFRED_DB_PASSWORD}" \
+  -v quickposts_db_user="${QUICKPOSTS_DB_USER}" \
+  -v quickposts_db_password="${QUICKPOSTS_DB_PASSWORD}" \
+  -v noteflow_db_user="${NOTEFLOW_DB_USER}" \
+  -v noteflow_db_password="${NOTEFLOW_DB_PASSWORD}" \
+  -v scratchpad_db_user="${SCRATCHPAD_DB_USER}" \
+  -v scratchpad_db_password="${SCRATCHPAD_DB_PASSWORD}" \
   < "${USERS_SQL}"
 
 sudo -u postgres psql \
@@ -253,6 +317,12 @@ sudo -u postgres psql \
   -v green_pledge_db_user="${PLEDGE_DB_USER}" \
   -v alfred_db_name="${ALFRED_DB_NAME}" \
   -v alfred_db_user="${ALFRED_DB_USER}" \
+  -v quickposts_db_name="${QUICKPOSTS_DB_NAME}" \
+  -v quickposts_db_user="${QUICKPOSTS_DB_USER}" \
+  -v noteflow_db_name="${NOTEFLOW_DB_NAME}" \
+  -v noteflow_db_user="${NOTEFLOW_DB_USER}" \
+  -v scratchpad_db_name="${SCRATCHPAD_DB_NAME}" \
+  -v scratchpad_db_user="${SCRATCHPAD_DB_USER}" \
   < "${DBS_SQL}"
 
 echo "PostgreSQL roles and databases are ready."
