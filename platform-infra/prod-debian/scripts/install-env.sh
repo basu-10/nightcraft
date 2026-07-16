@@ -92,6 +92,15 @@ copy_env "${ENV_TARGET_DIR}/app-pledge.env" 1 \
 copy_env "${ENV_TARGET_DIR}/app-alfred.env" 1 \
   "${ENV_SRC_DIR}/app-alfred.env" \
   "${ENV_SRC_DIR}/alfred.env.example"
+copy_env "${ENV_TARGET_DIR}/app-quickposts.env" 1 \
+  "${ENV_SRC_DIR}/app-quickposts.env" \
+  "${ENV_SRC_DIR}/quickposts.env.example"
+copy_env "${ENV_TARGET_DIR}/app-noteflow.env" 1 \
+  "${ENV_SRC_DIR}/app-noteflow.env" \
+  "${ENV_SRC_DIR}/noteflow.env.example"
+copy_env "${ENV_TARGET_DIR}/app-scratchpad.env" 1 \
+  "${ENV_SRC_DIR}/app-scratchpad.env" \
+  "${ENV_SRC_DIR}/scratchpad.env.example"
 copy_env "${ENV_TARGET_DIR}/tinyxl.env" 1 \
   "${ENV_SRC_DIR}/tinyxl.env" \
   "${ENV_SRC_DIR}/tinyxl.env.example"
