@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Alfred — Home{% endblock %}
+{% block content %}
+<h1>Welcome, {{ app_user.display_name or 'there' }}</h1>
+<p class="lead">Ask Alfred to research, synthesize, and build your personal Asset library.</p>
+<div class="action-row">
+  <a class="btn primary" href="{{ url_for('main.ask') }}">Ask Alfred</a>
+  <a class="btn" href="{{ url_for('library.index') }}">Open Library</a>
+</div>
+
+{% if sessions %}
+<h2>Your conversations</h2>
+<ul class="session-list">
+  {% for s in sessions %}
+    <li><a href="{{ url_for('main.ask', session=s.session_id) }}">{{ s.title }}</a></li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

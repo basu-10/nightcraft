@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Alfred{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='alfred/styles.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><a href="{{ url_for('main.home') }}">Alfred</a></div>
+    <nav class="nav">
+      <a href="{{ url_for('main.ask') }}">Ask</a>
+      <a href="{{ url_for('library.index') }}">Library</a>
+      {% if app_user.is_admin %}<a href="{{ url_for('admin.settings') }}">Admin</a>{% endif %}
+      {% if app_user.is_authenticated %}
+        <span class="user">{{ app_user.display_name }}</span>
+        <form method="post" action="{{ url_for('auth.logout') }}" class="logout-form">
+          <button type="submit">Sign out</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}">Sign in</a>
+      {% endif %}
+    </nav>
+  </header>
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Alfred — Ask{% endblock %}
+{% block content %}
+<div class="ask-layout">
+  <section class="conversation">
+    <div id="messages" class="messages">
+      {% for m in messages %}
+        <div class="msg msg-{{ m.role }}">
+          <div class="msg-role">{{ m.role }}</div>
+          <div class="msg-body">{{ m.content }}</div>
+          {% if m.references %}
+            <div class="msg-refs">
+              {% for aid in m.references %}
+                <span class="chip">Asset #{{ aid }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div id="agent-log" class="agent-log" hidden></div>
+
+    <!-- Drag-drop dropzone overlay target is the composer -->
+    <form id="composer" class="composer" data-session="{{ session.session_id if session else '' }}">
+      <div id="dropzone" class="dropzone">
+        <textarea id="goal-input" name="goal" rows="3" placeholder="Ask Alfred… or drag a file here to edit it."></textarea>
+        <div id="attachments" class="attachments"></div>
+      </div>
+      <div class="composer-actions">
+        <span class="hint">Drag a file to attach &amp; edit it. Attached assets are sent with your message.</span>
+        <button type="submit" id="send-btn" class="btn primary">Send</button>
+      </div>
+    </form>
+  </section>
+
+  <aside class="sidebar">
+    <h3>Library</h3>
+    <p class="hint">Click an asset to attach it to your message.</p>
+    <ul id="asset-list" class="asset-list">
+      {% for a in assets %}
+        <li>
+          <button type="button" class="asset-attach" data-id="{{ a.id }}" data-title="{{ a.title }}">
+            {{ a.title }} <span class="badge">{{ a.content_type }}</span>
+          </button>
+        </li>
+      {% endfor %}
+    </ul>
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='alfred/ask.js') }}"></script>
+{% endblock %}

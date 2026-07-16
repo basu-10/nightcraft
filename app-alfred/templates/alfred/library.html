@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Alfred — Library{% endblock %}
+{% block content %}
+<h1>Library</h1>
+<div class="library-actions">
+  <form method="post" action="{{ url_for('library.upload') }}" enctype="multipart/form-data" class="inline-form">
+    <input type="file" name="file" required>
+    <button type="submit" class="btn primary">Upload</button>
+  </form>
+  <form method="post" action="{{ url_for('library.import_url') }}" class="inline-form">
+    <input type="url" name="url" placeholder="https://…" required>
+    <button type="submit" class="btn">Import by URL</button>
+  </form>
+</div>
+
+{% if assets %}
+<table class="asset-table">
+  <thead><tr><th>Title</th><th>Type</th><th>Status</th><th>Created</th><th></th></tr></thead>
+  <tbody>
+    {% for a in assets %}
+      <tr>
+        <td><a href="{{ url_for('library.asset_detail', asset_id=a.id) }}">{{ a.title }}</a></td>
+        <td>{{ a.content_type }}</td>
+        <td>{{ a.status }}</td>
+        <td>{{ a.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td>
+          <form method="post" action="{{ url_for('library.delete_asset', asset_id=a.id) }}" onsubmit="return confirm('Delete this asset?');">
+            <button type="submit" class="btn danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No assets yet. Upload a file or import a URL to start your library.</p>
+{% endif %}
+{% endblock %}
