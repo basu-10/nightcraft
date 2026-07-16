@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Starting&hellip; | Nightcraft</title>
+  <title>Loading&hellip; | Nightcraft</title>
   <style>
     :root {
       --bg: #0b1410;
@@ -18,30 +18,99 @@
       background: var(--bg);
       color: var(--fg);
       font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      overflow: hidden;
     }
     body {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 1.25rem;
+      gap: 1.75rem;
       text-align: center;
       padding: 2rem;
     }
-    .leaf {
-      width: 56px;
-      height: 56px;
+
+    /* floating drifting dots in the background */
+    .bg-dots { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+    .bg-dots span {
+      position: absolute;
+      bottom: -20px;
+      width: 8px; height: 8px;
       border-radius: 50%;
-      border: 4px solid var(--accent);
-      border-top-color: transparent;
-      animation: spin 1s linear infinite;
+      background: var(--accent);
+      opacity: 0.18;
+      animation: floatUp linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    h1 { font-size: 1.25rem; font-weight: 600; margin: 0; }
-    p { color: var(--muted); margin: 0; font-size: 0.95rem; }
+    @keyframes floatUp {
+      0% { transform: translateY(0) translateX(0); opacity: 0; }
+      10% { opacity: 0.22; }
+      90% { opacity: 0.22; }
+      100% { transform: translateY(-110vh) translateX(40px); opacity: 0; }
+    }
+
+    .stage { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 1.75rem; }
+
+    /* bouncing critter made of dots */
+    .critter {
+      width: 96px; height: 64px;
+      position: relative;
+      animation: hop 1.1s ease-in-out infinite;
+    }
+    @keyframes hop {
+      0%, 100% { transform: translateY(0); }
+      45% { transform: translateY(-18px); }
+    }
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 18px rgba(76,175,80,0.45);
+    }
+    .bubble.b1 { width: 26px; height: 26px; left: 8px;  top: 22px; animation: pulse 1.1s ease-in-out infinite; }
+    .bubble.b2 { width: 34px; height: 34px; left: 31px; top: 14px; animation: pulse 1.1s ease-in-out .15s infinite; }
+    .bubble.b3 { width: 22px; height: 22px; left: 64px; top: 26px; animation: pulse 1.1s ease-in-out .3s infinite; }
+    .eye {
+      position: absolute;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--bg);
+      z-index: 2;
+    }
+    .eye.e1 { left: 40px; top: 26px; }
+    .eye.e2 { left: 54px; top: 26px; }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(0.82); opacity: 0.8; }
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: 0.2px;
+    }
+    .loading-text {
+      color: var(--muted);
+      margin: 0;
+      font-size: 1.05rem;
+      min-height: 1.4em;
+      transition: opacity 0.25s ease;
+    }
+    .loading-text .dots::after {
+      content: "";
+      animation: ellipsis 1.2s steps(4, end) infinite;
+    }
+    @keyframes ellipsis {
+      0% { content: ""; }
+      25% { content: "."; }
+      50% { content: ".."; }
+      75% { content: "..."; }
+      100% { content: ""; }
+    }
+
     .bar {
-      width: 220px;
-      height: 6px;
+      width: 240px;
+      height: 8px;
       border-radius: 999px;
       background: rgba(255,255,255,0.08);
       overflow: hidden;
@@ -50,20 +119,46 @@
       display: block;
       height: 100%;
       width: 40%;
-      background: var(--accent);
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), #81c784);
       animation: slide 1.2s ease-in-out infinite;
     }
     @keyframes slide {
       0% { transform: translateX(-120%); }
       100% { transform: translateX(320%); }
     }
+
+    .footer {
+      position: fixed;
+      bottom: 1rem;
+      width: 100%;
+      text-align: center;
+      color: var(--muted);
+      opacity: 0.5;
+      font-size: 0.78rem;
+      z-index: 1;
+    }
   </style>
 </head>
 <body>
-  <div class="leaf" aria-hidden="true"></div>
-  <h1 id="title">Warming up the service&hellip;</h1>
-  <div class="bar"><span></span></div>
-  <p id="status">This page will redirect automatically once the app is ready.</p>
+  <div class="bg-dots" id="bgDots" aria-hidden="true"></div>
+
+  <div class="stage">
+    <div class="critter" aria-hidden="true">
+      <span class="bubble b1"></span>
+      <span class="bubble b2"></span>
+      <span class="bubble b3"></span>
+      <span class="eye e1"></span>
+      <span class="eye e2"></span>
+    </div>
+
+    <h1 id="title">Just a moment&hellip;</h1>
+    <p class="loading-text" id="status">Getting things ready<span class="dots"></span></p>
+
+    <div class="bar"><span></span></div>
+  </div>
+
+  <div class="footer">Nightcraft</div>
 
   <script>
     // ?slug=<slug>&next=<original-request-uri>
@@ -84,17 +179,67 @@
         }
       }
 
-      if (!slug) {
-        document.getElementById("title").textContent = "Missing service slug";
-        document.getElementById("status").textContent =
-          "The loading page was opened without a ?slug= parameter.";
-        return;
+      // --- fun, nonsensical loading messages (never mention on-demand / cold start) ---
+      var messages = [
+        "Munching bytes",
+        "Running tests with otters",
+        "Filing taxes for the server gnomes",
+        "Teaching ducks to type",
+        "Brushing the digital cat",
+        "Convincing the hamster to keep running",
+        "Polishing pixels to a mirror shine",
+        "Negotiating with the rubber duck",
+        "Untangling spaghetti code, one noodle at a time",
+        "Summoning the snacking spirits",
+        "Counting to potato",
+        "Bribing the load balancer with cookies",
+        "Aligning the cosmic cogs",
+        "Warming up the jazz hands",
+        "Defragmenting the chaos",
+        "Brewing a fresh pot of logic",
+        "Herding stray semicolons",
+        "Charging the flux capacitor",
+        "Asking the crystal ball politely",
+        "Reticulating splines",
+        "Spinning up the confetti cannon",
+        "Waking the sleepy databases",
+        "Boosting morale of the background threads",
+        "Petting the mainframe",
+        "Downloading more RAM, just in case"
+      ];
+
+      var statusEl = document.getElementById("status");
+      var idx = Math.floor(Math.random() * messages.length);
+      function rotateMessage() {
+        statusEl.style.opacity = "0";
+        setTimeout(function () {
+          idx = (idx + 1) % messages.length;
+          statusEl.innerHTML = messages[idx] + '<span class="dots"></span>';
+          statusEl.style.opacity = "1";
+        }, 250);
+      }
+      statusEl.innerHTML = messages[idx] + '<span class="dots"></span>';
+      var msgTimer = setInterval(rotateMessage, 2600);
+
+      // --- drifting background dots ---
+      var bg = document.getElementById("bgDots");
+      for (var d = 0; d < 18; d++) {
+        var s = document.createElement("span");
+        s.style.left = Math.random() * 100 + "vw";
+        var size = 4 + Math.random() * 10;
+        s.style.width = size + "px";
+        s.style.height = size + "px";
+        s.style.animationDuration = (8 + Math.random() * 12) + "s";
+        s.style.animationDelay = (-Math.random() * 12) + "s";
+        bg.appendChild(s);
       }
 
-      var title = document.getElementById("title");
-      var status = document.getElementById("status");
-      title.textContent = "Starting " + slug + "…";
-      status.textContent = "First request triggers a cold start; this can take up to a minute.";
+      if (!slug) {
+        clearInterval(msgTimer);
+        document.getElementById("title").textContent = "Something went wrong";
+        statusEl.textContent = "This page was opened without the info it needs.";
+        return;
+      }
 
       function poll() {
         var url = "/_nc_probe/" + encodeURIComponent(slug) +
@@ -102,7 +247,8 @@
         fetch(url, { cache: "no-store" })
           .then(function (resp) {
             if (resp.ok) {
-              status.textContent = "Ready! Redirecting…";
+              clearInterval(msgTimer);
+              statusEl.textContent = "All set! Taking you in…";
               window.location.href = next;
               return;
             }
