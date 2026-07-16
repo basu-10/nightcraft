@@ -1,6 +1,6 @@
-from alfred import create_app
+from scratchpad import create_app
 
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5950)
+    app.run(debug=True, port=5330)
