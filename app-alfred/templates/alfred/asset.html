@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Alfred — Asset{% endblock %}
+{% block content %}
+<h1>{{ asset.title }}</h1>
+<p class="meta">Type: {{ asset.content_type }} · Status: {{ asset.status }} · ID: {{ asset.id }}</p>
+
+<h2>Relations</h2>
+{% if graph.outgoing or graph.incoming %}
+  <ul>
+    {% for r in graph.outgoing %}
+      <li><strong>{{ r.relation_type }}</strong> → Asset #{{ r.to_id }}</li>
+    {% endfor %}
+    {% for r in graph.incoming %}
+      <li>Asset #{{ r.from_id }} <strong>{{ r.relation_type }}</strong> this</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No relations yet.</p>
+{% endif %}
+
+<p><a href="{{ url_for('library.index') }}">← Back to Library</a></p>
+{% endblock %}

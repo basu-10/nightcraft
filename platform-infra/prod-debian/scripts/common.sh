@@ -29,6 +29,8 @@ NEERA_SRC_DIR="${NEERA_SRC_DIR:-${REPO_ROOT}/app-artsy}"
 GAME_SRC_DIR="${GAME_SRC_DIR:-${REPO_ROOT}/app-game}"
 NOTE_SRC_DIR="${NOTE_SRC_DIR:-${REPO_ROOT}/app-note}"
 PLEDGE_SRC_DIR="${PLEDGE_SRC_DIR:-${REPO_ROOT}/app-pledge}"
+ALFRED_SRC_DIR="${ALFRED_SRC_DIR:-${REPO_ROOT}/app-alfred}"
+ALFRED_SLUG="${ALFRED_SLUG:-app-alfred}"
 
 RADIO_SHARED_DIR="${SHARED_ROOT}/${RADIO_SLUG}"
 AUTH_SHARED_DIR="${SHARED_ROOT}/${AUTH_SLUG}"
@@ -38,6 +40,7 @@ NEERA_SHARED_DIR="${SHARED_ROOT}/${NEERA_SLUG}"
 GAME_SHARED_DIR="${SHARED_ROOT}/${GAME_SLUG}"
 NOTE_SHARED_DIR="${SHARED_ROOT}/${NOTE_SLUG}"
 PLEDGE_SHARED_DIR="${SHARED_ROOT}/${PLEDGE_SLUG}"
+ALFRED_SHARED_DIR="${SHARED_ROOT}/${ALFRED_SLUG}"
 RADIO_VENV_DIR="${RADIO_VENV_DIR:-${VENV_ROOT}/${RADIO_SLUG}}"
 AUTH_VENV_DIR="${AUTH_VENV_DIR:-${VENV_ROOT}/${AUTH_SLUG}}"
 LANDING_VENV_DIR="${LANDING_VENV_DIR:-${VENV_ROOT}/${LANDING_SLUG}}"
@@ -46,6 +49,7 @@ NEERA_VENV_DIR="${NEERA_VENV_DIR:-${VENV_ROOT}/${NEERA_SLUG}}"
 GAME_VENV_DIR="${GAME_VENV_DIR:-${VENV_ROOT}/${GAME_SLUG}}"
 NOTE_VENV_DIR="${NOTE_VENV_DIR:-${VENV_ROOT}/${NOTE_SLUG}}"
 PLEDGE_VENV_DIR="${PLEDGE_VENV_DIR:-${VENV_ROOT}/${PLEDGE_SLUG}}"
+ALFRED_VENV_DIR="${ALFRED_VENV_DIR:-${VENV_ROOT}/${ALFRED_SLUG}}"
 
 log() {
   printf '[%s] %s\n' "$(basename "$0")" "$*"
@@ -96,5 +100,58 @@ chown_tree() {
   local target_dir="$1"
   if [[ "${EUID}" -eq 0 ]]; then
     chown -R "${APP_USER}:${APP_GROUP}" "${target_dir}"
+  fi
+}
+
+# --- Product manifest helpers (source of truth: products.yml) ---
+# Reads via scripts/products.py so bash and the runtime manager share one source.
+
+PRODUCTS_PY="${SCRIPT_DIR}/products.py"
+
+nc_products_manifest() {
+  # Prefer an explicit env override, then the deployed path, then repo copy.
+  if [[ -n "${NC_PRODUCTS_YML:-}" ]]; then
+    echo "${NC_PRODUCTS_YML}"
+  elif [[ -f /etc/nightcraft/products.yml ]]; then
+    echo /etc/nightcraft/products.yml
+  else
+    echo "${PROD_DEBIAN_DIR}/products.yml"
+  fi
+}
+
+nc_field() {
+  local slug="$1" field="$2"
+  python3 "${PRODUCTS_PY}" --manifest "$(nc_products_manifest)" get "${slug}" "${field}"
+}
+
+nc_policy()      { nc_field "$1" runtime.policy; }
+nc_service()     { nc_field "$1" runtime.service; }
+nc_port()        { nc_field "$1" runtime.port; }
+nc_workers()     { nc_field "$1" runtime.workers; }
+nc_upstream()    { nc_field "$1" runtime.upstream; }
+nc_idle()        { nc_field "$1" runtime.idle_timeout; }
+
+nc_public_paths() {
+  python3 "${PRODUCTS_PY}" --manifest "$(nc_products_manifest)" public_paths "$1"
+}
+
+nc_slugs() {
+  python3 "${PRODUCTS_PY}" --manifest "$(nc_products_manifest)" slugs "$@"
+}
+
+nc_is_on_demand() {
+  [[ "$(nc_policy "$1")" == "on_demand" ]]
+}
+
+# The runtime manager and products.py use the SYSTEM Python (/usr/bin/python3),
+# not an app venv, so PyYAML must be installed at the system level. The
+# bootstrap may skip setup-host.sh on an already-provisioned box, so ensure it
+# here (idempotent) wherever it is actually needed.
+nc_ensure_yaml() {
+  if ! python3 -c "import yaml" >/dev/null 2>&1; then
+    log "PyYAML missing on system Python; installing python3-yaml"
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update >/dev/null 2>&1 || true
+    apt-get install -y python3-yaml
   fi
 }

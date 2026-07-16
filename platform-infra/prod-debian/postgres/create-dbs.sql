@@ -5,7 +5,8 @@
 --   radio_db_name, radio_db_user,
 --   neera_db_name, neera_db_user,
 --   notestack_db_name, notestack_db_user,
---   green_pledge_db_name, green_pledge_db_user
+--   green_pledge_db_name, green_pledge_db_user,
+--   alfred_db_name, alfred_db_user
 SELECT format(
         'CREATE DATABASE %I OWNER %I ENCODING ''UTF8''',
         :'auth_db_name',
@@ -65,6 +66,21 @@ SELECT format(
         'GRANT ALL PRIVILEGES ON DATABASE %I TO %I',
         :'notestack_db_name',
         :'notestack_db_user'
+    ) \gexec
+SELECT format(
+        'CREATE DATABASE %I OWNER %I ENCODING ''UTF8''',
+        :'alfred_db_name',
+        :'alfred_db_user'
+    )
+WHERE NOT EXISTS (
+        SELECT 1
+        FROM pg_database
+        WHERE datname = :'alfred_db_name'
+    ) \gexec
+SELECT format(
+        'GRANT ALL PRIVILEGES ON DATABASE %I TO %I',
+        :'alfred_db_name',
+        :'alfred_db_user'
     ) \gexec
 SELECT format(
         'CREATE DATABASE %I OWNER %I ENCODING ''UTF8''',

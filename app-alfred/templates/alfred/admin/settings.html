@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Alfred — Admin Settings{% endblock %}
+{% block content %}
+<h1>Alfred Admin Settings</h1>
+<form method="post" action="{{ url_for('admin.settings') }}" class="settings-form">
+  <label>OpenRouter API Key (encrypted)
+    <input type="password" name="alfred_openrouter_api_key" placeholder="{% if masked_key %}already set{% else %}enter key{% endif %}">
+  </label>
+  <label>Embedding Model
+    <input type="text" name="alfred_embedding_model" value="{{ embedding_model }}">
+  </label>
+  <label>Agent / ReAct Model
+    <input type="text" name="alfred_agent_model" value="{{ agent_model }}">
+  </label>
+  <label>ReAct Max Steps (per phase)
+    <input type="number" name="alfred_react_max_steps" value="{{ react_max_steps }}">
+  </label>
+  <label>Chunk Size
+    <input type="number" name="alfred_chunk_size" value="{{ chunk_size }}">
+  </label>
+  <label>Chunk Overlap
+    <input type="number" name="alfred_chunk_overlap" value="{{ chunk_overlap }}">
+  </label>
+  <label>Top-K (RAG)
+    <input type="number" name="alfred_top_k" value="{{ top_k }}">
+  </label>
+  <button type="submit" class="btn primary">Save Settings</button>
+</form>
+
+<hr>
+<h2>Library Maintenance</h2>
+<form method="post" action="{{ url_for('admin.reindex') }}">
+  <button type="submit" class="btn">Re-index library (after changing embedding model)</button>
+</form>
+{% endblock %}

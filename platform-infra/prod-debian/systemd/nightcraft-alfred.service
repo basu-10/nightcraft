@@ -1,0 +1,24 @@
+[Unit]
+Description=Nightcraft Alfred App (Gunicorn)
+After=network.target postgresql.service nightcraft-auth.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=dev
+Group=dev
+WorkingDirectory=/nightcraft-source-code/app-alfred
+EnvironmentFile=/etc/nightcraft/app-alfred.env
+ExecStart=/runtime/venvs/app-alfred/bin/python -m gunicorn \
+  --workers 2 \
+  --bind 127.0.0.1:5950 \
+  --access-logfile - \
+  --error-logfile - \
+  run:app
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

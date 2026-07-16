@@ -148,3 +148,122 @@ jobs:
 ```
 
 ---
+
+
+
+
+```
+═══════════════════════════════════════════════════════════════════
+A) DEPLOY TIME  — what runs when you push to main
+═══════════════════════════════════════════════════════════════════
+
+GitHub Action (.github/workflows/deploy.yml)
+   │  (push → main)
+   ▼
+applesboy/ssh-action
+   │  ssh root@31.70.85.89
+   ▼
+/usr/local/sbin/server-scripts/nightcraft-server-bootstrap.sh
+   │
+   ├─ sync_repo() ──────────────► git fetch/checkout origin/main → /nightcraft-source-code
+   │
+   └─ run_deploy_sequence()
+         │
+         ├─ setup-host.sh  ──────► [SKIPPED if baseline "looks ready"]
+         │     └─ apt-get install … python3-yaml …   (only runs if not skipped)
+         │
+         ├─ install-env.sh ─────► writes /etc/nightcraft/*.env  (unchanged)
+         │
+         ├─ setup-postgres.sh ──► roles/DBs  (the bug we fixed was here)
+         │
+         ├─ install-systemd.sh
+         │     ├─ nc_ensure_yaml()  ──► apt-get install python3-yaml  (NEW self-heal)
+         │     ├─ cp products.yml → /etc/nightcraft/products.yml
+         │     ├─ for each slug in products.yml (via products.py):
+         │     │     ├─ always_on ─► install unit + systemctl enable
+         │     │     └─ on_demand ─► install unit + Restart=no drop-in + systemctl disable
+         │     └─ install+enable --now nightcraft-runtime-manager.service
+         │            └─ ExecStart=/usr/bin/python3 /opt/nightcraft/runtime-manager/…py
+         │
+         ├─ install-nginx.sh
+         │     ├─ cp nightcraft.conf → /etc/nginx/sites-available/
+         │     ├─ gen-nginx-on-demand.sh
+         │     │     ├─ source common.sh → nc_* helpers → call products.py
+         │     │     ├─ products.py ──reads──► /etc/nightcraft/products.yml
+         │     │     ├─ writes /etc/nginx/sites-include/on-demand.conf
+         │     │     └─ cp on-demand.html → /runtime/nightcraft/loaders/
+         │     ├─ nginx -t
+         │     └─ systemctl reload nginx
+         │
+         └─ deploy-all.sh
+               ├─ deploy-*.sh  (per-app venv + flask setup)  ── unchanged
+               ├─ seed-*.sh   (oauth clients)                 ── unchanged
+               ├─ cp products.yml → /etc/nightcraft/products.yml
+               ├─ gen-nginx-on-demand.sh  (regenerate)
+               ├─ systemctl restart nightcraft-runtime-manager.service
+               ├─ for each slug: restart always_on / SKIP on_demand (pledge stays down)
+               └─ systemctl reload nginx
+
+
+═══════════════════════════════════════════════════════════════════
+B) REQUEST TIME  — hitting /pledge/ cold (service is DOWN)
+═══════════════════════════════════════════════════════════════════
+
+Browser ──http──► nginx  (nightcraft.conf + include on-demand.conf)
+   │
+   ├─ location /pledge/  ──mirror──► /_nc_touch_green
+   │                                  │  (internal subrequest)
+   │                                  ▼
+   │                       nightcraft_runtime_manager_upstream (5700)
+   │                                  ▼
+   │                       Manager  /touch/green
+   │                          └─ records last_access + spawns thread:
+   │                               systemctl start nightcraft-pledge.service
+   │
+   ├─ proxy_pass ─► app_pledge_upstream (5300)  ── service DOWN ──► 502
+   │
+   ├─ proxy_intercept_errors on
+   ├─ error_page 502 = @nc_cold_green
+   └─ @nc_cold_green ──302──► /_nc_loading?slug=green&next=/pledge/
+
+Browser ──shows──► on-demand.html  (polls /_nc_probe/green every 1.5s)
+   │
+   └─ GET /_nc_probe/green
+         ├─ mirror ─► /_nc_touch_green  (re-touch → keeps start alive)
+         └─ proxy_pass ─► app_pledge_upstream (5300)
+               ├─ still DOWN ─► 502 (intercept off) ── loader keeps polling
+               └─ UP ─► 200  ── loader: location.href = next (/pledge/)
+
+Browser ──► /pledge/  ── proxy ─► app (now running) ── 200 served
+
+
+═══════════════════════════════════════════════════════════════════
+C) MANAGER INTERNALS  (always-on daemon, 127.0.0.1:5700)
+═══════════════════════════════════════════════════════════════════
+
+nightcraft-runtime-manager.py
+   │
+   ├─ startup: load products.yml → seed last_access=now for active on_demand
+   │
+   ├─ GET/POST /touch/<slug>
+   │     └─ touch(): lock → last_access[slug]=now
+   │           └─ if inactive & not starting:
+   │                 starting.add(slug)
+   │                 thread → systemctl start <service>
+   │
+   ├─ GET /healthz ──► 200 "ok"
+   │
+   └─ sweep thread (every 30s)
+         └─ for each on_demand service active:
+               if (now - last_access[slug]) > idle_timeout(15m):
+                     systemctl stop <service>
+         persist last_access → /runtime/nightcraft/manager/last_access.json
+```
+
+Key caller graph (who invokes whom):
+- **deploy.yml** → **bootstrap.sh** → {setup-host, install-env, setup-postgres, **install-systemd**, **install-nginx**, **deploy-all**}
+- **install-systemd.sh** → common.sh(`nc_ensure_yaml`) + copies manifest + installs manager
+- **install-nginx.sh** → **gen-nginx-on-demand.sh** → common.sh(`nc_*` helpers) → **products.py** → reads `products.yml`
+- **deploy-all.sh** → deploy-*/seed-* + **gen-nginx-on-demand.sh** + restarts manager
+- **products.py** is the shared leaf (read by both `gen` and `install-systemd` via common.sh)
+- runtime: **nginx** → **manager** (`/touch`) → `systemctl` (starts/stops pledge)

@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: nightcraft-postgres
     environment:
       POSTGRES_PASSWORD: postgres
@@ -27,6 +27,32 @@ services:
       timeout: 3s
       retries: 10
 
+  alfred:
+    build:
+      context: ..
+      dockerfile: dev-setup/Dockerfile.alfred
+    container_name: nightcraft-alfred
+    environment:
+      DATABASE_URL: postgresql+psycopg://alfred_app:alfred_app_db_2026_prod_secret@postgres:5432/alfred_db
+      FLASK_AUTH_MODE: sso
+      FLASK_AUTH_SERVICE_URL: http://127.0.0.1:5100/auth
+      FLASK_AUTHLIB_CLIENT_ID: alfred-app
+      FLASK_AUTHLIB_CLIENT_SECRET: alfred-app-client-secret-2026
+      FLASK_UPLOADS_DIR: /app/instance/uploads
+      APP_SLUG: alfred
+    ports:
+      - "127.0.0.1:5950:5950"
+    volumes:
+      - ..:/app
+      - alfred_uploads:/app/instance/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "python -m flask --app alfred setup || true &&
+             gunicorn --workers 2 --bind 0.0.0.0:5950 run:app"
+
 volumes:
   postgres_data:
   redis_data:
+  alfred_uploads:
