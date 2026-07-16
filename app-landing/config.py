@@ -48,7 +48,7 @@ class Config:
     TEXTTRACE_GITHUB_URL: str = os.environ.get("LANDING_TEXTTRACE_GITHUB_URL", "")
     TEXTTRACE_DOWNLOAD_URL: str = os.environ.get("LANDING_TEXTTRACE_DOWNLOAD_URL", "")
     GREENPLEDGE_URL: str = os.environ.get("LANDING_GREENPLEDGE_URL", "/green-pledge")
-    SCRAPBOOK_URL: str = os.environ.get("LANDING_SCRAPBOOK_URL", "/scrapbook")
+    SCRATCHPAD_URL: str = os.environ.get("LANDING_SCRATCHPAD_URL", "/scratchpad")
     NOTEBOOK_URL: str = os.environ.get("LANDING_NOTEBOOK_URL", "/miobook")
     QUICKPOST_URL: str = os.environ.get("LANDING_QUICKPOST_URL", "/quickpost")
     FOSSIL_URL: str = os.environ.get("LANDING_FOSSIL_URL", "/fossil")

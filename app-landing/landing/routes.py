@@ -213,13 +213,13 @@ def texttrace_home():
     )
 
 
-@main_bp.get("/scrapbook")
-def scrapbook_landing():
+@main_bp.get("/scratchpad")
+def scratchpad_landing():
     return render_template("mindmap-landing.html")
 
 
-@main_bp.get("/scrapbook/app")
-def scrapbook_app():
+@main_bp.get("/scratchpad/app")
+def scratchpad_app():
     return render_template("mindmap-app.html")
 
 
@@ -302,10 +302,10 @@ def experimental_apps():
                     "stack": "Planned",
                 },
                 {
-                    "name": "ScrapBook",
+                    "name": "ScratchPad",
                     "tagline": "Mind maps that grow with your ideas.",
                     "description": "A mindmap app for visually organizing thoughts, notes, and the connections between them.",
-                    "url": current_app.config["SCRAPBOOK_URL"],
+                    "url": current_app.config["SCRATCHPAD_URL"],
                     "status": "In Development",
                     "stack": "JavaScript, Canvas",
                 },
