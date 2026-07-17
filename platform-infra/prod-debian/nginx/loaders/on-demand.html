@@ -333,7 +333,39 @@
         return;
       }
 
+      // Hard ceiling: after this many ms, stop polling and let the user retry.
+      // Prevents an infinite spinner if the backend never comes up.
+      var HARD_TIMEOUT_MS = 120000;
+      var startedAt = Date.now();
+      var gaveUp = false;
+
+      function giveUp(reason) {
+        if (gaveUp) return;
+        gaveUp = true;
+        alive = false;
+        clearInterval(msgTimer);
+        document.getElementById("title").textContent = "We couldn't start this app";
+        statusEl.innerHTML = (reason ||
+          "The service didn't become ready in time. It may have failed to start.") +
+          ' <a href="#" id="retryLink" style="color:var(--accent)">Try again</a>';
+        var retry = document.getElementById("retryLink");
+        if (retry) {
+          retry.addEventListener("click", function (e) {
+            e.preventDefault();
+            retryNow();
+          });
+        }
+      }
+
+      function retryNow() {
+        // Re-running the probe re-mirrors /_nc_touch_<slug>, which asks the
+        // manager to re-attempt `systemctl start` (a failed start clears its
+        // in-progress guard, so a fresh touch retries). Reload to begin fresh.
+        window.location.reload();
+      }
+
       function poll() {
+        if (gaveUp) return;
         var url = "/_nc_probe/" + encodeURIComponent(slug) +
           "?t=" + Date.now();
         fetch(url, { cache: "no-store" })
@@ -345,9 +377,37 @@
               window.location.href = next;
               return;
             }
-            setTimeout(poll, 1500);
+            // Not ready yet: ask the manager whether the start failed, so we
+            // can stop spinning forever on a crashed service.
+            fetch("/_nc_status/" + encodeURIComponent(slug) + "?t=" + Date.now(),
+              { cache: "no-store" })
+              .then(function (r) { return r.ok ? r.json() : null; })
+              .then(function (st) {
+                if (st && st.status === "failed") {
+                  var why = st.error ? (" (" + st.error + ")") : "";
+                  giveUp("The service failed to start" + why +
+                    ". You can retry, or contact support if it keeps failing.");
+                  return;
+                }
+                if (Date.now() - startedAt > HARD_TIMEOUT_MS) {
+                  giveUp();
+                  return;
+                }
+                setTimeout(poll, 1500);
+              })
+              .catch(function () {
+                if (Date.now() - startedAt > HARD_TIMEOUT_MS) {
+                  giveUp();
+                  return;
+                }
+                setTimeout(poll, 1500);
+              });
           })
           .catch(function () {
+            if (Date.now() - startedAt > HARD_TIMEOUT_MS) {
+              giveUp();
+              return;
+            }
             setTimeout(poll, 1500);
           });
       }

@@ -82,6 +82,17 @@ MANAGER_UPSTREAM="nightcraft_runtime_manager_upstream"
       echo "}"
       echo
 
+      # Start-status probe: reports whether the manager succeeded/failed to
+      # start the service, so the loader can stop spinning forever on a crash.
+      echo "location = /_nc_status/${slug} {"
+      echo "    proxy_pass http://${MANAGER_UPSTREAM}/status/${slug};"
+      echo "    proxy_set_header Host \$host;"
+      echo "    proxy_set_header X-Real-IP \$remote_addr;"
+      echo "    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;"
+      echo "    proxy_set_header X-Forwarded-Proto \$scheme;"
+      echo "}"
+      echo
+
       # Cold-start handler: redirect to the branded loading page.
       # `next` is the LAST query param and may itself contain ?/&, so the loader
       # parses it as the trailing value (no URL-encoding needed).

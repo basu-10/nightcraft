@@ -111,6 +111,8 @@ class Manager:
     def __init__(self):
         self.lock = threading.Lock()
         self.last_access = {}
+        # start_state[slug] = {"status": "starting"|"active"|"failed", "error": "..."}
+        self.start_state = {}
         self.starting = set()
         self.products = {}
         self.od_products = {}
@@ -157,6 +159,7 @@ class Manager:
             should_start = slug not in self.starting and not is_active(service)
             if should_start:
                 self.starting.add(slug)
+                self.start_state[slug] = {"status": "starting", "error": ""}
         if should_start:
             log("Touch %s: service inactive, starting %s" % (slug, service))
             threading.Thread(
@@ -169,10 +172,29 @@ class Manager:
         rc, _, err = systemctl(["start", service])
         with self.lock:
             self.starting.discard(slug)
+            if rc == 0:
+                self.start_state[slug] = {"status": "active", "error": ""}
+            else:
+                self.start_state[slug] = {"status": "failed", "error": err}
         if rc == 0:
             log("Started %s (%s)" % (slug, service))
         else:
             log("Failed to start %s (%s): %s" % (slug, service, err))
+
+    def status(self, slug):
+        product = self.od_products.get(slug)
+        if product is None:
+            return None
+        service = product["runtime"]["service"]
+        with self.lock:
+            state = dict(self.start_state.get(slug, {}))
+        if not state:
+            if is_active(service):
+                state = {"status": "active", "error": ""}
+            else:
+                state = {"status": "down", "error": ""}
+        state["active"] = is_active(service)
+        return state
 
     def sweep(self):
         now = _now_seconds()
@@ -238,6 +260,17 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(202, "touched %s\n" % slug)
             else:
                 self._send(404, "unknown on_demand product\n")
+            return
+        if path.startswith("/status/"):
+            slug = path[len("/status/"):]
+            if not slug:
+                self._send(400, "missing slug\n")
+                return
+            state = self.server.manager.status(slug)
+            if state is None:
+                self._send(404, '{"error":"unknown on_demand product"}\n')
+                return
+            self._send(200, json.dumps(state) + "\n")
             return
         self._send(404, "not found\n")
 
