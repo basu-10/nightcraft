@@ -9,6 +9,12 @@ User=dev
 Group=dev
 WorkingDirectory=/nightcraft-source-code/app-game
 EnvironmentFile=/etc/nightcraft/app-game.env
+# Provision the persistent shared volume (DB + ROM uploads) before starting,
+# so a missing/partial deploy cannot crash create_app() and take the whole
+# game app down. Runs as root (+) because it must create/chown the paths.
+ExecStartPre=+install -d -m 0755 /runtime/shared/app-game
+ExecStartPre=+install -d -m 0755 /runtime/shared/app-game/uploads
+ExecStartPre=+chown -R dev:dev /runtime/shared/app-game
 ExecStart=/runtime/venvs/app-game/bin/python -m gunicorn \
   --workers 2 \
   --bind 127.0.0.1:5800 \
