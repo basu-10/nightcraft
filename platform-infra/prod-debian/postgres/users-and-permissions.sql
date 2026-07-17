@@ -49,7 +49,8 @@ WHERE NOT EXISTS (
         SELECT 1
         FROM pg_roles
         WHERE rolname = :'notestack_db_user'
-    ) \gexec -- Always keep role passwords aligned with deployment configuration.
+    ) \gexec
+-- Always keep role passwords aligned with deployment configuration.
 SELECT format(
         'ALTER ROLE %I WITH LOGIN PASSWORD %L',
         :'auth_db_user',
