@@ -13,6 +13,16 @@ from .models import QuickPost
 
 bp = Blueprint("app", __name__, url_prefix="/quickposts")
 
+# Root route (no prefix). The on-demand runtime manager probes `GET /` to
+# decide when the service is ready; without this the probe gets a 404 and the
+# branded loader page polls forever. It also hands off to the /quickposts landing.
+_root_bp = Blueprint("app_root", __name__)
+
+
+@_root_bp.route("/")
+def root():
+    return redirect(url_for("app.landing"))
+
 
 @bp.route("/")
 def landing():

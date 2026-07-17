@@ -56,6 +56,7 @@ def create_app(test_config=None, instance_path=None):
     from . import routes as routes_module
 
     app.register_blueprint(routes_module.bp)
+    app.register_blueprint(routes_module._root_bp)
 
     from . import cli
 
