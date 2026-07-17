@@ -869,7 +869,7 @@
         Paste text. Get slides. Refine. Compose. Publish. That's the entire QuickPost pipeline — under ninety seconds from start to finish.
       </p>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-3 anim-fade-up delay-2">
-        <button class="launch-btn bg-brand-accent text-brand-black text-xs font-semibold uppercase tracking-widest px-10 py-3.5 rounded-sm w-full sm:w-auto flex items-center justify-center gap-2" onclick="showToast('Opening pipeline workspace…', 'info'); setTimeout(() => showToast('Pipeline workspace ready', 'success'), 1500);">
+        <button class="launch-btn bg-brand-accent text-brand-black text-xs font-semibold uppercase tracking-widest px-10 py-3.5 rounded-sm w-full sm:w-auto flex items-center justify-center gap-2" onclick="showToast('Opening pipeline workspace…', 'info'); setTimeout(() => showToast('Pipeline workspace ready', 'success'), 1500); setTimeout(() => { window.location.href = QUICKPOSTS_EDITOR_URL; }, 1700);">
           <i data-lucide="play" class="w-3.5 h-3.5"></i>
           Start Pipeline
         </button>
@@ -905,6 +905,10 @@
   <div class="fixed bottom-6 right-6 z-[100] flex flex-col gap-2" id="toastContainer"></div>
 
   <script>
+    // Editor workspace URL — wired from the server so the landing page can
+    // hand off to the actual QuickPost app after launch.
+    const QUICKPOSTS_EDITOR_URL = "{{ url_for('app.editor') }}";
+
     lucide.createIcons();
 
     // Mobile menu
@@ -943,6 +947,8 @@
       const stageMap = { 'Quick Slides': 'Stage 01', 'Quick Edits': 'Stage 02', 'QuickCollages': 'Stage 03' };
       showToast(`Initializing ${stageMap[name]} — ${name}…`, 'info');
       setTimeout(() => showToast(`${name} workspace loaded`, 'success'), 1600);
+      // Hand off to the actual QuickPost app editor.
+      setTimeout(() => { window.location.href = QUICKPOSTS_EDITOR_URL; }, 1700);
     }
 
     // Intersection Observer for scroll animations

@@ -783,11 +783,11 @@
 <body>
 
 <header>
-  <div class="header-left">
-    <div class="logo">
-      <div class="logo-icon"><i class="fas fa-bolt" style="font-size:13px"></i></div>
-      <span class="logo-text">NoteFlow</span>
-    </div>
+    <div class="header-left">
+      <a href="{{ url_for('app.landing') }}" class="logo" style="text-decoration:none;color:inherit;">
+        <div class="logo-icon"><i class="fas fa-bolt" style="font-size:13px"></i></div>
+        <span class="logo-text">NoteFlow</span>
+      </a>
     <input type="text" class="notebook-title" value="Data Exploration — Customer Churn Analysis" id="notebookTitle" aria-label="Notebook title">
   </div>
   <div class="header-center">

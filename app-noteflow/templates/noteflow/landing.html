@@ -299,8 +299,8 @@ footer{padding:60px 0 40px;border-top:1px solid var(--border);position:relative;
       <li><a href="#cta">Pricing</a></li>
     </ul>
     <div class="nav-cta">
-      <a href="#cta" class="btn btn-ghost">Sign In</a>
-      <a href="#cta" class="btn btn-primary">Get Started</a>
+      <a href="{{ url_for('app.editor') }}" class="btn btn-ghost">Sign In</a>
+      <a href="{{ url_for('app.editor') }}" class="btn btn-primary">Get Started</a>
     </div>
   </div>
 </nav>
@@ -314,7 +314,7 @@ footer{padding:60px 0 40px;border-top:1px solid var(--border);position:relative;
         <h1>Notebooks built for <span class="accent">team thinking</span></h1>
         <p>The notebook environment you already love, with inline comments on every cell. Review, discuss, and iterate on analysis — without leaving your workflow.</p>
         <div class="hero-actions">
-          <a href="#cta" class="btn btn-primary btn-lg"><i class="fas fa-arrow-right"></i> Start Free</a>
+          <a href="{{ url_for('app.editor') }}" class="btn btn-primary btn-lg"><i class="fas fa-arrow-right"></i> Start Free</a>
           <a href="#features" class="btn btn-outline-lg"><i class="fas fa-play"></i> See How It Works</a>
         </div>
         <div class="hero-stats">
@@ -560,8 +560,8 @@ F1-Score: 0.6156</div>
     <h2 class="reveal">Start thinking together</h2>
     <p class="reveal reveal-delay-1">Free for individuals and small teams. No credit card required. Your notebooks, your data, your workflow.</p>
     <div class="cta-actions reveal reveal-delay-2">
-      <a href="#" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Get Started Free</a>
-      <a href="#" class="btn btn-outline-lg"><i class="fas fa-calendar"></i> Book a Demo</a>
+      <a href="{{ url_for('app.editor') }}" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Get Started Free</a>
+      <a href="#features" class="btn btn-outline-lg"><i class="fas fa-calendar"></i> Book a Demo</a>
     </div>
   </div>
 </section>

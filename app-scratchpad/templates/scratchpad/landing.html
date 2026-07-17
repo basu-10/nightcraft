@@ -319,7 +319,7 @@
             <li><a href="#search">Search</a></li>
             <li><a href="#layout">Layouts</a></li>
         </ul>
-        <a href="#launch" class="btn-primary">Launch App</a>
+        <a href="{{ url_for('app.editor') }}" class="btn-primary">Launch App</a>
     </nav>
 
     <!-- Hero -->
@@ -537,7 +537,7 @@
         <h2>Start mapping your research</h2>
         <p>No sign-up required. Your data stays on your machine.</p>
         <div style="display: flex; gap: 15px; justify-content: center;">
-            <a href="landing.html" class="btn-primary" style="padding: 15px 30px; font-size: 1.1rem;">Launch Workspace</a>
+            <a href="{{ url_for('app.editor') }}" class="btn-primary" style="padding: 15px 30px; font-size: 1.1rem;">Launch Workspace</a>
         </div>
     </section>
 
