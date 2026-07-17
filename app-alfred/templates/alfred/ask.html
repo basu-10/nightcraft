@@ -1,52 +1,104 @@
 {% extends "base.html" %}
+{% block header %}{% endblock %}
 {% block title %}Alfred — Ask{% endblock %}
 {% block content %}
-<div class="ask-layout">
-  <section class="conversation">
+<div class="alfred-app">
+  <aside class="app-sidebar">
+    <div class="sidebar-brand">alfred</div>
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('main.ask') }}" class="nav-item">
+        <span class="nav-icon">+</span>
+        <span>New Conversation</span>
+      </a>
+      <a href="{{ url_for('main.ask') }}" class="nav-item active">
+        <span class="nav-icon">&#128172;</span>
+        <span>Conversations</span>
+      </a>
+      <a href="{{ url_for('library.index') }}" class="nav-item">
+        <span class="nav-icon">&#128214;</span>
+        <span>Library</span>
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon">&#10004;</span>
+        <span>Tasks</span>
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon">&#9881;</span>
+        <span>Settings</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="local-mode">
+        <span class="status-dot"></span>
+        <span>Local Mode</span>
+        <span class="chevron">&#9662;</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <header class="app-header">
+      <h1>Ask Alfred</h1>
+      <div class="header-actions">
+        <button class="icon-btn" title="Toggle theme">&#9788;</button>
+      </div>
+    </header>
+
     <div id="messages" class="messages">
       {% for m in messages %}
-        <div class="msg msg-{{ m.role }}">
-          <div class="msg-role">{{ m.role }}</div>
-          <div class="msg-body">{{ m.content }}</div>
-          {% if m.references %}
-            <div class="msg-refs">
-              {% for aid in m.references %}
-                <span class="chip">Asset #{{ aid }}</span>
-              {% endfor %}
-            </div>
+        <div class="msg msg-{{ m.role }}" data-role="{{ m.role }}">
+          {% if m.role == 'assistant' %}
+            <div class="msg-avatar">A</div>
           {% endif %}
+          <div class="msg-content">
+            <div class="msg-meta">
+              <span class="msg-name">{{ 'You' if m.role == 'user' else 'Alfred' }}</span>
+              <span class="msg-time" data-timestamp="{{ m.created_at.strftime('%Y-%m-%dT%H:%M:%S') }}"></span>
+            </div>
+            <div class="msg-body">{{ m.content }}</div>
+            {% if m.references %}
+              <div class="msg-refs">
+                {% for aid in m.references %}
+                  <span class="chip">Asset #{{ aid }}</span>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
         </div>
       {% endfor %}
     </div>
 
     <div id="agent-log" class="agent-log" hidden></div>
 
-    <!-- Drag-drop dropzone overlay target is the composer -->
     <form id="composer" class="composer" data-session="{{ session.session_id if session else '' }}">
       <div id="dropzone" class="dropzone">
-        <textarea id="goal-input" name="goal" rows="3" placeholder="Ask Alfred… or drag a file here to edit it."></textarea>
+        <textarea id="goal-input" name="goal" rows="1" placeholder="Ask Alfred anything..."></textarea>
         <div id="attachments" class="attachments"></div>
       </div>
       <div class="composer-actions">
-        <span class="hint">Drag a file to attach &amp; edit it. Attached assets are sent with your message.</span>
-        <button type="submit" id="send-btn" class="btn primary">Send</button>
+        <div class="composer-tools">
+          <button type="button" class="tool-btn" data-tool="attach" title="Attach file">
+            <span class="tool-icon">&#128206;</span>
+          </button>
+          <button type="button" class="tool-btn" data-tool="web">
+            <span class="tool-icon">&#127760;</span>
+            <span>Search Web</span>
+          </button>
+          <button type="button" class="tool-btn" data-tool="papers">
+            <span class="tool-icon">&#128196;</span>
+            <span>Search Papers</span>
+          </button>
+          <button type="button" class="tool-btn" data-tool="more">
+            <span class="tool-icon">&#8942;</span>
+            <span>More Tools</span>
+          </button>
+        </div>
+        <button type="submit" id="send-btn" class="btn primary send-btn" title="Send">
+          <span>&#10148;</span>
+        </button>
       </div>
     </form>
-  </section>
-
-  <aside class="sidebar">
-    <h3>Library</h3>
-    <p class="hint">Click an asset to attach it to your message.</p>
-    <ul id="asset-list" class="asset-list">
-      {% for a in assets %}
-        <li>
-          <button type="button" class="asset-attach" data-id="{{ a.id }}" data-title="{{ a.title }}">
-            {{ a.title }} <span class="badge">{{ a.content_type }}</span>
-          </button>
-        </li>
-      {% endfor %}
-    </ul>
-  </aside>
+  </main>
 </div>
 {% endblock %}
 {% block scripts %}

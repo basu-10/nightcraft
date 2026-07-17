@@ -15,18 +15,82 @@
   let pollTimer = null;
   let currentRunId = null;
   let lastSeq = -1;
+  let currentRunTools = [];
+  let currentRunPlan = null;
 
-  function addMessage(role, text, refs) {
+  function formatTime(date) {
+    if (!date) return "";
+    const d = new Date(date);
+    let hours = d.getHours();
+    const minutes = d.getMinutes();
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    if (hours === 0) hours = 12;
+    const minStr = minutes < 10 ? "0" + minutes : minutes;
+    return hours + ":" + minStr + " " + ampm;
+  }
+
+  function formatTimestamp(iso) {
+    if (!iso) return formatTime(new Date());
+    return formatTime(iso);
+  }
+
+  function renderMessage(el) {
+    const timeEl = el.querySelector(".msg-time");
+    if (timeEl && !timeEl.textContent) {
+      const ts = timeEl.dataset.timestamp;
+      timeEl.textContent = formatTimestamp(ts);
+    }
+  }
+
+  function addMessage(role, text, refs, runContext) {
     const div = document.createElement("div");
     div.className = "msg msg-" + role;
-    const roleEl = document.createElement("div");
-    roleEl.className = "msg-role";
-    roleEl.textContent = role;
+    div.dataset.role = role;
+
+    if (role === "assistant") {
+      const avatar = document.createElement("div");
+      avatar.className = "msg-avatar";
+      avatar.textContent = "A";
+      div.appendChild(avatar);
+    }
+
+    const content = document.createElement("div");
+    content.className = "msg-content";
+
+    const meta = document.createElement("div");
+    meta.className = "msg-meta";
+    const name = document.createElement("span");
+    name.className = "msg-name";
+    name.textContent = role === "user" ? "You" : "Alfred";
+    const time = document.createElement("span");
+    time.className = "msg-time";
+    time.textContent = formatTime(new Date());
+    if (role === "user") {
+      const check = document.createElement("span");
+      check.className = "msg-check";
+      check.textContent = " ✓";
+      time.appendChild(check);
+    }
+    meta.appendChild(name);
+    meta.appendChild(time);
+    content.appendChild(meta);
+
     const body = document.createElement("div");
     body.className = "msg-body";
     body.textContent = text;
-    div.appendChild(roleEl);
-    div.appendChild(body);
+    content.appendChild(body);
+
+    if (runContext && runContext.tools && runContext.tools.length) {
+      const toolsSection = buildToolsSection(runContext.tools);
+      content.appendChild(toolsSection);
+    }
+
+    if (runContext && runContext.plan) {
+      const planSection = buildPlanSection(runContext.plan);
+      content.appendChild(planSection);
+    }
+
     if (refs && refs.length) {
       const refsEl = document.createElement("div");
       refsEl.className = "msg-refs";
@@ -36,10 +100,96 @@
         c.textContent = "Asset #" + id;
         refsEl.appendChild(c);
       });
-      div.appendChild(refsEl);
+      content.appendChild(refsEl);
     }
+
+    div.appendChild(content);
     messagesEl.appendChild(div);
     messagesEl.scrollTop = messagesEl.scrollHeight;
+    return div;
+  }
+
+  function buildToolsSection(tools) {
+    const section = document.createElement("div");
+    section.className = "section-toggle open";
+
+    const header = document.createElement("div");
+    header.className = "section-toggle-header";
+    header.innerHTML = '<span>Using tools</span><span class="section-toggle-chevron">&#9662;</span>';
+    header.addEventListener("click", function () {
+      section.classList.toggle("open");
+    });
+
+    const body = document.createElement("div");
+    body.className = "section-toggle-body";
+
+    tools.forEach(function (tool) {
+      const card = document.createElement("div");
+      card.className = "tool-card";
+
+      const icon = document.createElement("div");
+      icon.className = "tool-icon";
+      icon.textContent = tool.icon || "&#128736;";
+
+      const info = document.createElement("div");
+      info.className = "tool-info";
+      const name = document.createElement("div");
+      name.className = "tool-name";
+      name.textContent = tool.name;
+      const query = document.createElement("div");
+      query.className = "tool-query";
+      query.textContent = tool.query || "";
+      info.appendChild(name);
+      info.appendChild(query);
+
+      const status = document.createElement("div");
+      status.className = "tool-status " + (tool.status || "completed");
+      const dot = document.createElement("span");
+      dot.className = "tool-status-dot";
+      const label = document.createElement("span");
+      label.textContent = tool.statusLabel || "Completed";
+      status.appendChild(dot);
+      status.appendChild(label);
+
+      card.appendChild(icon);
+      card.appendChild(info);
+      card.appendChild(status);
+      body.appendChild(card);
+    });
+
+    section.appendChild(header);
+    section.appendChild(body);
+    return section;
+  }
+
+  function buildPlanSection(plan) {
+    const section = document.createElement("div");
+    section.className = "section-toggle";
+
+    const header = document.createElement("div");
+    header.className = "section-toggle-header";
+    header.innerHTML = '<span>Planning</span><span class="section-toggle-chevron">&#9662;</span>';
+    header.addEventListener("click", function () {
+      section.classList.toggle("open");
+    });
+
+    const body = document.createElement("div");
+    body.className = "section-toggle-body";
+    body.textContent = plan || "Analyzing goal and selecting tools...";
+
+    section.appendChild(header);
+    section.appendChild(body);
+    return section;
+  }
+
+  function getToolIcon(name) {
+    const n = (name || "").toLowerCase();
+    if (n.includes("search") && n.includes("web")) return "&#127760;";
+    if (n.includes("search") && n.includes("paper")) return "&#128196;";
+    if (n.includes("read")) return "&#128212;";
+    if (n.includes("summar")) return "&#128220;";
+    if (n.includes("write")) return "&#9997;";
+    return "&#128736;";
   }
 
   function addAgentEvent(ev) {
@@ -48,7 +198,7 @@
     line.className = "ev-" + ev.type;
     let text = "[" + ev.type + "]";
     if (ev.type === "plan" && ev.payload.plan) {
-      text += " " + JSON.stringify(ev.payload.plan.phases);
+      currentRunPlan = ev.payload.plan.phases ? ev.payload.plan.phases.join(", ") : JSON.stringify(ev.payload.plan);
     } else if (ev.payload && ev.payload.message) {
       text += " " + ev.payload.message;
     } else if (ev.type === "artifact" && ev.payload.title) {
@@ -56,8 +206,22 @@
     } else if (ev.type === "llm_message" && ev.payload.content) {
       text = ev.payload.content;
     } else if (ev.type === "tool_call" && ev.payload.name) {
-      text += " " + ev.payload.name + " " + JSON.stringify(ev.payload.args || {});
+      const toolName = ev.payload.name;
+      const toolQuery = ev.payload.args && ev.payload.args.query ? ev.payload.args.query : "";
+      currentRunTools.push({
+        name: toolName,
+        query: toolQuery,
+        status: "in-progress",
+        statusLabel: "In progress",
+        icon: getToolIcon(toolName),
+      });
+      text += " " + toolName + " " + JSON.stringify(ev.payload.args || {});
     } else if (ev.type === "tool_result" && ev.payload.name) {
+      const tool = currentRunTools.find(function (t) { return t.name === ev.payload.name && t.status === "in-progress"; });
+      if (tool) {
+        tool.status = "completed";
+        tool.statusLabel = "Completed";
+      }
       text += " " + ev.payload.name + " → " + JSON.stringify(ev.payload.result || {}).slice(0, 200);
     }
     line.textContent = text;
@@ -91,7 +255,6 @@
     });
   }
 
-  // Drag and drop a file -> ingest -> attach chip.
   ["dragenter", "dragover"].forEach(function (evt) {
     dropzone.addEventListener(evt, function (e) {
       e.preventDefault();
@@ -141,7 +304,13 @@
             addMessage("assistant", "Created report: " + ev.payload.title + " (Asset #" + ev.payload.asset_id + ")");
           }
           if (ev.type === "status" && ev.payload.status === "done") {
-            addMessage("assistant", ev.payload.summary || "Done.");
+            const runContext = {
+              tools: currentRunTools.slice(),
+              plan: currentRunPlan,
+            };
+            addMessage("assistant", ev.payload.summary || "Done.", [], runContext);
+            currentRunTools = [];
+            currentRunPlan = null;
           }
           addAgentEvent(ev);
         });
@@ -162,11 +331,14 @@
     pollTimer = null;
   }
 
-  // Heartbeat every ~15s while tab open (§11).
   startPolling();
   setInterval(function () {
     fetch("/alfred/api/heartbeat", { method: "GET" }).catch(function () {});
   }, 15000);
+
+  messagesEl.querySelectorAll(".msg").forEach(function (el) {
+    renderMessage(el);
+  });
 
   if (form) {
     form.addEventListener("submit", function (e) {
@@ -176,6 +348,8 @@
       addMessage("user", goal, Array.from(attached));
       input.value = "";
       sendBtn.disabled = true;
+      currentRunTools = [];
+      currentRunPlan = null;
 
       const payload = {
         goal: goal,
@@ -205,4 +379,16 @@
         });
     });
   }
+
+  document.querySelectorAll(".tool-btn[data-tool]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      const tool = btn.dataset.tool;
+      if (tool === "attach") {
+        input.click();
+      } else {
+        input.placeholder = "Use " + btn.textContent.trim() + " to find information...";
+        input.focus();
+      }
+    });
+  });
 })();

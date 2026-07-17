@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='alfred/styles.css') }}">
 </head>
 <body>
+  {% block header %}
   <header class="topbar">
     <div class="brand"><a href="{{ url_for('main.marketing') }}">Alfred</a></div>
     <nav class="nav">
@@ -23,6 +24,7 @@
       {% endif %}
     </nav>
   </header>
+  {% endblock %}
   <main class="container">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
