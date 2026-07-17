@@ -17,7 +17,7 @@ set -a
 source /etc/nightcraft/service-auth.env
 set +a
 
-NOTEFLOW_PUBLIC_URL="${NOTEFLOW_PUBLIC_URL:-http://31.70.85.189}"
+NOTEFLOW_PUBLIC_URL="${NOTEFLOW_PUBLIC_URL:-http://31.70.85.89}"
 NOTEFLOW_PUBLIC_PATH="${NOTEFLOW_PUBLIC_PATH:-/noteflow}"
 AUTH_SEED_USERNAME="${AUTH_SEED_USERNAME:-devuser}"
 AUTH_SEED_EMAIL="${AUTH_SEED_EMAIL:-devuser@example.com}"

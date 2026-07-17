@@ -17,7 +17,7 @@ set -a
 source /etc/nightcraft/service-auth.env
 set +a
 
-SCRATCHPAD_PUBLIC_URL="${SCRATCHPAD_PUBLIC_URL:-http://31.70.85.189}"
+SCRATCHPAD_PUBLIC_URL="${SCRATCHPAD_PUBLIC_URL:-http://31.70.85.89}"
 SCRATCHPAD_PUBLIC_PATH="${SCRATCHPAD_PUBLIC_PATH:-/scratchpad}"
 AUTH_SEED_USERNAME="${AUTH_SEED_USERNAME:-devuser}"
 AUTH_SEED_EMAIL="${AUTH_SEED_EMAIL:-devuser@example.com}"

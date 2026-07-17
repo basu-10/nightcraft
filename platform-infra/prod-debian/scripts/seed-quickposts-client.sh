@@ -17,7 +17,7 @@ set -a
 source /etc/nightcraft/service-auth.env
 set +a
 
-QUICKPOSTS_PUBLIC_URL="${QUICKPOSTS_PUBLIC_URL:-http://31.70.85.189}"
+QUICKPOSTS_PUBLIC_URL="${QUICKPOSTS_PUBLIC_URL:-http://31.70.85.89}"
 QUICKPOSTS_PUBLIC_PATH="${QUICKPOSTS_PUBLIC_PATH:-/quickposts}"
 AUTH_SEED_USERNAME="${AUTH_SEED_USERNAME:-devuser}"
 AUTH_SEED_EMAIL="${AUTH_SEED_EMAIL:-devuser@example.com}"
