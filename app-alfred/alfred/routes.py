@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, render_template, request, url_for
+from flask import Blueprint, redirect, render_template, request, url_for
 
 from .auth.current_user import get_current_user
 from .guards import auth_required
