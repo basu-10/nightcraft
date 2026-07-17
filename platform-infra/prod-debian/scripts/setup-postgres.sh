@@ -192,58 +192,54 @@ if [[ -z "${PLEDGE_DB_USER}" || -z "${PLEDGE_DB_NAME}" || -z "${PLEDGE_DB_PASSWO
   fi
 fi
 
-ALFRED_DB_NAME="${ALFRED_DB_NAME:-alfred_db}"
-ALFRED_DB_USER="${ALFRED_DB_USER:-alfred_app}"
-ALFRED_DB_PASSWORD="${ALFRED_DB_PASSWORD:-alfred_app_db_2026_prod_secret}"
-
 ALFRED_ENV_FILE="${ALFRED_ENV_FILE:-/etc/nightcraft/app-alfred.env}"
-if [[ -z "${ALFRED_DB_USER}" || -z "${ALFRED_DB_NAME}" || -z "${ALFRED_DB_PASSWORD}" ]]; then
-  if alfred_url="$(_extract_database_url_from_env_file "${ALFRED_ENV_FILE}" 2>/dev/null)"; then
-    _set_db_values_from_url "${alfred_url}" "ALFRED" || true
-  fi
+ALFRED_DB_USER="${ALFRED_DB_USER:-alfred_app}"
+ALFRED_DB_NAME="${ALFRED_DB_NAME:-alfred_db}"
+ALFRED_DB_PASSWORD="${ALFRED_DB_PASSWORD:-alfred_app_db_2026_prod_secret}"
+if alfred_url="$(_extract_database_url_from_env_file "${ALFRED_ENV_FILE}" 2>/dev/null)"; then
+  _set_db_values_from_url "${alfred_url}" "ALFRED" || true
 fi
+ALFRED_DB_USER="${ALFRED_DB_USER:-alfred_app}"
+ALFRED_DB_NAME="${ALFRED_DB_NAME:-alfred_db}"
+ALFRED_DB_PASSWORD="${ALFRED_DB_PASSWORD:-alfred_app_db_2026_prod_secret}"
 
 QUICKPOSTS_ENV_FILE="${QUICKPOSTS_ENV_FILE:-/etc/nightcraft/app-quickposts.env}"
 NOTEFLOW_ENV_FILE="${NOTEFLOW_ENV_FILE:-/etc/nightcraft/app-noteflow.env}"
 SCRATCHPAD_ENV_FILE="${SCRATCHPAD_ENV_FILE:-/etc/nightcraft/app-scratchpad.env}"
 
-QUICKPOSTS_DB_NAME="${QUICKPOSTS_DB_NAME:-quickposts_db}"
 QUICKPOSTS_DB_USER="${QUICKPOSTS_DB_USER:-quickposts_app}"
+QUICKPOSTS_DB_NAME="${QUICKPOSTS_DB_NAME:-quickposts_db}"
+QUICKPOSTS_DB_PASSWORD="${QUICKPOSTS_DB_PASSWORD:-quickposts_app_db_2026_prod_secret}"
+if quickposts_url="$(_extract_database_url_from_env_file "${QUICKPOSTS_ENV_FILE}" 2>/dev/null)"; then
+  _set_db_values_from_url "${quickposts_url}" "QUICKPOSTS" || true
+fi
+QUICKPOSTS_DB_USER="${QUICKPOSTS_DB_USER:-quickposts_app}"
+QUICKPOSTS_DB_NAME="${QUICKPOSTS_DB_NAME:-quickposts_db}"
 QUICKPOSTS_DB_PASSWORD="${QUICKPOSTS_DB_PASSWORD:-quickposts_app_db_2026_prod_secret}"
 
-NOTEFLOW_DB_NAME="${NOTEFLOW_DB_NAME:-noteflow_db}"
 NOTEFLOW_DB_USER="${NOTEFLOW_DB_USER:-noteflow_app}"
+NOTEFLOW_DB_NAME="${NOTEFLOW_DB_NAME:-noteflow_db}"
+NOTEFLOW_DB_PASSWORD="${NOTEFLOW_DB_PASSWORD:-noteflow_app_db_2026_prod_secret}"
+if noteflow_url="$(_extract_database_url_from_env_file "${NOTEFLOW_ENV_FILE}" 2>/dev/null)"; then
+  _set_db_values_from_url "${noteflow_url}" "NOTEFLOW" || true
+fi
+NOTEFLOW_DB_USER="${NOTEFLOW_DB_USER:-noteflow_app}"
+NOTEFLOW_DB_NAME="${NOTEFLOW_DB_NAME:-noteflow_db}"
 NOTEFLOW_DB_PASSWORD="${NOTEFLOW_DB_PASSWORD:-noteflow_app_db_2026_prod_secret}"
 
-SCRATCHPAD_DB_NAME="${SCRATCHPAD_DB_NAME:-scratchpad_db}"
 SCRATCHPAD_DB_USER="${SCRATCHPAD_DB_USER:-scratchpad_app}"
+SCRATCHPAD_DB_NAME="${SCRATCHPAD_DB_NAME:-scratchpad_db}"
 SCRATCHPAD_DB_PASSWORD="${SCRATCHPAD_DB_PASSWORD:-scratchpad_app_db_2026_prod_secret}"
-
-if [[ -z "${QUICKPOSTS_DB_USER}" || -z "${QUICKPOSTS_DB_NAME}" || -z "${QUICKPOSTS_DB_PASSWORD}" ]]; then
-  if quickposts_url="$(_extract_database_url_from_env_file "${QUICKPOSTS_ENV_FILE}" 2>/dev/null)"; then
-    _set_db_values_from_url "${quickposts_url}" "QUICKPOSTS" || true
-  fi
+if scratchpad_url="$(_extract_database_url_from_env_file "${SCRATCHPAD_ENV_FILE}" 2>/dev/null)"; then
+  _set_db_values_from_url "${scratchpad_url}" "SCRATCHPAD" || true
 fi
-
-if [[ -z "${NOTEFLOW_DB_USER}" || -z "${NOTEFLOW_DB_NAME}" || -z "${NOTEFLOW_DB_PASSWORD}" ]]; then
-  if noteflow_url="$(_extract_database_url_from_env_file "${NOTEFLOW_ENV_FILE}" 2>/dev/null)"; then
-    _set_db_values_from_url "${noteflow_url}" "NOTEFLOW" || true
-  fi
-fi
-
-if [[ -z "${SCRATCHPAD_DB_USER}" || -z "${SCRATCHPAD_DB_NAME}" || -z "${SCRATCHPAD_DB_PASSWORD}" ]]; then
-  if scratchpad_url="$(_extract_database_url_from_env_file "${SCRATCHPAD_ENV_FILE}" 2>/dev/null)"; then
-    _set_db_values_from_url "${scratchpad_url}" "SCRATCHPAD" || true
-  fi
-fi
+SCRATCHPAD_DB_USER="${SCRATCHPAD_DB_USER:-scratchpad_app}"
+SCRATCHPAD_DB_NAME="${SCRATCHPAD_DB_NAME:-scratchpad_db}"
+SCRATCHPAD_DB_PASSWORD="${SCRATCHPAD_DB_PASSWORD:-scratchpad_app_db_2026_prod_secret}"
 
 NOTESTACK_DB_NAME="${NOTESTACK_DB_NAME:-notestack_db}"
 NOTESTACK_DB_USER="${NOTESTACK_DB_USER:-notestack_app}"
 NOTESTACK_DB_PASSWORD="${NOTESTACK_DB_PASSWORD:-notestack_app_db_2026_prod_secret}"
-
-ALFRED_DB_NAME="${ALFRED_DB_NAME:-alfred_db}"
-ALFRED_DB_USER="${ALFRED_DB_USER:-alfred_app}"
-ALFRED_DB_PASSWORD="${ALFRED_DB_PASSWORD:-alfred_app_db_2026_prod_secret}"
 
 if [[ -z "${ALFRED_DB_PASSWORD}" ]]; then
   echo "[setup-postgres] Alfred PostgreSQL password is empty." >&2
