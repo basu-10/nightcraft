@@ -138,6 +138,31 @@
       font-size: 0.78rem;
       z-index: 1;
     }
+
+    /* click ripple */
+    .ripple {
+      position: fixed;
+      border: 2px solid rgba(76,175,80,0.55);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 3;
+      transform: translate(-50%, -50%);
+      animation: rippleOut 0.7s ease-out forwards;
+    }
+    @keyframes rippleOut {
+      0% { width: 0; height: 0; opacity: 0.7; }
+      100% { width: 160px; height: 160px; opacity: 0; }
+    }
+
+    /* cursor-following critter */
+    .critter {
+      transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .ripple { animation-duration: 0.01ms; }
+    }
   </style>
 </head>
 <body>
@@ -223,6 +248,7 @@
 
       // --- drifting background dots ---
       var bg = document.getElementById("bgDots");
+      var dotEls = [];
       for (var d = 0; d < 18; d++) {
         var s = document.createElement("span");
         s.style.left = Math.random() * 100 + "vw";
@@ -232,7 +258,73 @@
         s.style.animationDuration = (8 + Math.random() * 12) + "s";
         s.style.animationDelay = (-Math.random() * 12) + "s";
         bg.appendChild(s);
+        dotEls.push(s);
       }
+
+      // --- passive interactivity -------------------------------------------------
+      var reduceMotion = window.matchMedia &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var stageEl = document.querySelector(".stage");
+      var pointer = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+      var alive = true; // set false once we redirect, to stop the rAF loop
+
+      // critter + stage lean gently toward the pointer
+      if (!reduceMotion) {
+        window.addEventListener("pointermove", function (e) {
+          pointer.x = e.clientX;
+          pointer.y = e.clientY;
+        }, { passive: true });
+
+        (function followLoop() {
+          if (!alive) return;
+          var cx = window.innerWidth / 2;
+          var cy = window.innerHeight / 2;
+          var dx = (pointer.x - cx) / cx; // -1 .. 1
+          var dy = (pointer.y - cy) / cy;
+          stageEl.style.transform =
+            "translate(" + (dx * 18).toFixed(1) + "px," + (dy * 14).toFixed(1) + "px)";
+          requestAnimationFrame(followLoop);
+        })();
+      }
+
+      // background dots drift away from the pointer (parallax-ish parting)
+      function repelDots() {
+        if (!alive || reduceMotion) return;
+        var px = pointer.x, py = pointer.y;
+        for (var i = 0; i < dotEls.length; i++) {
+          var el = dotEls[i];
+          var r = el.getBoundingClientRect();
+          var ex = r.left + r.width / 2;
+          var ey = r.top + r.height / 2;
+          var dist = Math.hypot(ex - px, ey - py);
+          if (dist < 120) {
+            var ang = Math.atan2(ey - py, ex - px);
+            var push = (120 - dist) / 120 * 22;
+            el.style.marginLeft = Math.cos(ang) * push + "px";
+            el.style.marginTop = Math.sin(ang) * push + "px";
+          } else if (el.style.marginLeft !== "0px") {
+            el.style.marginLeft = "0px";
+            el.style.marginTop = "0px";
+          }
+        }
+        requestAnimationFrame(repelDots);
+      }
+      if (!reduceMotion) repelDots();
+
+      // tap / click spawns a ripple
+      function spawnRipple(x, y) {
+        var r = document.createElement("span");
+        r.className = "ripple";
+        r.style.left = x + "px";
+        r.style.top = y + "px";
+        document.body.appendChild(r);
+        setTimeout(function () {
+          if (r.parentNode) r.parentNode.removeChild(r);
+        }, 750);
+      }
+      window.addEventListener("pointerdown", function (e) {
+        spawnRipple(e.clientX, e.clientY);
+      }, { passive: true });
 
       if (!slug) {
         clearInterval(msgTimer);
@@ -247,6 +339,7 @@
         fetch(url, { cache: "no-store" })
           .then(function (resp) {
             if (resp.ok) {
+              alive = false;
               clearInterval(msgTimer);
               statusEl.textContent = "All set! Taking you in…";
               window.location.href = next;
