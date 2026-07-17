@@ -57,6 +57,15 @@ copy_env() {
 
   if [[ -f "${target_file}" ]]; then
     sed -i 's/\r$//' "${target_file}"
+    # Self-heal a known-bad auth service IP typo (31.70.85.189 is a
+    # different host; the real server is 31.70.85.89). Only rewrite the
+    # specific auth-related keys so operator-set secrets are preserved.
+    sed -i -E \
+      -e 's#^(FLASK_AUTH_SERVICE_URL=)http://31\.70\.85\.189/#\1http://31.70.85.89/#' \
+      -e 's#^(AUTH_SERVICE_URL=)http://31\.70\.85\.189/#\1http://31.70.85.89/#' \
+      -e 's#^(OIDC_ISSUER=)http://31\.70\.85\.189/#\1http://31.70.85.89/#' \
+      -e 's#^(PUBLIC_BASE_URL=)http://31\.70\.85\.189/#\1http://31.70.85.89/#' \
+      "${target_file}"
     echo "kept existing: ${target_file}"
   else
     install -m 0640 "${src_file}" "${target_file}"
