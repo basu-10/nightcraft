@@ -10,7 +10,7 @@ from .auth.current_user import get_current_user
 from .extensions import db
 from .guards import auth_required
 from .ingest import ingest_bytes
-from .models import Asset
+from .models import Asset, ASSET_TYPE_REPORT
 from .providers import web_search as web_provider
 from .rag import get_relation_graph
 
@@ -21,12 +21,37 @@ bp = Blueprint("library", __name__, url_prefix="/alfred/library")
 @auth_required
 def index():
     user = get_current_user()
-    assets = (
-        Asset.query.filter_by(user_id=user.user_id)
-        .order_by(Asset.created_at.desc())
-        .all()
+    category = (request.args.get("category") or "all").lower()
+    q = (request.args.get("q") or "").strip()
+    sort = (request.args.get("sort") or "recent").lower()
+
+    query = Asset.query.filter_by(user_id=user.user_id)
+
+    if q:
+        like = f"%{q}%"
+        query = query.filter(Asset.title.ilike(like))
+
+    if sort == "recent":
+        query = query.order_by(Asset.created_at.desc())
+    elif sort == "name":
+        query = query.order_by(Asset.title.asc())
+    elif sort == "size":
+        query = query.order_by(Asset.created_at.desc())
+
+    assets = query.all()
+
+    uploaded = [a for a in assets if a.content_type != ASSET_TYPE_REPORT]
+    generated = [a for a in assets if a.content_type == ASSET_TYPE_REPORT]
+
+    return render_template(
+        "alfred/library.html",
+        assets=assets,
+        uploaded=uploaded,
+        generated=generated,
+        category=category,
+        q=q,
+        sort=sort,
     )
-    return render_template("alfred/library.html", assets=assets)
 
 
 @bp.route("/upload", methods=["POST"])

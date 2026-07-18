@@ -99,6 +99,32 @@ def create_app(test_config=None, instance_path=None):
 
         return {"app_user": get_current_user()}
 
+    @app.template_filter("relative_time")
+    def relative_time(dt):
+        if not dt:
+            return ""
+        from datetime import datetime, timezone
+
+        now = datetime.now(timezone.utc)
+        diff = now - dt
+        seconds = int(diff.total_seconds())
+        if seconds < 60:
+            return "just now"
+        minutes = seconds // 60
+        if minutes < 60:
+            return f"{minutes}m ago"
+        hours = minutes // 60
+        if hours < 24:
+            return f"{hours}h ago"
+        days = hours // 24
+        if days < 30:
+            return f"{days}d ago"
+        months = days // 30
+        if months < 12:
+            return f"{months}mo ago"
+        years = days // 365
+        return f"{years}y ago"
+
     with app.app_context():
         _ensure_pgvector(app)
         db.create_all()

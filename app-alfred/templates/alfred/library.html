@@ -1,38 +1,332 @@
 {% extends "base.html" %}
+{% block header %}{% endblock %}
 {% block title %}Alfred — Library{% endblock %}
 {% block content %}
-<h1>Library</h1>
-<div class="library-actions">
-  <form method="post" action="{{ url_for('library.upload') }}" enctype="multipart/form-data" class="inline-form">
-    <input type="file" name="file" required>
-    <button type="submit" class="btn primary">Upload</button>
-  </form>
-  <form method="post" action="{{ url_for('library.import_url') }}" class="inline-form">
-    <input type="url" name="url" placeholder="https://…" required>
-    <button type="submit" class="btn">Import by URL</button>
-  </form>
-</div>
+<div class="alfred-app">
+  <aside class="app-sidebar">
+    <div class="sidebar-brand">alfred</div>
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('main.ask') }}" class="nav-item">
+        <span class="nav-icon">&#128172;</span>
+        <span>Ask Alfred</span>
+      </a>
+      <a href="{{ url_for('library.index') }}" class="nav-item active">
+        <span class="nav-icon">&#128214;</span>
+        <span>Library</span>
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon">&#128188;</span>
+        <span>Projects</span>
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon">&#9881;</span>
+        <span>Tools</span>
+      </a>
+    </nav>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">STARRED</div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item">
+          <span class="nav-icon">&#128203;</span>
+          <span>Research on LLMs</span>
+        </a>
+        <a href="#" class="nav-item">
+          <span class="nav-icon">&#128203;</span>
+          <span>Product Strategy</span>
+        </a>
+        <a href="#" class="nav-item">
+          <span class="nav-icon">&#128203;</span>
+          <span>Personal Notes</span>
+        </a>
+      </nav>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">COLLECTIONS</div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item">
+          <span class="nav-icon">&#128188;</span>
+          <span>Work</span>
+        </a>
+        <a href="#" class="nav-item">
+          <span class="nav-icon">&#128220;</span>
+          <span>Research</span>
+        </a>
+        <a href="#" class="nav-item">
+          <span class="nav-icon">&#128218;</span>
+          <span>Learning</span>
+        </a>
+        <a href="#" class="nav-item">
+          <span class="nav-icon">&#128181;</span>
+          <span>Finance</span>
+        </a>
+      </nav>
+      <a href="#" class="nav-item new-collection">
+        <span class="nav-icon">+</span>
+        <span>New Collection</span>
+      </a>
+    </div>
+    <div class="sidebar-storage">
+      <div class="storage-label">Storage</div>
+      <div class="storage-bar">
+        <div class="storage-fill" style="width: 14%"></div>
+      </div>
+      <div class="storage-text">7.2 GB / 50 GB <span class="storage-percent">14%</span></div>
+    </div>
+    <div class="sidebar-bottom">
+      <a href="#" class="nav-item">
+        <span class="nav-icon">&#9881;</span>
+        <span>Settings</span>
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon">&#10067;</span>
+        <span>Help & Docs</span>
+      </a>
+    </div>
+  </aside>
 
-{% if assets %}
-<table class="asset-table">
-  <thead><tr><th>Title</th><th>Type</th><th>Status</th><th>Created</th><th></th></tr></thead>
-  <tbody>
-    {% for a in assets %}
-      <tr>
-        <td><a href="{{ url_for('library.asset_detail', asset_id=a.id) }}">{{ a.title }}</a></td>
-        <td>{{ a.content_type }}</td>
-        <td>{{ a.status }}</td>
-        <td>{{ a.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-        <td>
-          <form method="post" action="{{ url_for('library.delete_asset', asset_id=a.id) }}" onsubmit="return confirm('Delete this asset?');">
-            <button type="submit" class="btn danger">Delete</button>
-          </form>
-        </td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<p>No assets yet. Upload a file or import a URL to start your library.</p>
-{% endif %}
+  <main class="app-main">
+    <header class="app-header">
+      <div class="header-left">
+        <h1>Library</h1>
+        <p class="header-subtitle">Your knowledge, outputs and workspace artifacts.</p>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn notification-btn" title="Notifications">
+          <span>&#128276;</span>
+        </button>
+        <div class="user-avatar">AB</div>
+      </div>
+    </header>
+
+    <div class="library-toolbar">
+      <div class="search-box">
+        <span class="search-icon">&#128269;</span>
+        <input type="text" placeholder="Search library..." value="{{ q }}" id="library-search">
+        <kbd class="search-kbd">&#8984;K</kbd>
+      </div>
+      <div class="toolbar-actions">
+        <button class="toolbar-btn">
+          <span>&#9776;</span>
+          <span>Filter</span>
+        </button>
+        <div class="sort-dropdown">
+          <button class="toolbar-btn">
+            <span>Sort:</span>
+            <span class="sort-label">{{ 'Recent' if sort == 'recent' else ('Name' if sort == 'name' else 'Size') }}</span>
+            <span class="chevron">&#9662;</span>
+          </button>
+        </div>
+        <div class="view-toggle">
+          <button class="view-btn active" title="Grid view">
+            <span>&#9638;</span>
+          </button>
+          <button class="view-btn" title="List view">
+            <span>&#9776;</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-chips">
+      <a href="{{ url_for('library.index', q=q, sort=sort, category='all') }}" class="chip {{ 'active' if category == 'all' else '' }}">
+        <span class="chip-icon">&#8593;</span>
+        <span>All</span>
+      </a>
+      <a href="{{ url_for('library.index', q=q, sort=sort, category='uploaded') }}" class="chip {{ 'active' if category == 'uploaded' else '' }}">
+        <span class="chip-icon">&#8593;</span>
+        <span>Uploaded</span>
+      </a>
+      <a href="{{ url_for('library.index', q=q, sort=sort, category='generated') }}" class="chip {{ 'active' if category == 'generated' else '' }}">
+        <span class="chip-icon">&#9733;</span>
+        <span>Generated</span>
+      </a>
+      <a href="{{ url_for('library.index', q=q, sort=sort, category='scratchpad') }}" class="chip {{ 'active' if category == 'scratchpad' else '' }}">
+        <span class="chip-icon">&#128196;</span>
+        <span>Scratchpad</span>
+      </a>
+      <a href="{{ url_for('library.index', q=q, sort=sort, category='favorites') }}" class="chip {{ 'active' if category == 'favorites' else '' }}">
+        <span class="chip-icon">&#11088;</span>
+        <span>Favorites</span>
+      </a>
+    </div>
+
+    <div class="library-content">
+      {% if category in ['all', 'uploaded', 'favorites'] %}
+      <section class="artifact-section">
+        <div class="section-header">
+          <h2>Uploaded Artifacts</h2>
+          <p class="section-subtitle">Files and documents you've uploaded.</p>
+          <a href="#" class="see-all">See all <span>&#8250;</span></a>
+        </div>
+        <div class="artifact-grid">
+          {% for a in uploaded %}
+          <a href="{{ url_for('library.asset_detail', asset_id=a.id) }}" class="artifact-card">
+            <div class="artifact-icon {{ (a.mime_type | default('')) | lower | replace('/', '-') }}">
+              {% set title_lower = a.title | lower %}
+              {% if title_lower.endswith('.pdf') or a.mime_type == 'application/pdf' %}
+                <span class="file-icon pdf-icon">PDF</span>
+              {% elif title_lower.endswith('.xlsx') or title_lower.endswith('.xls') or a.mime_type == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' %}
+                <span class="file-icon xlsx-icon">XLSX</span>
+              {% elif title_lower.endswith('.md') or a.mime_type == 'text/markdown' %}
+                <span class="file-icon md-icon">MD</span>
+              {% elif title_lower.endswith('.txt') or a.mime_type == 'text/plain' %}
+                <span class="file-icon txt-icon">TXT</span>
+              {% else %}
+                <span class="file-icon default-icon">&#128196;</span>
+              {% endif %}
+            </div>
+            <div class="artifact-info">
+              <div class="artifact-title">{{ a.title }}</div>
+              <div class="artifact-meta">
+                {% set meta = a.asset_metadata %}
+                {% if meta and meta.get('filename') %}
+                  {% set fname = meta['filename'] | lower %}
+                  {% if fname.endswith('.pdf') %}
+                    PDF
+                  {% elif fname.endswith('.xlsx') or fname.endswith('.xls') %}
+                    XLSX
+                  {% elif fname.endswith('.md') or fname.endswith('.markdown') %}
+                    MD
+                  {% elif fname.endswith('.txt') %}
+                    TXT
+                  {% else %}
+                    {{ a.content_type }}
+                  {% endif %}
+                  · {{ meta.get('text_length', 0) // 1024 }} KB
+                {% else %}
+                  {{ a.content_type }} · {{ a.mime_type | default('application/octet-stream', true) }}
+                {% endif %}
+              </div>
+              <div class="artifact-time">Uploaded {{ a.created_at | relative_time }}</div>
+            </div>
+          </a>
+          {% endfor %}
+          {% if not uploaded %}
+          <div class="empty-state">No uploaded artifacts yet.</div>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if category in ['all', 'generated', 'favorites'] %}
+      <section class="artifact-section">
+        <div class="section-header">
+          <h2>Generated Artifacts</h2>
+          <p class="section-subtitle">Outputs created by Alfred.</p>
+          <a href="#" class="see-all">See all <span>&#8250;</span></a>
+        </div>
+        <div class="artifact-grid">
+          {% for a in generated %}
+          <a href="{{ url_for('library.asset_detail', asset_id=a.id) }}" class="artifact-card">
+            <div class="artifact-icon doc-icon">
+              <span class="file-icon doc-file-icon">&#128196;</span>
+            </div>
+            <div class="artifact-info">
+              <div class="artifact-title">{{ a.title }}</div>
+              <div class="artifact-meta">
+                {% set meta = a.asset_metadata %}
+                {% if meta and meta.get('text_length') %}
+                  Doc · {{ meta.get('text_length', 0) // 1024 }} KB
+                {% else %}
+                  Doc · {{ a.mime_type | default('application/octet-stream', true) }}
+                {% endif %}
+              </div>
+              <div class="artifact-time">Generated {{ a.created_at | relative_time }}</div>
+            </div>
+          </a>
+          {% endfor %}
+          {% if not generated %}
+          <div class="empty-state">No generated artifacts yet.</div>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if category == 'all' or category == 'scratchpad' %}
+      <section class="artifact-section">
+        <div class="section-header">
+          <h2>Scratchpad / Working Space</h2>
+          <span class="temporary-badge">Temporary</span>
+          <p class="section-subtitle">Ephemeral space for Alfred's thinking, notes, and intermediate steps.</p>
+          <a href="#" class="see-all">See all <span>&#8250;</span></a>
+        </div>
+        <div class="artifact-grid">
+          <div class="artifact-card scratchpad-card">
+            <div class="artifact-icon scratchpad-icon">
+              <span class="file-icon scratchpad-file-icon">&#128196;</span>
+            </div>
+            <div class="artifact-info">
+              <div class="artifact-title">Research Outline</div>
+              <div class="artifact-meta">Scratchpad</div>
+              <div class="artifact-time">Updated just now</div>
+            </div>
+          </div>
+          <div class="artifact-card scratchpad-card">
+            <div class="artifact-icon scratchpad-icon">
+              <span class="file-icon scratchpad-file-icon">&#128196;</span>
+            </div>
+            <div class="artifact-info">
+              <div class="artifact-title">Source Notes</div>
+              <div class="artifact-meta">Scratchpad</div>
+              <div class="artifact-time">Updated 3m ago</div>
+            </div>
+          </div>
+          <div class="artifact-card scratchpad-card">
+            <div class="artifact-icon scratchpad-icon">
+              <span class="file-icon scratchpad-file-icon">&#128196;</span>
+            </div>
+            <div class="artifact-info">
+              <div class="artifact-title">Thoughts on Pricing</div>
+              <div class="artifact-meta">Scratchpad</div>
+              <div class="artifact-time">Updated 1h ago</div>
+            </div>
+          </div>
+          <div class="artifact-card scratchpad-card">
+            <div class="artifact-icon scratchpad-icon">
+              <span class="file-icon scratchpad-file-icon">&#128196;</span>
+            </div>
+            <div class="artifact-info">
+              <div class="artifact-title">Data Extraction Draft</div>
+              <div class="artifact-meta">Scratchpad</div>
+              <div class="artifact-time">Updated 2h ago</div>
+            </div>
+          </div>
+          <div class="artifact-card scratchpad-card">
+            <div class="artifact-icon scratchpad-icon">
+              <span class="file-icon scratchpad-file-icon">&#128196;</span>
+            </div>
+            <div class="artifact-info">
+              <div class="artifact-title">Ideas Parking Lot</div>
+              <div class="artifact-meta">Scratchpad</div>
+              <div class="artifact-time">Updated 1d ago</div>
+            </div>
+          </div>
+        </div>
+      </section>
+      {% endif %}
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  const searchInput = document.getElementById('library-search');
+  if (!searchInput) return;
+  let timer;
+  searchInput.addEventListener('input', function() {
+    clearTimeout(timer);
+    timer = setTimeout(function() {
+      const url = new URL(window.location.href);
+      if (searchInput.value.trim()) {
+        url.searchParams.set('q', searchInput.value.trim());
+      } else {
+        url.searchParams.delete('q');
+      }
+      window.location.href = url.toString();
+    }, 300);
+  });
+})();
+</script>
 {% endblock %}
