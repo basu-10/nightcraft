@@ -9,3 +9,5 @@ app-landing - no code files. will hold logic to showscase different apps and pro
 
 app-pledge - "The Green Pledge" (greenpledge package). Backend scaffold with auth adapter layer (local + SSO via service-auth) and a placeholder landing page. PostgreSQL-only, served under /pledge, systemd nightcraft-pledge.service (port 5300).
 
+app-alfred - Persistent, artifact-centric AI workspace ("Workflow OS"). Previously referred to as Butler and SeekSage — those names are retired; the product is Alfred now. Final architecture (8-layer stack: UI, Conversation/Extractor, Intent IR + Retrieval, Compiler + Policy Engine, Execution Plan, Capability Runtime, Runtime Infrastructure, Artifacts) is documented in app-alfred/ARCHITECTURE.md. Flask app under app-alfred/alfred (agent, rag, providers, ingest, services, auth); current working code is a partial MVP per the Alfred MVP plan.
+
