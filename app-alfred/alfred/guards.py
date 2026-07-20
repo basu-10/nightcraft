@@ -4,6 +4,25 @@ from urllib.parse import urlsplit
 from flask import abort, redirect, request, url_for
 
 from .auth.current_user import get_current_user
+from .models import Asset
+
+
+def require_owned_asset(asset_id, user):
+    """Return the Asset only if it exists AND belongs to ``user`` (P2 #5).
+
+    Raises 404/403 otherwise so a client-supplied foreign ``asset_id`` is never
+    resolved into work on another user's data.
+    """
+    try:
+        aid = int(asset_id)
+    except (TypeError, ValueError):
+        abort(404)
+    asset = Asset.query.get(aid)
+    if asset is None:
+        abort(404)
+    if asset.user_id != user.user_id:
+        abort(403)
+    return asset
 
 
 def _forwarded_prefix() -> str:

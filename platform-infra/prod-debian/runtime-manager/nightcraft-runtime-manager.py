@@ -228,6 +228,13 @@ def run_sweep(manager):
 class Handler(BaseHTTPRequestHandler):
     manager = None
 
+    def _client_is_loopback(self):
+        # Defense-in-depth: only accept /touch from loopback. The manager binds
+        # 127.0.0.1 already, but a proxied/forwarded request must still be
+        # rejected so an external origin can never keep a service alive (P3 #3).
+        host = (self.client_address or ("",))[0]
+        return host in ("127.0.0.1", "::1", "localhost")
+
     def _send(self, code, body=""):
         self.send_response(code)
         if body:
@@ -255,6 +262,13 @@ class Handler(BaseHTTPRequestHandler):
             slug = path[len("/touch/"):]
             if not slug:
                 self._send(400, "missing slug\n")
+                return
+            # Operational security (P3 #3): /touch may only be called by the
+            # service itself (loopback). External callers are rejected.
+            # Multi-tenant future: require a Manager Secret / UDS / mTLS here.
+            if not self._client_is_loopback():
+                log("Rejected /touch from non-loopback client %s" % (self.client_address,))
+                self._send(403, "forbidden: /touch requires loopback origin\n")
                 return
             if self.server.manager.touch(slug):  # noqa: E501
                 self._send(202, "touched %s\n" % slug)

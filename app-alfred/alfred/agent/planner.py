@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 
 from ..models import Asset
@@ -85,3 +86,45 @@ def _fallback_plan(goal: str, summary: str) -> dict:
             {"phase": "retrieve", "allowed_tools": ["library_search"], "intent": "Check the user's library first."},
         )
     return {"phases": phases}
+
+
+# Capability Versioning (P2 #13): record which capability + version + manifest
+# hash compiled a run. The "capability" is the dominant route the planner chose
+# (transform/research/retrieve), the version is pinned in code, and the manifest
+# hash covers the exact planner contract so a recompile is detectable.
+ALFRED_CAPABILITY_VERSION = "1.0.0"
+
+_CAPABILITY_ROUTES = {
+    "transform": ("transform_asset",),
+    "retrieve": ("library_search",),
+    "research": ("web_search", "visit_url", "wiki_search"),
+}
+
+
+def _classify_capability(plan: dict) -> str:
+    phases = plan.get("phases", [])
+    allowed = {t for p in phases for t in (p.get("allowed_tools") or [])}
+    if "transform_asset" in allowed:
+        return "transform"
+    if "library_search" in allowed:
+        return "retrieve"
+    return "research"
+
+
+def plan_goal_capability(goal: str, user_id: str) -> dict:
+    """Compute (capability, version, manifest_hash) for a goal without persisting."""
+    plan = plan_goal(goal, user_id)
+    capability = _classify_capability(plan)
+    manifest = {
+        "capability": capability,
+        "capability_version": ALFRED_CAPABILITY_VERSION,
+        "planner_contract": PLANNER_SYSTEM.strip(),
+    }
+    manifest_hash = hashlib.sha256(
+        json.dumps(manifest, sort_keys=True).encode("utf-8")
+    ).hexdigest()
+    return {
+        "capability": capability,
+        "capability_version": ALFRED_CAPABILITY_VERSION,
+        "manifest_hash": manifest_hash,
+    }

@@ -31,6 +31,15 @@ def _openai_client():
     )
 
 
+def resolve_provider_ok():
+    """Best-effort check that an LLM client can be constructed (P4 #11)."""
+    try:
+        _openai_client()
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
 class LLMProvider:
     """OpenRouter chat completions (OpenAI-compatible)."""
 

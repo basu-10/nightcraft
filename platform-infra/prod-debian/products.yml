@@ -85,7 +85,7 @@ products:
       service: nightcraft-alfred.service
       port: 5950
       upstream: app_alfred_upstream
-      workers: 2
+      workers: 1
       idle_timeout: 30m
   game:
     display_name: Game

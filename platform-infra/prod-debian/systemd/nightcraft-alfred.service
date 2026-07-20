@@ -10,7 +10,8 @@ Group=dev
 WorkingDirectory=/nightcraft-source-code/app-alfred
 EnvironmentFile=/etc/nightcraft/app-alfred.env
 ExecStart=/runtime/venvs/app-alfred/bin/python -m gunicorn \
-  --workers 2 \
+  --config /nightcraft-source-code/app-alfred/gunicorn.conf.py \
+  --workers 1 \
   --bind 127.0.0.1:5950 \
   --access-logfile - \
   --error-logfile - \

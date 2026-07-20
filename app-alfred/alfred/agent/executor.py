@@ -12,6 +12,8 @@ self-contained so Alfred does not depend on LangGraph at runtime. The plan's
 from __future__ import annotations
 
 import json
+import time
+from datetime import datetime, timezone
 
 from ..extensions import db
 from ..models import AgentRun
@@ -131,6 +133,69 @@ def _system_prompt(goal, phase_intent, allowed_tools, collected_sources):
     )
 
 
+class _PolicyClock:
+    """Wall-clock source for runtime policies. Injectable for tests (fake clock)."""
+
+    def __init__(self, now_fn=None):
+        self._now_fn = now_fn or (lambda: time.monotonic())
+
+    def now(self):
+        return self._now_fn()
+
+
+class _RuntimePolicy:
+    """Bounded runtime / idle / budget guard for a single AgentRun (P1 #2).
+
+    A run is aborted with status ``fatal`` when any bound is exceeded:
+      - wall-clock runtime > ``max_runtime_seconds`` (None => unbounded)
+      - gap since last activity > ``idle_timeout_seconds`` (None => unbounded)
+      - cumulative tokens > ``token_budget`` (None => unbounded)
+      - cumulative cost > ``cost_budget_usd`` (None => unbounded)
+    """
+
+    def __init__(self, max_runtime=None, idle_timeout=None, token_budget=None, cost_budget=None):
+        self.max_runtime = max_runtime
+        self.idle_timeout = idle_timeout
+        self.token_budget = token_budget
+        self.cost_budget = cost_budget
+        self.last_activity = None
+        self.tokens_used = 0
+        self.cost_usd = 0.0
+        self._clock = _PolicyClock()
+
+    def start(self, started_at=None):
+        now = _utcnow() if started_at is None else started_at
+        self.last_activity = now
+        self._start_wall = self._clock.now()
+
+    def touch(self, tokens=0, cost=0.0):
+        self.last_activity = _utcnow()
+        self._clock.now()  # advance monotonic reference only via clock
+        self.tokens_used += tokens
+        self.cost_usd += cost
+
+    def _exceeded(self):
+        """Return (exceeded: bool, reason: str)."""
+        wall = self._clock.now() - self._start_wall
+        if self.max_runtime is not None and wall > self.max_runtime:
+            return True, f"max runtime {self.max_runtime}s exceeded ({wall:.0f}s)"
+        if self.idle_timeout is not None:
+            idle = (datetime.now(timezone.utc) - self.last_activity).total_seconds()
+            if idle > self.idle_timeout:
+                return True, f"idle timeout {self.idle_timeout}s exceeded ({idle:.0f}s)"
+        if self.token_budget is not None and self.tokens_used > self.token_budget:
+            return True, f"token budget {self.token_budget} exceeded ({self.tokens_used})"
+        if self.cost_budget is not None and self.cost_usd > self.cost_budget:
+            return True, f"cost budget ${self.cost_budget} exceeded (${self.cost_usd:.2f})"
+        return False, ""
+
+    def exceeded(self):
+        return self._exceeded()
+
+    def exceeded_reason(self):
+        return self._exceeded()[1]
+
+
 def run_workflow(run_id: str, user_id: str, goal: str, plan: dict, attached_asset_ids=None):
     run = AgentRun.query.filter_by(run_id=run_id).first()
     if run is None:
@@ -143,6 +208,16 @@ def run_workflow(run_id: str, user_id: str, goal: str, plan: dict, attached_asse
     collected_sources = list(attached_asset_ids)
     model = resolve_agent_model()
     max_steps = resolve_react_max_steps()
+
+    policy = _RuntimePolicy(
+        max_runtime=run.max_runtime_seconds,
+        idle_timeout=run.idle_timeout_seconds,
+        token_budget=run.token_budget,
+        cost_budget=run.cost_budget_usd,
+    )
+    policy.start(started_at=run.started_at or _utcnow())
+    run.started_at = run.started_at or _utcnow()
+    run.last_activity_at = run.last_activity_at or _utcnow()
 
     try:
         for phase in plan.get("phases", []):
@@ -160,6 +235,12 @@ def run_workflow(run_id: str, user_id: str, goal: str, plan: dict, attached_asse
             final_summary = None
             while steps < max_steps:
                 steps += 1
+
+                exceeded, reason = policy.exceeded()
+                if exceeded:
+                    emit_event(run_id, user_id, EVT_ERROR, {"message": f"Run terminated: {reason}"})
+                    raise RuntimeError(f"Runtime policy violation: {reason}")
+
                 try:
                     resp = LLMProvider_openai_chat(model, messages, allowed)
                 except Exception as exc:
@@ -201,6 +282,11 @@ def run_workflow(run_id: str, user_id: str, goal: str, plan: dict, attached_asse
 
                     emit_event(run_id, user_id, EVT_TOOL_RESULT, {"name": fn_name, "result": _truncate(result)})
 
+                    # Refresh activity + accounting for the runtime guard.
+                    policy.touch(tokens=0, cost=0.0)
+                    run.last_activity_at = _utcnow()
+                    db.session.commit()
+
                     # Collect provenance from any cited sources.
                     for key in ("sources", "asset_id", "imported_asset_id"):
                         val = result.get(key) if isinstance(result, dict) else None
@@ -238,7 +324,7 @@ def run_workflow(run_id: str, user_id: str, goal: str, plan: dict, attached_asse
         db.session.commit()
     except Exception as exc:
         emit_event(run_id, user_id, EVT_ERROR, {"message": f"Run failed: {exc}"})
-        run.status = "error"
+        run.status = "fatal" if "Runtime policy violation" in str(exc) else "error"
         run.error = str(exc)
         db.session.commit()
 
@@ -254,6 +340,10 @@ def LLMProvider_openai_chat(model, messages, allowed_tools):
         kwargs["tools"] = [s for s in TOOL_SCHEMAS if s["function"]["name"] in allowed_tools]
         kwargs["tool_choice"] = "auto"
     return client.chat.completions.create(**kwargs)
+
+
+def _utcnow():
+    return datetime.now(timezone.utc)
 
 
 def _truncate(obj, limit=4000):

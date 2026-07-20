@@ -4,6 +4,12 @@
 <h1>{{ asset.title }}</h1>
 <p class="meta">Type: {{ asset.content_type }} · Status: {{ asset.status }} · ID: {{ asset.id }}</p>
 
+{% if asset.asset_metadata.is_generated_version %}
+  <p class="notice"><strong>Generated markdown version</strong> — the original asset is unchanged.</p>
+{% elif asset.asset_metadata.is_original %}
+  <p class="notice"><strong>Original source</strong> — preserved as uploaded; transformations create new versions.</p>
+{% endif %}
+
 <h2>Relations</h2>
 {% if graph.outgoing or graph.incoming %}
   <ul>

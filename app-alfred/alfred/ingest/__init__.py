@@ -143,6 +143,12 @@ def ingest_bytes(
                 "source_url": source_url,
                 "text_length": len(text),
                 "word_count": len(text.split()),
+                # Binary-edit product rule (P3 #9): the ingested blob is the
+                # original (immutable). Any transformation produces a NEW asset,
+                # never overwrites this one.
+                "is_original": True,
+                "is_generated_version": False,
+                "original_preserved": True,
             }
         ),
     )
@@ -223,10 +229,19 @@ def _write_file(storage_ref: str, data: bytes):
 
 
 def reindex_library(user_id: str, model=None):
-    """Re-embed all chunks for a user under the active embedding model."""
+    """Re-embed all chunks for a user under the active embedding model.
+
+    Atomic swap (P3 #7): new vectors are built under a temporary generation tag
+    and only swapped in (delete old generation, rename temp -> active) inside a
+    single transaction. Search always queries one generation, so a mid-reindex
+    reader never sees a partial index.
+    """
     from .models import AssetChunk
+    from sqlalchemy import text
 
     model = model or get_setting("alfred_embedding_model", "") or _default_embedding_model()
+    temp_model = f"{model}#reindex"
+
     chunks = (
         AssetChunk.query.join(Asset)
         .filter(Asset.user_id == user_id)
@@ -235,12 +250,27 @@ def reindex_library(user_id: str, model=None):
     texts = [c.text for c in chunks]
     if not texts:
         return 0
+
     vectors = EmbeddingProvider.embed_batch(texts, model=model)
+
+    # Build the new generation under a temp model tag (never read by search yet).
     for c, vec in zip(chunks, vectors):
-        emb = AssetEmbedding.query.filter_by(chunk_id=c.id, model=model).first()
-        if emb is None:
-            emb = AssetEmbedding(chunk_id=c.id, asset_id=c.asset_id, model=model)
-        emb.embedding = json.dumps(vec)
+        emb = AssetEmbedding(
+            chunk_id=c.id, asset_id=c.asset_id, model=temp_model, embedding=json.dumps(vec)
+        )
         db.session.add(emb)
+    db.session.flush()
+
+    # Atomic swap: drop the prior active generation, promote the temp generation.
+    db.session.execute(
+        text("DELETE FROM asset_embedding WHERE model = :model AND chunk_id IN ("
+             "SELECT id FROM asset_chunk WHERE asset_id IN "
+             "(SELECT id FROM asset WHERE user_id = :uid))"),
+        {"model": model, "uid": user_id},
+    )
+    db.session.execute(
+        text("UPDATE asset_embedding SET model = :model WHERE model = :temp"),
+        {"model": model, "temp": temp_model},
+    )
     db.session.commit()
     return len(chunks)

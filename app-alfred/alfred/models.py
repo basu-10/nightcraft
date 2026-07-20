@@ -85,7 +85,7 @@ class Asset(db.Model):
     metadata_json = db.Column(db.Text, nullable=False, default="{}")
     lineage_json = db.Column(db.Text, nullable=False, default="{}")
     user_id = db.Column(db.String(100), nullable=False, index=True)
-    workspace_id = db.Column(db.String(100), nullable=True)
+    workspace_id = db.Column(db.String(100), nullable=True)  # deferred: nullable/unused (P3 #8)
     status = db.Column(db.String(20), nullable=False, default="ready")
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
@@ -168,18 +168,58 @@ class Evidence(db.Model):
             return {}
 
 
+def assert_derivation_has_sources(evidence: "Evidence | None"):
+    """Boundary validator (P2 #4): a derived artifact MUST cite sources.
+
+    Rejects with ``ValueError`` when the lineage claims derivation but the
+    Evidence carries no source asset ids. Call this on the artifact write path.
+    """
+    if evidence is None:
+        raise ValueError("derived artifact requires provenance Evidence (P4).")
+    if not evidence.sources:
+        raise ValueError("derived artifact requires non-empty Evidence.sources (P4).")
+    return True
+
+
 class AgentRun(db.Model):
     __tablename__ = "agent_run"
 
     id = db.Column(db.Integer, primary_key=True)
     run_id = db.Column(db.String(64), unique=True, nullable=False, index=True)
     user_id = db.Column(db.String(100), nullable=False, index=True)
-    workspace_id = db.Column(db.String(100), nullable=True)
+    workspace_id = db.Column(db.String(100), nullable=True)  # deferred: nullable/unused (P3 #8)
     session_id = db.Column(db.String(64), nullable=True, index=True)
     goal = db.Column(db.Text, nullable=False, default="")
     plan_json = db.Column(db.Text, nullable=False, default="{}")
+
+    # Runtime policies (P1 #2): bounds enforced by the executor ReAct loop.
+    # Nullable => no bound (unbounded) when not set.
+    max_runtime_seconds = db.Column(db.Integer, nullable=True)
+    idle_timeout_seconds = db.Column(db.Integer, nullable=True)
+    token_budget = db.Column(db.Integer, nullable=True)
+    cost_budget_usd = db.Column(db.Float, nullable=True)
+
+    # Determinism / provenance provenance (P2 #13 Capability Versioning).
+    capability = db.Column(db.String(80), nullable=True)
+    capability_version = db.Column(db.String(40), nullable=True)
+    manifest_hash = db.Column(db.String(64), nullable=True)
+
+    # Artifact Version Pinning (P2 #14): input is pinned at RESOLUTION time, not
+    # compile time. run_input_hash captures the referenced asset ids + their
+    # content hashes as they existed when the run started, so a user edit to a
+    # referenced asset after compile does not change the executed input.
+    run_input_hash = db.Column(db.String(64), nullable=True)
+
     status = db.Column(db.String(20), nullable=False, default="queued")
     error = db.Column(db.Text, nullable=True)
+
+    # Live runtime accounting, refreshed by the executor. last_activity_at drives
+    # the idle-timeout check; tokens_used / cost_usd feed the budgets.
+    started_at = db.Column(db.DateTime, nullable=True)
+    last_activity_at = db.Column(db.DateTime, nullable=True)
+    tokens_used = db.Column(db.Integer, nullable=False, default=0)
+    cost_usd = db.Column(db.Float, nullable=False, default=0.0)
+
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,

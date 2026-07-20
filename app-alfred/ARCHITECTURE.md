@@ -364,10 +364,41 @@ Compile
 Runtime executes  → Wrong input
 ```
 
-Semantic resolution must bind **`artifact_id` + `content_hash` (or revision)**
-at resolution time, not at compile time.
+ Semantic resolution must bind **`artifact_id` + `content_hash` (or revision)**
+ at resolution time, not at compile time.
 
-## 5. Capability Runtime: Framework Heterogeneity
+ ### Implementation Status (tracked in `IMPLEMENTATION_PIPELINE.md`)
+
+ The review findings above are now implemented in code (see
+ `IMPLEMENTATION_PIPELINE.md` for per-item flags):
+
+ - **Workers = 1:** `app-alfred/gunicorn.conf.py` pins `workers = 1` and rejects
+   multi-worker overrides; `systemd/nightcraft-alfred.service` + `products.yml`
+   set `workers: 1`.
+ - **Runtime policies:** `AgentRun` carries `max_runtime_seconds`,
+   `idle_timeout_seconds`, `token_budget`, `cost_budget_usd`; the executor
+   ReAct loop (`alfred/agent/executor.py`) aborts with status `fatal` on breach.
+ - **Startup health check:** `flask check` verifies providers → API key →
+   embedding model → storage → pgvector and exits non-zero on failure.
+ - **`/touch` auth:** runtime manager (`nightcraft-runtime-manager.py`) rejects
+   non-loopback `/touch` callers (403); multi-tenant future noted (Manager
+   Secret / UDS / mTLS).
+ - **Evidence enforcement:** `assert_derivation_has_sources()` in `alfred/models.py`
+   rejects a derived artifact write when `Evidence.sources` is empty.
+ - **Asset isolation:** `require_owned_asset()` in `alfred/guards.py` is applied
+   to run-start referenced assets, ingest, and relation creation.
+ - **Capability + artifact versioning:** `AgentRun` records `capability`,
+   `capability_version`, `manifest_hash` (planner) and `run_input_hash`
+   (input pinned at run-start, not compile time).
+ - **Reindex atomic swap:** `reindex_library()` builds a temp generation, then
+   swaps in a single transaction — search never sees a partial index.
+ - **Binary-edit rule:** DOCX/original ingest is flagged `original_preserved`;
+   generated reports are flagged `is_generated_version` and the asset page shows
+   "Generated markdown version — the original asset is unchanged."
+ - **`workspace_id`:** remains a nullable, unused column (no logic built around
+   it).
+
+ ## 5. Capability Runtime: Framework Heterogeneity
 
 **Principle:** Capabilities may use different internal harnesses. The
 Planner / Compiler / Runtime do not know.

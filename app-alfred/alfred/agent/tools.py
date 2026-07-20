@@ -13,6 +13,7 @@ from ..models import (
     Asset,
     AssetRelation,
     Evidence,
+    assert_derivation_has_sources,
 )
 from ..providers import LLMProvider, web_search as web_provider
 from ..rag import library_search as rag_search
@@ -93,7 +94,15 @@ def tool_save_report(run_id, user_id, args):
         title=title,
         user_id=user_id,
         status="ready",
-        metadata_json=json.dumps({"kind": "report", "word_count": len(content.split())}),
+        metadata_json=json.dumps({
+            "kind": "report",
+            "word_count": len(content.split()),
+            # P3 #9: this is a generated markdown version derived from sources;
+            # the originals remain unchanged.
+            "is_generated_version": True,
+            "is_original": False,
+            "original_preserved": True,
+        }),
     )
     db.session.add(asset)
     db.session.flush()
@@ -114,6 +123,8 @@ def tool_save_report(run_id, user_id, args):
     )
     db.session.add(evidence)
     db.session.flush()
+    # Boundary validator (P2 #4): never persist a derived artifact without provenance.
+    assert_derivation_has_sources(evidence)
     asset.lineage_json = json.dumps({"generated_by_run": run_id, "evidence_id": evidence.id})
     db.session.commit()
 
@@ -170,7 +181,13 @@ def tool_transform_asset(run_id, user_id, args):
         title=new_title,
         user_id=user_id,
         status="ready",
-        metadata_json=json.dumps({"kind": "report", "transform_of": source.id}),
+        metadata_json=json.dumps({
+            "kind": "report",
+            "transform_of": source.id,
+            "is_generated_version": True,
+            "is_original": False,
+            "original_preserved": True,
+        }),
     )
     db.session.add(asset)
     db.session.flush()
@@ -185,6 +202,7 @@ def tool_transform_asset(run_id, user_id, args):
     )
     db.session.add(evidence)
     db.session.flush()
+    assert_derivation_has_sources(evidence)
     asset.lineage_json = json.dumps({"generated_by_run": run_id, "evidence_id": evidence.id})
     db.session.commit()
 

@@ -101,6 +101,7 @@ body {
 .auth-card input { width: 100%; margin-top: 4px; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); }
 hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 .meta { color: var(--muted); font-size: 13px; }
+.notice { padding: 8px 12px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--border); color: var(--text); font-size: 14px; }
 
 .alfred-app {
   position: fixed;

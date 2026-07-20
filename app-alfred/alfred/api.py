@@ -10,14 +10,49 @@ from flask import Blueprint, current_app, jsonify, request
 
 from .agent.executor import run_workflow
 from .agent.events import get_events
-from .agent.planner import plan_goal
+from .agent.planner import plan_goal, plan_goal_capability
 from .agent import executor as executor_module
 from .auth.current_user import get_current_user
 from .extensions import db
-from .guards import auth_required
+from .guards import auth_required, require_owned_asset
 from .ingest import ingest_bytes
 from .keepalive import start_run_keepalive, stop_run_keepalive
 from .models import AgentRun, Asset, ChatSession, Message
+
+
+def _parse_int(value):
+    try:
+        return int(value) if value not in (None, "") else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _parse_float(value):
+    try:
+        return float(value) if value not in (None, "") else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _pin_input_hash(asset_ids):
+    """Artifact Version Pinning (P2 #14): freeze referenced inputs at run-start.
+
+    Hash over (asset_id, content_hash) pairs so a later edit to a referenced
+    asset is detectable and does not alter the executed input.
+    """
+    if not asset_ids:
+        return None
+    import hashlib
+
+    parts = []
+    for aid in asset_ids:
+        asset = Asset.query.get(aid)
+        if asset is None:
+            continue
+        parts.append(f"{asset.id}:{asset.content_hash}")
+    if not parts:
+        return None
+    return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()
 
 bp = Blueprint("api", __name__, url_prefix="/alfred/api")
 
@@ -56,22 +91,37 @@ def start_run():
             session_id = session.session_id
 
     referenced_asset_ids = data.get("referenced_asset_ids") or []
+    # Asset isolation (P2 #5): referenced assets must belong to this user.
+    validated_refs = []
+    for rid in referenced_asset_ids:
+        asset = require_owned_asset(rid, user)
+        validated_refs.append(asset.id)
+
     msg = Message(
         session_id=session_id,
         user_id=user.user_id,
         role="user",
         content=goal,
-        referenced_asset_ids=__import__("json").dumps(referenced_asset_ids),
+        referenced_asset_ids=__import__("json").dumps(validated_refs),
     )
     db.session.add(msg)
 
-    run_id = uuid.uuid4().hex
+    # Runtime policies (P1 #2) + determinism provenance (P2 #13/#14).
+    cap = plan_goal_capability(goal, user.user_id)
     run = AgentRun(
         run_id=run_id,
         user_id=user.user_id,
         session_id=session_id,
         goal=goal,
         status="queued",
+        max_runtime_seconds=_parse_int(data.get("max_runtime_seconds")),
+        idle_timeout_seconds=_parse_int(data.get("idle_timeout_seconds")),
+        token_budget=_parse_int(data.get("token_budget")),
+        cost_budget_usd=_parse_float(data.get("cost_budget_usd")),
+        capability=cap.get("capability"),
+        capability_version=cap.get("capability_version"),
+        manifest_hash=cap.get("manifest_hash"),
+        run_input_hash=_pin_input_hash(validated_refs),
     )
     db.session.add(run)
     db.session.commit()
@@ -89,7 +139,7 @@ def start_run():
         with app.app_context():
             try:
                 executor_module.run_workflow(
-                    run_id, user.user_id, goal, plan, attached_asset_ids=referenced_asset_ids
+                    run_id, user.user_id, goal, plan, attached_asset_ids=validated_refs
                 )
             finally:
                 stop_run_keepalive(run_id)
