@@ -422,9 +422,14 @@ Runtime executes  → Wrong input
     `db.create_all()` assumption + idempotent upgrade SQL.
   - **F10 UI:** admin Runtime Policies form; capability/run-status badges on asset
     page; "generated" badge on library cards.
-  - **F11 Reindex lock:** per-user in-process flag guards `reindex_library`.
-  - **F12 Multi-tenant `/touch`:** runtime manager accepts a config-gated
-    `X-Manager-Secret` for external callers.
+   - **F11 Reindex lock:** per-user in-process flag guards `reindex_library`.
+   - **F12 Multi-tenant `/touch`:** runtime manager accepts a config-gated
+     `X-Manager-Secret` for external callers.
+   - **Janitorial worker (§4):** `alfred/janitor.py` runs an in-process daemon
+     thread every 60s (workers=1 safe) reconciling the three-system consistency
+     model — reaps non-terminal `AgentRun`s, reconciles stuck `indexing` assets
+     (promote/retry-embed/reap orphan), retries `embedding_pending` assets, and
+     prunes `superseded` embeddings. Also exposed as `flask janitor [--once|--report]`.
 
 
  ## 5. Capability Runtime: Framework Heterogeneity

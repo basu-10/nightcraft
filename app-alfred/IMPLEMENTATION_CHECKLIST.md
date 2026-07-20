@@ -197,9 +197,20 @@ Priority order suggested. Each is a concrete next patch.
   Files: `templates/alfred/library.html`, `alfred/__init__.py` (`alfred_run` global
   already exists).
 
-- [ ] **N12. Run history / dashboard** — there is no UI to list past `AgentRun`s
-  (goal, capability, status, tokens, cost). Add `/alfred/runs` listing scoped to the
-  user. Files: `alfred/routes.py` (or `api.py`), `templates/alfred/runs.html`.
+- [x] **N12. Run history / dashboard** — `/alfred/runs` lists past `AgentRun`s
+  (goal, capability, status, tokens, cost), scoped to the user, with status
+  filter chips. Re-run affordance links from `error`/`fatal` rows.
+  Files: `alfred/routes.py` (`run_history`), `templates/alfred/runs.html`,
+  sidebar nav in `ask.html` + `library.html`. Test:
+  `test_run_history_route_scoped_to_user` (integration).
+
+- [x] **N17. Janitorial worker (§4 runtime health)** — background daemon thread
+  (`alfred/janitor.py`) runs every 60s reconciling the three-system consistency
+  model: reaps non-terminal `AgentRun`s, reconciles `indexing` assets (promote to
+  `ready`, retry embeddings, or reap orphaned blobs), retries `embedding_pending`
+  assets, and prunes embeddings of `superseded` assets. Also exposed as
+  `flask janitor [--once|--report]`. Wired into `create_app` (workers=1 safe).
+  Test: `test_janitor_reaps_failed_ingest_orphan` (integration).
 
 - [ ] **N13. `fatal` recovery affordance** — when a run ends `fatal` (policy breach),
   let the user re-run with looser bounds from the UI (calls `start_run` again). Ties
@@ -225,5 +236,90 @@ Priority order suggested. Each is a concrete next patch.
 1. **N1** (run status in live UI) — visible correctness win, reuses existing endpoint.
 2. **N3 + N2** (policy test + cost accuracy) — hardens F2/F4 with real coverage.
 3. **N4** (relation delete ownership) — closes the last ownership gap from F5.
-4. **N11 + N12** (capability badges on list + run history) — rounds out F10 UX.
+4. **N11** (capability badges on library list) — rounds out F10 UX.
+   *(N12 Run history + N17 Janitorial worker implemented this session.)*
+
+---
+
+## 🧭 Next Natural Patches — Resumable Backlog (for future chat sessions)
+
+> Pick up any item below in a fresh session. Each entry is self-contained:
+> **what to do · why · files · suggested test.** Priority order is a suggestion,
+> not a hard sequence. Status legend: `[ ]` not started.
+> Last curated: 2026-07-20 (after N12 + N17 landed).
+
+### 🟢 Tier 1 — Visible correctness / UX wins (do first)
+- **N1. Run-status banner in live chat UI** — `ask.html` + `ask.js` already poll
+  `GET /runs/<id>/events` (returns `status`). Show `done`/`running`/`error`/`fatal`
+  from the last `status` event with `fatal` styled red (reuse `.badge.status-*`
+  from `styles.css`). Files: `templates/alfred/ask.html`, `static/alfred/ask.js`,
+  `alfred/api.py` (already returns `status`). Test: assert `run_events` returns the
+  terminal `status` after a run.
+- **N11. Capability badges on library list** — F10 put capability/run-status on the
+  asset detail page only. Surface the same badge on generated cards in `library.html`
+  by resolving `lineage.generated_by_run` per card (the `alfred_run` template global
+  already exists in `alfred/__init__.py`). Files: `templates/alfred/library.html`.
+- **N13. `fatal` recovery affordance** — when a run ends `fatal` (policy breach),
+  let the user re-run with looser bounds from the UI (`start_run` again). Ties N1 +
+  F1 together. Files: `ask.html`, `api.py`. (N12 already links to `/alfred/ask`.)
+
+### 🟡 Tier 2 — Reliability hardening (close F2/F4/F5/F7/F8 follow-ups)
+- **N2. Cost model accuracy** — `_usage_from_response` uses a flat `$2/1M-token`
+  blended rate, mispricing expensive models. Move to a per-model map in
+  `settings_keys.py` (or read from the provider's cost fingerprint) so token/cost
+  budgets stay meaningful. Files: `alfred/agent/executor.py`, `alfred/settings_keys.py`.
+- **N3. Idle-timeout accuracy** — add a unit test pinning `last_activity` to prove
+  idle fires after the window with no tool calls (mixed `datetime.now()` vs
+  `time.monotonic()` clocks noted in N3). Files: `tests/test_pipeline.py`.
+- **N4. Ownership on AssetRelation delete path** — F5 guarded delete + create, but
+  there is still no API endpoint to delete a relation, and `get_relation_graph` is
+  read-only. Add `DELETE /alfred/api/assets/<id>/relations/<to_id>` verifying the
+  user owns *both* sides. Files: `alfred/api.py`, `alfred/guards.py`, `tests/`.
+- **N5. Replay uses stored plan, not a fresh one** — `flask replay` re-derives
+  `run.plan`; use `run.plan_json` (already persisted) so planner drift in *planning*
+  is replayed faithfully, not just manifest-hash drift. Files: `alfred/cli.py`.
+- **N6. Stale-input guard configurable** — F8 hard-aborts on any change. Add opt-in
+  `ALFRED_STRICT_INPUT_PIN` (default off) so a changed reference downgrades to a
+  warning event instead of `error`. Files: `alfred/agent/executor.py`,
+  `alfred/settings_keys.py`.
+
+### 🟠 Tier 3 — Scale / architecture spikes (post-v1, design first)
+- **N7. Execution behind a queue** — ARCHITECTURE §4b says workers=1 is a v1
+  invariant; next scale step is a Runtime Process behind a queue (Temporal/Celery/
+  Dramatiq) so the web tier scales independently. Design spike; no code yet.
+  Files: `alfred/agent/executor.py`, `keepalive.py`, `gunicorn.conf.py`.
+- **N8. Alembic migrations** — replace `db.create_all()` + `migrations/README.md`
+  SQL with real Alembic before the first non-additive schema change. Generate an
+  initial migration from current models. Test: `alembic upgrade head` on a fresh DB
+  matches `create_all()` schema.
+- **N9. SSE/WebSocket for live events** — replace the `GET /runs/<id>/events` poll
+  loop with `text/event-stream` for lower latency. Files: `alfred/api.py`, `ask.html`,
+  `ask.js`.
+- **N10. Embedding-model switch integrity** — changing `alfred_embedding_model`
+  leaves old-model vectors in `asset_embedding`. Add a janitor/CLI prune (the N17
+  janitor already prunes `superseded`; extend it or add `flask janitor --prune-embeddings`).
+  Files: `alfred/rag/__init__.py`, `alfred/cli.py` / `alfred/janitor.py`.
+
+### 🔵 Tier 4 — Ops / hardening
+- **N14. `/touch` UDS path** — F12 added a Manager Secret stub; add the Unix Domain
+  Socket variant (manager listens on a socket, Alfred posts there) so loopback isn't
+  the only non-secret option. Files: `platform-infra/prod-debian/runtime-manager/…`.
+- **N15. Health-check coverage gap** — `flask check` / fail-fast (F3) doesn't yet
+  verify runtime-manager reachability (`RUNTIME_MANAGER_URL`) or that the on-demand
+  service can `systemctl start`. Add a probe. Files: `alfred/cli.py`.
+- **N16. Secrets management for `NC_MANAGER_SECRET`** — source the manager secret
+  from the secrets store / systemd `EnvironmentFile`, not a process env var; update
+  `products.yml` + systemd unit. Files: `platform-infra/prod-debian/products.yml`,
+  `systemd/nightcraft-alfred.service`.
+
+### Recommended multi-session plan
+- **Session A:** N1 + N11 + N13 (visible UX completion of F10/N12).
+- **Session B:** N3 + N2 + N4 (reliability hardening, real test coverage).
+- **Session C:** N5 + N6 (replay/input-pin fidelity).
+- **Session D:** N10 (embeddings prune) + N15 (health probe) — ops hygiene.
+- **Later:** N7/N8/N9 (scale spikes) when traffic justifies it.
+
+> Definition of "done" per session: code compiles (`py_compile`), behavior covered
+> by a test in `tests/` (pure-logic preferred; `@pytest.mark.integration` for DB),
+> and this checklist + ARCHITECTURE "Implementation Status" updated.
 

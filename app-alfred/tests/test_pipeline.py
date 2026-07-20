@@ -200,3 +200,69 @@ def test_run_records_capability_and_input_hash(app, client):
         assert got.capability == "research"
         assert got.run_input_hash == pinned
         assert _pin_input_hash([a.id]) != _pin_input_hash([])
+
+
+@pytest.mark.integration
+def test_janitor_reaps_failed_ingest_orphan(app, client):
+    """§4 janitor: a stuck 'indexing' asset with no blob is reaped as an orphan."""
+    with app.app_context():
+        from alfred.extensions import db
+        from alfred.janitor import run_janitor_pass
+        from alfred.models import AgentRun, Asset, LocalCredential
+
+        u = LocalCredential(username="jan_user")
+        u.set_password("x")
+        db.session.add(u)
+        db.session.flush()
+        uid = u.ensure_profile().user_id
+        db.session.commit()
+
+        # 'indexing' asset whose blob never got written (Failed per §4). Put it in
+        # the past so it exceeds the stuck-indexing grace window.
+        from datetime import datetime, timedelta, timezone
+
+        asset = Asset(
+            content_hash="deadbeef" * 8, content_type="document",
+            storage_ref="/nonexistent/blob.txt", mime_type="text/plain",
+            title="Orphan", user_id=uid, status="indexing",
+            created_at=datetime.now(timezone.utc) - timedelta(minutes=10),
+        )
+        db.session.add(asset)
+        db.session.commit()
+        aid = asset.id
+
+        run_janitor_pass()
+
+        assert Asset.query.get(aid) is None
+
+
+@pytest.mark.integration
+def test_run_history_route_scoped_to_user(app, client):
+    """N12: /alfred/runs lists only the requesting user's runs."""
+    with app.app_context():
+        from alfred.extensions import db
+        from alfred.models import AgentRun, LocalCredential
+
+        u = LocalCredential(username="hist_user")
+        u.set_password("x")
+        db.session.add(u)
+        db.session.flush()
+        uid = u.ensure_profile().user_id
+        other = LocalCredential(username="hist_other")
+        other.set_password("x")
+        db.session.add(other)
+        db.session.flush()
+        oid = other.ensure_profile().user_id
+        db.session.commit()
+
+        db.session.add(AgentRun(run_id="r_self", user_id=uid, goal="mine", status="done"))
+        db.session.add(AgentRun(run_id="r_other", user_id=oid, goal="theirs", status="done"))
+        db.session.commit()
+
+    # Login as hist_user and fetch the history page.
+    client.post("/alfred/auth/login", data={"username": "hist_user", "password": "x"})
+    resp = client.get("/alfred/runs")
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert "mine" in body
+    assert "theirs" not in body

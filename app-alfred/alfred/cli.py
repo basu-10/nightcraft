@@ -1,4 +1,5 @@
 import os
+import time
 
 import click
 
@@ -86,6 +87,41 @@ def register_cli(app):
                 click.echo(f"  - {e}")
             raise SystemExit(1)
         click.echo("Health check passed.")
+
+
+@app.cli.command("janitor")
+@click.option("--once", is_flag=True, help="Run a single reconciliation pass and exit.")
+@click.option("--report", is_flag=True, help="Print cumulative janitor stats and exit.")
+def janitor(once, report):
+    """§4 Janitorial worker: reconcile asset/run consistency; loop every 60s by default."""
+    from .janitor import run_janitor_pass, stats
+
+    if report:
+        s = stats()
+        click.echo("Janitor stats:")
+        for k, v in s.items():
+            click.echo(f"  {k}: {v}")
+        return
+
+    if once:
+        summary = run_janitor_pass()
+        click.echo("Janitor pass complete:")
+        for k, v in (summary or {}).items():
+            click.echo(f"  {k}: {v}")
+        return
+
+    click.echo("Starting janitor loop (every 60s). Ctrl-C to stop.")
+    from .janitor import start
+
+    start()
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        from .janitor import stop
+
+        stop()
+        click.echo("Janitor stopped.")
 
 
 def _replay_manifest_hash():

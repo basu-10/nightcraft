@@ -6,7 +6,7 @@ from flask import Blueprint, redirect, render_template, request, url_for
 
 from .auth.current_user import get_current_user
 from .guards import auth_required
-from .models import Asset, ChatSession
+from .models import AgentRun, Asset, ChatSession
 
 bp = Blueprint("main", __name__, url_prefix="/alfred")
 
@@ -85,3 +85,20 @@ def asset_view(asset_id):
 
     graph = get_relation_graph(asset.id)
     return render_template("alfred/asset.html", asset=asset, graph=graph)
+
+
+@bp.route("/runs")
+@auth_required
+def run_history():
+    """N12: list a user's past AgentRuns (goal, capability, status, tokens, cost)."""
+    user = get_current_user()
+    status_filter = (request.args.get("status") or "all").lower()
+    query = AgentRun.query.filter_by(user_id=user.user_id)
+    if status_filter != "all":
+        query = query.filter_by(status=status_filter)
+    runs = query.order_by(AgentRun.created_at.desc()).limit(200).all()
+    return render_template(
+        "alfred/runs.html",
+        runs=runs,
+        status_filter=status_filter,
+    )

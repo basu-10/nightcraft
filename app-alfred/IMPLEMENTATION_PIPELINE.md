@@ -123,6 +123,23 @@
 4. #7 reindex atomic swap, #4 evidence enforcement, #3 /touch auth.
 5. #9 binary rule, #6/#8/#10/#12 docs + hygiene.
 
+## Forward backlog (next-session, tracked in IMPLEMENTATION_CHECKLIST.md)
+
+> These items extend the review findings; status mirrored from the checklist.
+
+- [x] **N12. Run history / dashboard** — `/alfred/runs` lists past `AgentRun`s
+  scoped to the user (goal, capability, status, tokens, cost) with status
+  filters + re-run affordance. Files: `alfred/routes.py`, `templates/alfred/runs.html`.
+- [x] **N17. Janitorial worker (§4 runtime health)** — `alfred/janitor.py` daemon
+  thread every 60s reconciles the three-system consistency model (asset + run
+  reaping, embedding retry, superseded pruning). `flask janitor [--once|--report]`.
+- [ ] **N1. Run status in live chat UI** — show `done`/`running`/`error`/`fatal`
+  banner from `GET /runs/<id>/events` on the ask page.
+- [ ] **N2. Cost model accuracy** — per-model rate map instead of flat $2/1M.
+- [ ] **N4. Relation delete ownership** — add `DELETE /assets/<id>/relations/<to_id>`
+  verifying ownership of both sides.
+- [ ] **N11. Capability badges on library list** — surface badge on generated cards.
+
 ## Verification conventions
 - Tests live in `app-alfred/tests/`. Add a test per item where feasible.
 - Run: `cd app-alfred && python -m pytest`.

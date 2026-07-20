@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Alfred — Run History{% endblock %}
+{% block content %}
+<div class="runs-page">
+  <header class="runs-header">
+    <h1>Run History</h1>
+    <p class="meta">Past Alfred executions, scoped to your account.</p>
+  </header>
+
+  <div class="runs-filters">
+    {% set statuses = [('all','All'),('queued','Queued'),('running','Running'),('done','Done'),('error','Error'),('fatal','Fatal')] %}
+    {% for key, label in statuses %}
+      <a class="chip-filter {% if status_filter == key %}active{% endif %}"
+         href="{{ url_for('main.run_history', status=key) }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+
+  {% if runs %}
+  <table class="runs-table">
+    <thead>
+      <tr>
+        <th>Goal</th>
+        <th>Capability</th>
+        <th>Status</th>
+        <th>Tokens</th>
+        <th>Cost</th>
+        <th>Started</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for run in runs %}
+      <tr>
+        <td class="run-goal">
+          <span class="run-goal-text">{{ run.goal[:120] or '(no goal)' }}</span>
+          {% if run.error %}
+            <span class="run-error" title="{{ run.error }}">{{ run.error[:80] }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if run.capability %}
+            <span class="badge capability">cap: {{ run.capability }} v{{ run.capability_version or '—' }}</span>
+          {% else %}<span class="muted">—</span>{% endif %}
+        </td>
+        <td><span class="badge status status-{{ run.status }}">run {{ run.status }}</span></td>
+        <td>{{ run.tokens_used or 0 }}</td>
+        <td>${{ '%.4f'|format(run.cost_usd or 0.0) }}</td>
+        <td class="muted">{{ run.created_at|relative_time if run.created_at else '' }}</td>
+        <td class="run-actions">
+          <a class="btn small" href="{{ url_for('api.run_events', run_id=run.run_id) }}">Events</a>
+          {% if run.status in ('error','fatal') %}
+            <a class="btn small primary" href="{{ url_for('main.ask') }}">Re-run</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="empty">No runs{% if status_filter != 'all' %} with status &ldquo;{{ status_filter }}&rdquo;{% endif %} yet. <a href="{{ url_for('main.ask') }}">Start a conversation</a>.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -82,6 +82,11 @@ def create_app(test_config=None, instance_path=None):
 
     configure_keepalive(app)
 
+    # §4 Janitorial worker: long-term runtime health (in-process, workers=1 safe).
+    from .janitor import configure as configure_janitor
+
+    configure_janitor(app)
+
     from .cli import register_cli
 
     register_cli(app)
