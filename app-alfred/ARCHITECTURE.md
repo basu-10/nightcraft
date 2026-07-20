@@ -198,6 +198,175 @@ agent, autonomous "felt important" behavior.
 - SQLite / Filesystem: strongly consistent (transactional)
 - Vector Index: eventually consistent (seconds lag acceptable)
 
+## 4b. Runtime Deployment & Operational Policies (Review Findings)
+
+> The following items were raised in an architecture review of the runtime and
+> execution model. They are tracked here so the design reflects deployment
+> reality, not just the logical layer stack.
+
+### Deployment Invariant: Gunicorn Workers = 1 (🔴 Priority 1)
+
+The runtime is **single-process by assumption**:
+
+```
+HTTP request
+    ↓
+Gunicorn Worker
+    ↓
+Background Thread
+    ↓
+In-memory Run State
+```
+
+The keepalive timer, background thread, active run, and locks are all
+**process-local**. With `workers = 2` you get `Worker A` / `Worker B` with
+`stateA != stateB` — a classic WSGI mistake.
+
+**Decision (v1):** Pin `gunicorn --workers=1` as a **hard deployment invariant**.
+Document it in deployment config and reject multi-worker configs. *(Confirmed:
+keep workers=1 for v1; revisit with queue-based runtime later.)*
+
+**Future (post-v1):** Move execution into a dedicated Runtime Process behind a
+Queue (Temporal / Celery / Dramatiq pattern) so the web tier can scale
+independently of execution state.
+
+### Runtime Policies: Idle Timeout + Maximum Runtime (🔴 Priority 2)
+
+Current design has an **idle timeout** but no **maximum runtime**. These are
+different policies. Runtime must enforce all of:
+
+- **Idle Timeout** — no progress within window → terminate.
+- **Maximum Runtime** — hard wall-clock cap per run.
+- **Maximum Token Budget** — cap spend per run.
+- **Maximum Cost** — cap dollar spend per run.
+
+### Startup Health Check (🟢 Priority 12)
+
+Runtime must **fail fast at startup** before serving requests:
+
+```
+Provider Health Check
+    ↓
+API Keys
+    ↓
+Embedding Model
+    ↓
+Storage
+    ↓
+Capabilities
+```
+
+Missing `requests` dependency is a missing-package bug (not architecture) —
+add to requirements.
+
+### Operational Security: `/touch` Authentication (🟠 Priority 4)
+
+Classified as **Operational Security**, not architecture.
+
+- v1: `127.0.0.1` only is acceptable on a personal VPS.
+- If Alfred becomes multi-tenant, add one of: Manager Secret, Unix Domain
+  Socket, or mTLS. Not worth complicating v1.
+
+### Evidence & Provenance Enforcement (🟠 Priority 5)
+
+The plan states *provenance mandatory*, but enforcement currently relies on
+**executor promises** rather than **schema guarantees**. The architecture must
+distinguish three concerns:
+
+- **Policy** — declares provenance is required.
+- **Validation** — schema-enforced at the boundary, not developer discipline.
+- **Persistence** — stored as first-class lineage fields.
+
+If provenance is fundamental, it must be enforced structurally, not by
+convention.
+
+### Asset Isolation / Ownership (🟠 Priority 6)
+
+The `Relation` table (`from_id`, `to_id`) does not express ownership. The
+runtime must **never trust `asset_id` coming from the client**. Before any
+lowering operation, the runtime verifies:
+
+```
+asset.owner == current_user
+```
+
+### LangGraph Checkpointer Clarification (🟡 Priority 7)
+
+Documentation drift: "persistent checkpoint" was stated without definition.
+
+- **Default:** `PostgresSaver`
+- **Optional:** `MemorySaver`
+- **Unsupported:** Redis
+
+### Reindex Without Downtime (🟡 Priority 8)
+
+Do **not** pause search during reindex. *(Confirmed: atomic swap approach for
+v1.)* Use an atomic pointer swap:
+
+```
+Embedding Set A (active)
+    ↓ Build
+Embedding Set B
+    ↓ Atomic pointer swap
+Search queries Set B
+    ↓ Delete A
+```
+
+Search always queries exactly one embedding generation. Partial indexes are
+never exposed.
+
+### `workspace_id` — Remove Speculative Column (🟡 Priority 9)
+
+The model (User owns Workspace / Workspace owns User / Shared Org / ACL) is
+undecided. Carrying speculative columns hurts. **Decision (v1): keep
+`workspace_id` as a nullable, unused column** for forward compatibility; do not
+build logic around it. Design collaboration when it actually arrives.
+
+### Binary Edits — Explicit Product Rule (🟡 Priority 10)
+
+Not an architecture bug; a **product decision**. Rule:
+
+```
+DOCX
+    ↓ Editor
+Markdown
+    ↓ New Asset
+Original preserved
+```
+
+UI must state *"Generated markdown version — original DOCX unchanged."* No
+surprises.
+
+## 4c. Execution Determinism Gaps (Raised in Review — Confirmed, Add Both)
+
+Two gaps larger than several items above. *(Confirmed: add both as first-class
+requirements for v1.)*
+
+### Capability Versioning
+
+Manifests will evolve: `Editor` → `Editor v1` / `Editor v2` / `Editor Local` /
+`Editor Remote`. Execution must record **which capability + version compiled
+the graph**, otherwise replay is nondeterministic.
+
+Each executed run stores:
+
+- **Capability** name
+- **Version**
+- **Manifest Hash**
+
+### Artifact Version Pinning
+
+Currently bound to `artifact_id` but not `artifact_version`. Risk:
+
+```
+Compile
+    ↓ User edits report
+Runtime executes  → Wrong input
+```
+
+Semantic resolution must bind **`artifact_id` + `content_hash` (or revision)**
+at resolution time, not at compile time.
+
 ## 5. Capability Runtime: Framework Heterogeneity
 
 **Principle:** Capabilities may use different internal harnesses. The
@@ -329,6 +498,12 @@ Success criteria: End-to-end data flow through all layers.
 | General loops in execution plan               | Must use bounded Poll primitive        |
 | Autonomous task creation                      | Explicit user gesture only             |
 | "Felt important" proactive behavior           | Approved triggers only                 |
+| Multi-worker Gunicorn in v1                   | workers=1 is a hard deployment invariant |
+| Trusting client-supplied `asset_id` ownership | Runtime verifies `asset.owner==current_user` |
+| Provenance enforced by convention             | Schema-validated at boundary, not promises |
+| Reindex pauses search                          | Atomic swap of embedding sets, never pause |
+| Binding `artifact_id` without version         | Pin `artifact_id` + `content_hash` at resolution |
+| Executing capability without version record    | Store capability + version + manifest hash |
 
 ## 8. Success Metrics
 
