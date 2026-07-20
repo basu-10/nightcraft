@@ -35,6 +35,37 @@ EMBEDDING_DIMENSIONS = {
 }
 
 
+# Per-model blended cost (USD per 1M tokens) so token/cost budgets (P1 #2 / F2)
+# map to real spend instead of a single flat rate. Used by the executor's
+# _usage_from_response. Rates are blended (prompt+completion averaged) and
+# conservative; models not listed fall back to DEFAULT_TOKEN_COST_USD_PER_1M.
+DEFAULT_TOKEN_COST_USD_PER_1M = 2.0
+
+MODEL_TOKEN_COST_USD_PER_1M = {
+    # OpenAI chat
+    "openai/gpt-4o": 5.0,
+    "openai/gpt-4o-mini": 0.5,
+    "openai/gpt-4-turbo": 10.0,
+    "openai/gpt-3.5-turbo": 1.0,
+    # OpenRouter / other providers share the openai/ prefix convention.
+    "openai/claude-3.5-sonnet": 3.0,
+    "openai/claude-3-haiku": 0.25,
+    "anthropic/claude-3.5-sonnet": 3.0,
+    "anthropic/claude-3-haiku": 0.25,
+}
+
+
+def resolve_token_cost_per_1m(model=None):
+    """Blended USD cost per 1M tokens for ``model`` (N2).
+
+    Falls back to DEFAULT_TOKEN_COST_USD_PER_1M for unknown / unset models so the
+    cost budget never silently breaks when a new model is configured.
+    """
+    if model and model in MODEL_TOKEN_COST_USD_PER_1M:
+        return MODEL_TOKEN_COST_USD_PER_1M[model]
+    return DEFAULT_TOKEN_COST_USD_PER_1M
+
+
 def resolve_embedding_model():
     from .services.settings import get_setting
 

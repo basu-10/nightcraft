@@ -299,7 +299,7 @@ def run_workflow(run_id: str, user_id: str, goal: str, plan: dict, attached_asse
                 # F2: real token/cost accounting — OpenAI returns prompt+completion
                 # usage per call; feed it into the policy so token/cost budgets
                 # actually fire (previously only wall-clock + idle were live).
-                tokens_used, cost = _usage_from_response(resp)
+                tokens_used, cost = _usage_from_response(resp, model)
                 policy.touch(tokens=tokens_used, cost=cost)
 
                 tool_calls = getattr(msg, "tool_calls", None)
@@ -358,7 +358,7 @@ def run_workflow(run_id: str, user_id: str, goal: str, plan: dict, attached_asse
                 if any(tc.function.name in ("save_report", "transform_asset") for tc in tool_calls):
                     try:
                         summary_resp = LLMProvider_openai_chat(model, messages, [], timeout=policy.deadline())
-                        tokens_used, cost = _usage_from_response(summary_resp)
+                        tokens_used, cost = _usage_from_response(summary_resp, model)
                         policy.touch(tokens=tokens_used, cost=cost)
                         if summary_resp.choices[0].message.content:
                             emit_event(run_id, user_id, EVT_LLM_MESSAGE, {"phase": phase_name, "content": summary_resp.choices[0].message.content})
@@ -398,12 +398,12 @@ def LLMProvider_openai_chat(model, messages, allowed_tools, timeout=None):
     return client.chat.completions.create(**kwargs)
 
 
-def _usage_from_response(resp):
-    """Extract prompt+completion token usage and a rough USD cost (F2).
+def _usage_from_response(resp, model=None):
+    """Extract prompt+completion token usage and USD cost (F2, refined in N2).
 
-    Returns (tokens, cost). Cost uses a conservative flat per-1k-token rate so
-    token/cost budgets can actually fire without hard-coding every model's price;
-    a missing usage object yields (0, 0.0).
+    Returns (tokens, cost). Cost uses a per-model blended rate
+    (``resolve_token_cost_per_1m``) so token/cost budgets map to real spend
+    instead of a single flat rate; a missing usage object yields (0, 0.0).
     """
     usage = getattr(resp, "usage", None)
     if usage is None:
@@ -413,8 +413,10 @@ def _usage_from_response(resp):
     total = getattr(usage, "total_tokens", None)
     if total is None:
         total = prompt + completion
-    # Conservative blended rate (~$2 / 1M tokens) good enough for a soft budget.
-    cost = total / 1_000_000.0 * 2.0
+    from .settings_keys import resolve_token_cost_per_1m
+
+    cost_per_1m = resolve_token_cost_per_1m(model)
+    cost = total / 1_000_000.0 * cost_per_1m
     return int(total), float(cost)
 
 

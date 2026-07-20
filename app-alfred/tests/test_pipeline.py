@@ -15,6 +15,89 @@ from alfred.models import Evidence, assert_derivation_has_sources
 from alfred.api import _pin_input_hash
 
 
+# --- N2 Per-model cost model (no DB) ---
+
+
+def test_resolve_token_cost_per_1m_known_model():
+    from alfred.settings_keys import resolve_token_cost_per_1m
+
+    assert resolve_token_cost_per_1m("openai/gpt-4o") == 5.0
+    assert resolve_token_cost_per_1m("openai/gpt-4o-mini") == 0.5
+
+
+def test_resolve_token_cost_per_1m_unknown_falls_back():
+    from alfred.settings_keys import DEFAULT_TOKEN_COST_USD_PER_1M, resolve_token_cost_per_1m
+
+    assert resolve_token_cost_per_1m("some/unknown-model") == DEFAULT_TOKEN_COST_USD_PER_1M
+    assert resolve_token_cost_per_1m(None) == DEFAULT_TOKEN_COST_USD_PER_1M
+
+
+# --- N4 Relation delete ownership (DB-backed, skipped without DATABASE_URL) ---
+
+
+@pytest.mark.integration
+def test_delete_asset_relation_requires_ownership(app, client):
+    """N4: deleting a relation requires owning BOTH endpoints; a foreign edge is 404."""
+    with app.app_context():
+        from alfred.extensions import db
+        from alfred.ingest import ingest_bytes
+        from alfred.models import AssetRelation, LocalCredential
+
+        owner = LocalCredential(username="rel_owner")
+        owner.set_password("x")
+        db.session.add(owner)
+        db.session.flush()
+        oid = owner.ensure_profile().user_id
+
+        other = LocalCredential(username="rel_other")
+        other.set_password("x")
+        db.session.add(other)
+        db.session.flush()
+        tid = other.ensure_profile().user_id
+        db.session.commit()
+
+        a = ingest_bytes(b"parent", "p.txt", "text/plain", oid, title="P")
+        b = ingest_bytes(b"child", "c.txt", "text/plain", oid, title="C")
+        foreign = ingest_bytes(b"foreign", "f.txt", "text/plain", tid, title="F")
+        db.session.add(AssetRelation(from_id=a.id, to_id=b.id, relation_type="derived_from"))
+        db.session.commit()
+        rid_pair = (a.id, b.id)
+        foreign_pair = (a.id, foreign.id)
+
+    client.post("/alfred/auth/login", data={"username": "rel_owner", "password": "x"})
+
+    # Owning both sides -> 204 and the edge is gone.
+    resp = client.delete(f"/alfred/api/assets/{rid_pair[0]}/relations/{rid_pair[1]}")
+    assert resp.status_code == 204
+    with app.app_context():
+        assert AssetRelation.query.filter_by(from_id=rid_pair[0], to_id=rid_pair[1]).first() is None
+
+    # Edge touching another user's asset -> 404 (ownership of both sides enforced).
+    resp2 = client.delete(f"/alfred/api/assets/{foreign_pair[0]}/relations/{foreign_pair[1]}")
+    assert resp2.status_code == 404
+
+
+@pytest.mark.integration
+def test_delete_asset_relation_not_found(app, client):
+    with app.app_context():
+        from alfred.extensions import db
+        from alfred.ingest import ingest_bytes
+        from alfred.models import LocalCredential
+
+        u = LocalCredential(username="rel_none")
+        u.set_password("x")
+        db.session.add(u)
+        db.session.flush()
+        uid = u.ensure_profile().user_id
+        db.session.commit()
+        a = ingest_bytes(b"x", "x.txt", "text/plain", uid, title="X")
+        b = ingest_bytes(b"y", "y.txt", "text/plain", uid, title="Y")
+
+    client.post("/alfred/auth/login", data={"username": "rel_none", "password": "x"})
+    resp = client.delete(f"/alfred/api/assets/{a.id}/relations/{b.id}")
+    assert resp.status_code == 404
+
+
 # --- P1 #2 Runtime policies: clock + guard logic (no DB) ---
 
 
@@ -55,6 +138,28 @@ def test_policy_idle_timeout_exceeded():
     exceeded, reason = p.exceeded()
     assert exceeded is True
     assert "idle timeout" in reason
+
+
+def test_policy_idle_fires_without_activity_n3():
+    """N3: idle timeout must fire after the window when NO tool calls occur.
+
+    Pins ``last_activity`` to the (old) start and proves that a touch() only
+    extends it — the idle guard reads ``last_activity``, not ``started_at``.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    base = datetime(2026, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+    p = _RuntimePolicy(idle_timeout=120)
+    p.start(started_at=base)
+    # No touch() => last_activity stays at base. Advance clock past the window.
+    p.last_activity = base - timedelta(seconds=200)
+    exceeded, reason = p.exceeded()
+    assert exceeded is True
+    assert "idle timeout" in reason
+
+    # A touch() within the window resets the idle clock and clears the breach.
+    p.touch()
+    assert p.exceeded()[0] is False
 
 
 def test_policy_token_budget_exceeded():

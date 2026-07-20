@@ -22,6 +22,53 @@
 
 ---
 
+## 📊 Implementation Status Snapshot (as of 2026-07-20)
+
+> Verified directly against `app-alfred/` source. The full test suite cannot run
+> in this sandbox (Python 3.14 + sqlalchemy `TypingOnly` blocker), so "done" means
+> the code is present and `py_compile`-clean; DB/integration tests run only in the
+> provisioned venv.
+
+### Completed (code present + verified)
+- **Review items 1–14** (P1–P4): workers=1, runtime policies, `/touch` auth,
+  evidence enforcement, asset isolation, checkpointer docs, atomic reindex,
+  binary-edit rule, `requests` dep, startup health check, doc drift sweep,
+  capability versioning, artifact version pinning.
+- **Follow-ups F1–F12**: policy admin settings, real token/cost accounting,
+  fail-fast startup, interruptible max-runtime, ownership on rel/delete,
+  RAG Evidence exempt, replay manifest-hash guard, stale-input guard, migration
+  README, UI for policies + capability badges, reindex lock, multi-tenant
+  `/touch` Manager Secret, plus the `run_id` NameError fix.
+- **Forward patches N1, N11, N12, N13, N17**: live run-status banner, library
+  capability badges, run-history dashboard, `fatal` re-run affordance
+  (`relax_bounds`), janitorial worker.
+- **Session B (this cycle): N2, N3, N4**
+  - **N2** — per-model cost map (`MODEL_TOKEN_COST_USD_PER_1M` +
+    `resolve_token_cost_per_1m`) wired into `_usage_from_response(resp, model)`;
+    both call sites pass `model`. (`alfred/settings_keys.py`, `alfred/agent/executor.py`)
+  - **N3** — `test_policy_idle_fires_without_activity_n3` proves idle fires after
+    the window with no tool calls and that `touch()` resets the idle clock.
+  - **N4** — `DELETE /alfred/api/assets/<id>/relations/<to_id>` verifies the user
+    owns *both* endpoints via `require_owned_asset` (204 / 404). Closes last F5
+    ownership gap. (`alfred/api.py`, `tests/test_pipeline.py`)
+
+### Still open (not started in code)
+| Item | Gap (verified) |
+|------|----------------|
+| **N5** | `flask replay` re-derives `run.plan` (`cli.py:166`) instead of using stored `run.plan_json`. |
+| **N6** | Hard-aborts on any change; `ALFRED_STRICT_INPUT_PIN` not present in code. |
+| **N7** | No queue/worker extraction (design spike only). |
+| **N8** | Still `db.create_all()` + `migrations/README.md`; no Alembic. |
+| **N9** | Still polls `GET /runs/<id>/events`; no SSE/WebSocket. |
+| **N10** | Janitor prunes only `superseded`+wrong-model embeddings; no `--prune-embeddings` for model switches on non-superseded assets. |
+| **N14** | `/touch` is Manager-Secret stub only; no UDS variant. |
+| **N15** | `flask check`/fail-fast has no `RUNTIME_MANAGER_URL` reachability probe. |
+| **N16** | `NC_MANAGER_SECRET` read from `os.environ` only; not sourced from a secrets store / `EnvironmentFile`. |
+
+**Completion:** 14 review items + 12 F-items + 8 N-items (N1,N2,N3,N4,N11,N12,N13,N17) = **34 of 43 tracked items done (~79%)**. Open: N5, N6, N7, N8, N9, N10, N14, N15, N16 (9 items).
+
+---
+
 ## 🔴 P1 — Highest priority
 
 - [x] **1. Gunicorn workers = 1 (deployment invariant)**
@@ -134,23 +181,25 @@ Priority order suggested. Each is a concrete next patch.
   `ask.js` (`showRunStatus`) + `ask.html` + `styles.css`. Test:
   `test_run_events_returns_terminal_status` (integration).
 
-- [ ] **N2. Cost model accuracy (F2 follow-up)** — `_usage_from_response` uses a
-  flat `$2/1M-token` blended rate, which misprices expensive models. Move the rate
-  to a per-model map in `settings_keys.py` (or read from the provider's
-  `cost`/`system` fingerprint) so token budgets stay meaningful. Files:
-  `alfred/agent/executor.py`, `alfred/settings_keys.py`.
+- [x] **N2. Cost model accuracy (F2 follow-up)** — `_usage_from_response` now takes
+  the active `model` and resolves a per-model blended rate via
+  `resolve_token_cost_per_1m` in `settings_keys.py` (`MODEL_TOKEN_COST_USD_PER_1M`,
+  falls back to `DEFAULT_TOKEN_COST_USD_PER_1M` for unknown models) so token/cost
+  budgets map to real spend instead of a single flat `$2/1M` rate. Both call sites
+  (`executor.py` main + summary turn) pass `model`. Tests:
+  `test_resolve_token_cost_per_1m_*` (pure-logic).
 
-- [ ] **N3. Idle-timeout accuracy** — `_RuntimePolicy._exceeded` computes idle from
-  `last_activity` using `datetime.now()`, while wall-clock uses `time.monotonic()`.
-  Mixed clocks are fine but the idle check compares against `started_at` semantics;
-  add a unit test pinning `last_activity` to prove idle fires after the window with
-  no tool calls. Files: `tests/test_pipeline.py`.
+- [x] **N3. Idle-timeout accuracy** — added `test_policy_idle_fires_without_activity_n3`
+  pinning `last_activity` to prove idle fires after the window with no tool calls and
+  that `touch()` resets the idle clock (idle reads `last_activity`, not `started_at`).
+  Files: `tests/test_pipeline.py`.
 
-- [ ] **N4. Ownership on AssetRelation delete path** — F5 guarded delete + create,
-  but there is still **no API endpoint to delete a relation**, and `get_relation_graph`
-  is read-only. Add `DELETE /alfred/api/assets/<id>/relations/<to_id>` that verifies
-  the user owns *both* sides before removing (prevents orphaned provenance edges on
-  another user's data). Files: `alfred/api.py`, `alfred/guards.py`, `tests/`.
+- [x] **N4. Ownership on AssetRelation delete path** — added
+  `DELETE /alfred/api/assets/<id>/relations/<to_id>` (`api.py`) that calls
+  `require_owned_asset` on *both* endpoints before removing the edge, returning 204
+  on success / 404 when the edge is absent or not owned. Closes the last ownership
+  gap from F5. Tests: `test_delete_asset_relation_requires_ownership` +
+  `test_delete_asset_relation_not_found` (integration).
 
 - [ ] **N5. Replay needs the stored plan, not a fresh one (F7 follow-up)** — `flask replay`
   re-derives `run.plan`, but the intent of replay is to reproduce the *original*
@@ -260,17 +309,17 @@ Priority order suggested. Each is a concrete next patch.
 - (Tier 1 complete; remaining open items are Tier 2+. See individual N-entries above.)
 
 ### 🟡 Tier 2 — Reliability hardening (close F2/F4/F5/F7/F8 follow-ups)
-- **N2. Cost model accuracy** — `_usage_from_response` uses a flat `$2/1M-token`
-  blended rate, mispricing expensive models. Move to a per-model map in
-  `settings_keys.py` (or read from the provider's cost fingerprint) so token/cost
-  budgets stay meaningful. Files: `alfred/agent/executor.py`, `alfred/settings_keys.py`.
-- **N3. Idle-timeout accuracy** — add a unit test pinning `last_activity` to prove
-  idle fires after the window with no tool calls (mixed `datetime.now()` vs
-  `time.monotonic()` clocks noted in N3). Files: `tests/test_pipeline.py`.
-- **N4. Ownership on AssetRelation delete path** — F5 guarded delete + create, but
-  there is still no API endpoint to delete a relation, and `get_relation_graph` is
-  read-only. Add `DELETE /alfred/api/assets/<id>/relations/<to_id>` verifying the
-  user owns *both* sides. Files: `alfred/api.py`, `alfred/guards.py`, `tests/`.
+- [x] **N2. Cost model accuracy** — `_usage_from_response(resp, model)` resolves a
+  per-model blended USD/1M-token rate from `MODEL_TOKEN_COST_USD_PER_1M` in
+  `settings_keys.py` (falls back to `DEFAULT_TOKEN_COST_USD_PER_1M`), so token/cost
+  budgets map to real spend. Files: `alfred/agent/executor.py`, `alfred/settings_keys.py`.
+- [x] **N3. Idle-timeout accuracy** — `test_policy_idle_fires_without_activity_n3`
+  pins `last_activity` to prove idle fires after the window with no tool calls and
+  that `touch()` resets the idle clock. Files: `tests/test_pipeline.py`.
+- [x] **N4. Ownership on AssetRelation delete path** — `DELETE
+  /alfred/api/assets/<id>/relations/<to_id>` verifies the user owns *both* sides via
+  `require_owned_asset` before removing (204 success / 404 absent). Closes the last
+  ownership gap from F5. Files: `alfred/api.py`, `tests/`.
 - **N5. Replay uses stored plan, not a fresh one** — `flask replay` re-derives
   `run.plan`; use `run.plan_json` (already persisted) so planner drift in *planning*
   is replayed faithfully, not just manifest-hash drift. Files: `alfred/cli.py`.
@@ -310,10 +359,45 @@ Priority order suggested. Each is a concrete next patch.
 
 ### Recommended multi-session plan
 - **Session A:** N1 + N11 + N13 (visible UX completion of F10/N12) — DONE.
-- **Session B:** N3 + N2 + N4 (reliability hardening, real test coverage).
-- **Session C:** N5 + N6 (replay/input-pin fidelity).
+- **Session B:** N3 + N2 + N4 (reliability hardening, real test coverage) — DONE.
+- **Session C (next):** N5 + N6 (replay/input-pin fidelity).
 - **Session D:** N10 (embeddings prune) + N15 (health probe) — ops hygiene.
 - **Later:** N7/N8/N9 (scale spikes) when traffic justifies it.
+
+---
+
+## 🧭 Suggested next natural implementations / patches
+
+Ordered by value-to-risk. Each is self-contained (what · why · files · test).
+
+### 🟡 Next up — Session C (fidelity; low risk, high value)
+1. **N5. Replay uses the stored plan, not a fresh one** — `flask replay` currently
+   re-derives `run.plan` (`cli.py:166`); switch to the already-persisted
+   `run.plan_json` so planner *planning* drift (not just manifest-hash drift) is
+   replayed faithfully. One-line change + test asserting the replayed plan equals
+   the stored JSON.
+2. **N6. Stale-input guard configurable** — add opt-in `ALFRED_STRICT_INPUT_PIN`
+   (default off) so a changed reference downgrades to a warning event instead of
+   `error`, matching the "dynamic inputs only" principle. Files:
+   `alfred/agent/executor.py`, `alfred/settings_keys.py`; test in `test_pipeline.py`.
+
+### 🟠 Session D — Ops hygiene
+3. **N10. Embedding-model switch integrity** — extend the janitor or add
+   `flask janitor --prune-embeddings` to drop `asset_embedding` rows whose `model`
+   is not the active `alfred_embedding_model` (currently only `superseded`+wrong
+   model are pruned, leaving orphan rows on a model switch for non-superseded
+   assets). Files: `alfred/janitor.py`, `alfred/cli.py`.
+4. **N15. Health-check coverage gap** — add a `RUNTIME_MANAGER_URL` reachability
+   probe to `flask check` / fail-fast (F3) so a dead runtime manager fails startup.
+   Files: `alfred/cli.py`.
+
+### 🔵 Deferred — scale / hardening (when traffic justifies)
+5. **N7.** Execution behind a queue (Temporal/Celery/Dramatiq) — design spike.
+6. **N8.** Alembic migrations before the first non-additive schema change.
+7. **N9.** SSE/WebSocket replacing the `/runs/<id>/events` poll loop.
+8. **N14.** `/touch` UDS variant (manager listens on a socket).
+9. **N16.** Source `NC_MANAGER_SECRET` from a secrets store / systemd
+   `EnvironmentFile` instead of a raw process env var.
 
 > Definition of "done" per session: code compiles (`py_compile`), behavior covered
 > by a test in `tests/` (pure-logic preferred; `@pytest.mark.integration` for DB),

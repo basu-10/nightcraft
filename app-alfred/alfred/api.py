@@ -17,7 +17,7 @@ from .extensions import db
 from .guards import auth_required, require_owned_asset
 from .ingest import ingest_bytes
 from .keepalive import start_run_keepalive, stop_run_keepalive
-from .models import AgentRun, Asset, ChatSession, Message
+from .models import AgentRun, Asset, AssetRelation, ChatSession, Message
 from .settings_keys import (
     resolve_cost_budget_usd,
     resolve_idle_timeout_seconds,
@@ -259,3 +259,28 @@ def list_assets():
             for a in assets
         ]
     )
+
+
+@bp.delete("/assets/<int:asset_id>/relations/<int:to_id>")
+@auth_required
+def delete_asset_relation(asset_id, to_id):
+    """N4: remove an AssetRelation (provenance edge).
+
+    Asset isolation (P2 #5): the caller must own BOTH endpoints of the edge, so a
+    user cannot orphan provenance that points at another user's data. Returns 204
+    on success, 404 if the edge does not exist (or is not owned by this user).
+    """
+    user = _require_user()
+    if user is None:
+        return jsonify({"error": "unauthorized"}), 401
+
+    # Ownership of both sides is enforced before any delete (F5/N4 closure).
+    require_owned_asset(asset_id, user)
+    require_owned_asset(to_id, user)
+
+    relation = AssetRelation.query.filter_by(from_id=asset_id, to_id=to_id).first()
+    if relation is None:
+        return jsonify({"error": "relation not found"}), 404
+    db.session.delete(relation)
+    db.session.commit()
+    return "", 204
