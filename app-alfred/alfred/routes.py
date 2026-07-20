@@ -52,6 +52,15 @@ def home():
 def ask():
     user = get_current_user()
     session_id = request.args.get("session", "").strip()
+    rerun_id = request.args.get("rerun", "").strip()
+    prefill_goal = ""
+    relax_bounds = False
+    if rerun_id:
+        run = AgentRun.query.filter_by(run_id=rerun_id, user_id=user.user_id).first()
+        if run:
+            prefill_goal = run.goal or ""
+            # N13: a fatal run ended on a policy breach — re-run with looser bounds.
+            relax_bounds = run.status == "fatal"
     session = None
     messages = []
     if session_id:
@@ -73,6 +82,8 @@ def ask():
         session=session,
         messages=messages,
         assets=assets,
+        prefill_goal=prefill_goal,
+        relax_bounds=relax_bounds,
     )
 
 

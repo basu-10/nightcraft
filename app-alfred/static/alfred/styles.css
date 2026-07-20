@@ -122,6 +122,21 @@ hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 .meta { color: var(--muted); font-size: 13px; }
 .notice { padding: 8px 12px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--border); color: var(--text); font-size: 14px; }
 
+/* N1: live run-status banner in the Ask view. Mirrors the asset-page status palette. */
+.run-status-banner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 8px;
+  margin: 0 0 14px; font-size: 14px; border: 1px solid var(--border); background: var(--panel-2); }
+.run-status-banner .run-status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+.run-status-banner .run-status-label { font-weight: 600; }
+.run-status-banner .run-status-action { margin-left: auto; color: var(--accent); text-decoration: none; font-weight: 600; }
+.run-status-banner.status-running, .run-status-banner.status-queued { border-color: rgba(56,132,255,0.5); }
+.run-status-banner.status-running .run-status-dot, .run-status-banner.status-queued .run-status-dot { background: #3884ff; }
+.run-status-banner.status-done { border-color: rgba(76,175,143,0.5); }
+.run-status-banner.status-done .run-status-dot { background: #4caf8f; }
+.run-status-banner.status-error { border-color: rgba(255,170,0,0.5); background: rgba(255,170,0,0.12); }
+.run-status-banner.status-error .run-status-dot { background: #e0920c; }
+.run-status-banner.status-fatal { border-color: rgba(229,72,77,0.55); background: rgba(229,72,77,0.14); }
+.run-status-banner.status-fatal .run-status-dot { background: #e5484d; }
+
 /* F10: capability / run-status badges on the asset page. */
 .run-badge { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
 .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); }

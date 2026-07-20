@@ -430,6 +430,11 @@ Runtime executes  → Wrong input
      model — reaps non-terminal `AgentRun`s, reconciles stuck `indexing` assets
      (promote/retry-embed/reap orphan), retries `embedding_pending` assets, and
      prunes `superseded` embeddings. Also exposed as `flask janitor [--once|--report]`.
+   - **Live run-status + run history UX (N1/N11/N12/N13):** the Ask view shows a
+     live `#run-status-banner` driven by `GET /runs/<id>/events`; the Library lists
+     capability/run-status badges on generated cards (via `alfred_run`); `/alfred/runs`
+     is the run-history dashboard; and a `fatal`/`error` run offers a re-run with
+     `relax_bounds` (unbounded policies) through `/alfred/ask?rerun=<id>`.
 
 
  ## 5. Capability Runtime: Framework Heterogeneity

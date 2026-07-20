@@ -128,13 +128,11 @@ Priority order suggested. Each is a concrete next patch.
 
 ### Correctness / reliability
 
-- [ ] **N1. Run-status surfaced in the live UI** — the polling `ask` view reads
-  `GET /runs/<id>/events`, but there is no human-visible status/fatal banner on the
-  chat page (F10 only added badges on the *asset* page). Show `done`/`running`/
-  `error`/`fatal` from the last `status` event, with `fatal` styled distinctly.
-  Files: `templates/alfred/ask.html`, `static/alfred/styles.css`, `api.py`
-  (`run_events` already returns `status`). Test: assert `run_events` returns the
-  terminal `status` after a run.
+- [x] **N1. Run-status surfaced in the live UI** — the polling `ask` view now
+  shows a live `#run-status-banner` driven by `GET /runs/<id>/events` status
+  (`queued`/`running`/`done`/`error`/`fatal`, `fatal` styled red). Implemented in
+  `ask.js` (`showRunStatus`) + `ask.html` + `styles.css`. Test:
+  `test_run_events_returns_terminal_status` (integration).
 
 - [ ] **N2. Cost model accuracy (F2 follow-up)** — `_usage_from_response` uses a
   flat `$2/1M-token` blended rate, which misprices expensive models. Move the rate
@@ -191,11 +189,11 @@ Priority order suggested. Each is a concrete next patch.
 
 ### Product / UX
 
-- [ ] **N11. Capability badges on the library list (F10 follow-up)** — F10 put
-  capability/run-status on the *asset detail* page. Surface the same badge on
-  generated cards in `library.html` by resolving `lineage.generated_by_run` per card.
-  Files: `templates/alfred/library.html`, `alfred/__init__.py` (`alfred_run` global
-  already exists).
+- [x] **N11. Capability badges on the library list (F10 follow-up)** — capability +
+  run-status badges now appear on generated cards in `library.html` by resolving
+  `lineage.generated_by_run` via the existing `alfred_run` template global.
+  Files: `templates/alfred/library.html`, `styles.css`. Test:
+  `test_library_generated_card_shows_run_badge` (integration).
 
 - [x] **N12. Run history / dashboard** — `/alfred/runs` lists past `AgentRun`s
   (goal, capability, status, tokens, cost), scoped to the user, with status
@@ -212,9 +210,13 @@ Priority order suggested. Each is a concrete next patch.
   `flask janitor [--once|--report]`. Wired into `create_app` (workers=1 safe).
   Test: `test_janitor_reaps_failed_ingest_orphan` (integration).
 
-- [ ] **N13. `fatal` recovery affordance** — when a run ends `fatal` (policy breach),
-  let the user re-run with looser bounds from the UI (calls `start_run` again). Ties
-  together N1 + F1. Files: `ask.html`, `api.py`.
+- [x] **N13. `fatal` recovery affordance** — when a run ends `fatal`/`error`, the live
+  banner (N1) and the run-history rows (N12) link to `/alfred/ask?rerun=<run_id>`,
+  which prefills the goal and (for `fatal`) sets `relax_bounds`. `start_run` accepts
+  `relax_bounds` to force all policy bounds unbounded so a prior breach doesn't
+  immediately re-abort. Ties N1 + F1. Files: `ask.html`, `ask.js`, `api.py`,
+  `routes.py`, `styles.css`. Tests: `test_relax_bounds_forces_unbounded_policies`,
+  `test_ask_rerun_prefills_goal_and_relaxes_fatal` (integration).
 
 ### Ops / hardening
 
@@ -246,22 +248,16 @@ Priority order suggested. Each is a concrete next patch.
 > Pick up any item below in a fresh session. Each entry is self-contained:
 > **what to do · why · files · suggested test.** Priority order is a suggestion,
 > not a hard sequence. Status legend: `[ ]` not started.
-> Last curated: 2026-07-20 (after N12 + N17 landed).
+> Last curated: 2026-07-20 (after N1 + N11 + N13 landed).
 
 ### 🟢 Tier 1 — Visible correctness / UX wins (do first)
-- **N1. Run-status banner in live chat UI** — `ask.html` + `ask.js` already poll
-  `GET /runs/<id>/events` (returns `status`). Show `done`/`running`/`error`/`fatal`
-  from the last `status` event with `fatal` styled red (reuse `.badge.status-*`
-  from `styles.css`). Files: `templates/alfred/ask.html`, `static/alfred/ask.js`,
-  `alfred/api.py` (already returns `status`). Test: assert `run_events` returns the
-  terminal `status` after a run.
-- **N11. Capability badges on library list** — F10 put capability/run-status on the
-  asset detail page only. Surface the same badge on generated cards in `library.html`
-  by resolving `lineage.generated_by_run` per card (the `alfred_run` template global
-  already exists in `alfred/__init__.py`). Files: `templates/alfred/library.html`.
-- **N13. `fatal` recovery affordance** — when a run ends `fatal` (policy breach),
-  let the user re-run with looser bounds from the UI (`start_run` again). Ties N1 +
-  F1 together. Files: `ask.html`, `api.py`. (N12 already links to `/alfred/ask`.)
+- [x] **N1. Run-status banner in live chat UI** — done this session (`ask.js`
+  `showRunStatus` + `ask.html` `#run-status-banner` + `styles.css`).
+- [x] **N11. Capability badges on library list** — done this session (`library.html`
+  generated card badges via `alfred_run`).
+- [x] **N13. `fatal` recovery affordance** — done this session (`/alfred/ask?rerun=`
+  prefill + `relax_bounds` in `start_run`).
+- (Tier 1 complete; remaining open items are Tier 2+. See individual N-entries above.)
 
 ### 🟡 Tier 2 — Reliability hardening (close F2/F4/F5/F7/F8 follow-ups)
 - **N2. Cost model accuracy** — `_usage_from_response` uses a flat `$2/1M-token`
@@ -313,7 +309,7 @@ Priority order suggested. Each is a concrete next patch.
   `systemd/nightcraft-alfred.service`.
 
 ### Recommended multi-session plan
-- **Session A:** N1 + N11 + N13 (visible UX completion of F10/N12).
+- **Session A:** N1 + N11 + N13 (visible UX completion of F10/N12) — DONE.
 - **Session B:** N3 + N2 + N4 (reliability hardening, real test coverage).
 - **Session C:** N5 + N6 (replay/input-pin fidelity).
 - **Session D:** N10 (embeddings prune) + N15 (health probe) — ops hygiene.

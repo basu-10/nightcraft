@@ -74,9 +74,11 @@
 
     <div id="agent-log" class="agent-log" hidden></div>
 
-    <form id="composer" class="composer" data-session="{{ session.session_id if session else '' }}">
+    <div id="run-status-banner" class="run-status-banner" hidden></div>
+
+    <form id="composer" class="composer" data-session="{{ session.session_id if session else '' }}" data-relax-bounds="{{ '1' if relax_bounds else '' }}">
       <div id="dropzone" class="dropzone">
-        <textarea id="goal-input" name="goal" rows="1" placeholder="Ask Alfred anything..."></textarea>
+        <textarea id="goal-input" name="goal" rows="1" placeholder="Ask Alfred anything...">{{ prefill_goal or '' }}</textarea>
         <div id="attachments" class="attachments"></div>
       </div>
       <div class="composer-actions">

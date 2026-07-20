@@ -295,6 +295,7 @@
     fetch("/alfred/api/runs/" + currentRunId + "/events?after=" + lastSeq)
       .then(function (r) { return r.json(); })
       .then(function (data) {
+        const prevStatus = document.getElementById("run-status-banner").dataset.status;
         (data.events || []).forEach(function (ev) {
           if (ev.seq > lastSeq) lastSeq = ev.seq;
           if (ev.type === "llm_message" && ev.payload && ev.payload.content && !ev.payload.final) {
@@ -314,12 +315,36 @@
           }
           addAgentEvent(ev);
         });
-        if (data.status === "done" || data.status === "error") {
+        if (data.status && data.status !== prevStatus) {
+          showRunStatus(data.status, currentRunId);
+        }
+        if (data.status === "done" || data.status === "error" || data.status === "fatal") {
           stopPolling();
           sendBtn.disabled = false;
         }
       })
       .catch(function () { /* keep polling; heartbeat protects liveness */ });
+  }
+
+  function showRunStatus(status, runId) {
+    const banner = document.getElementById("run-status-banner");
+    if (!banner) return;
+    banner.dataset.status = status;
+    banner.className = "run-status-banner status-" + status;
+    banner.hidden = false;
+    let label = status;
+    if (status === "running") label = "Running…";
+    else if (status === "queued") label = "Queued…";
+    else if (status === "done") label = "Run completed";
+    else if (status === "error") label = "Run ended with an error";
+    else if (status === "fatal") label = "Run aborted: policy limit reached";
+    let html = '<span class="run-status-dot"></span><span class="run-status-label">' + label + "</span>";
+    if (status === "fatal") {
+      html += '<a class="run-status-action" href="/alfred/ask?rerun=' + encodeURIComponent(runId || "") + '">Re-run with looser limits</a>';
+    } else if (status === "error") {
+      html += '<a class="run-status-action" href="/alfred/ask?rerun=' + encodeURIComponent(runId || "") + '">Re-run</a>';
+    }
+    banner.innerHTML = html;
   }
 
   function startPolling() {
@@ -355,6 +380,7 @@
         goal: goal,
         session_id: sessionId,
         referenced_asset_ids: Array.from(attached),
+        relax_bounds: form.dataset.relaxBounds === "1",
       };
       fetch("/alfred/api/runs", {
         method: "POST",

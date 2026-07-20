@@ -234,6 +234,11 @@
                  {% else %}
                    Doc · {{ a.mime_type | default('application/octet-stream', true) }}
                  {% endif %}
+                 {% set gen_run = alfred_run(a.lineage.get('generated_by_run')) if a.lineage.get('generated_by_run') else None %}
+                 {% if gen_run %}
+                   <span class="badge capability">cap: {{ gen_run.capability or '—' }} v{{ gen_run.capability_version or '—' }}</span>
+                   <span class="badge status status-{{ gen_run.status }}">run {{ gen_run.status }}</span>
+                 {% endif %}
                </div>
                <div class="artifact-time">Generated {{ a.created_at | relative_time }}</div>
              </div>

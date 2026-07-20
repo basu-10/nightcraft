@@ -266,3 +266,129 @@ def test_run_history_route_scoped_to_user(app, client):
     body = resp.get_data(as_text=True)
     assert "mine" in body
     assert "theirs" not in body
+
+
+@pytest.mark.integration
+def test_run_events_returns_terminal_status(app, client):
+    """N1: GET /runs/<id>/events exposes the terminal status of a run."""
+    with app.app_context():
+        from alfred.extensions import db
+        from alfred.models import AgentRun, LocalCredential
+
+        u = LocalCredential(username="ev_user")
+        u.set_password("x")
+        db.session.add(u)
+        db.session.flush()
+        uid = u.ensure_profile().user_id
+        db.session.commit()
+
+        db.session.add(AgentRun(run_id="ev_run", user_id=uid, goal="g", status="fatal",
+                                error="policy breach"))
+        db.session.commit()
+
+    client.post("/alfred/auth/login", data={"username": "ev_user", "password": "x"})
+    resp = client.get("/alfred/api/runs/ev_run/events")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["status"] == "fatal"
+
+
+@pytest.mark.integration
+def test_relax_bounds_forces_unbounded_policies(app, client):
+    """N13: re-running a fatal run with relax_bounds clears all policy bounds."""
+    with app.app_context():
+        from alfred.extensions import db
+        from alfred.models import AgentRun, LocalCredential
+
+        u = LocalCredential(username="relax_user")
+        u.set_password("x")
+        db.session.add(u)
+        db.session.flush()
+        uid = u.ensure_profile().user_id
+        db.session.commit()
+
+        # Seed a fatal run so the re-run path has something to reference.
+        db.session.add(AgentRun(run_id="relax_src", user_id=uid, goal="retry me", status="fatal"))
+        db.session.commit()
+
+    client.post("/alfred/auth/login", data={"username": "relax_user", "password": "x"})
+    resp = client.post(
+        "/alfred/api/runs",
+        json={"goal": "retry me", "relax_bounds": True},
+    )
+    assert resp.status_code == 202
+    run_id = resp.get_json()["run_id"]
+    with app.app_context():
+        run = AgentRun.query.filter_by(run_id=run_id).first()
+        assert run.max_runtime_seconds is None
+        assert run.idle_timeout_seconds is None
+        assert run.token_budget is None
+        assert run.cost_budget_usd is None
+
+
+@pytest.mark.integration
+def test_ask_rerun_prefills_goal_and_relaxes_fatal(app, client):
+    """N13: /alfred/ask?rerun=<fatal_run> prefills goal and flags relaxed bounds."""
+    with app.app_context():
+        from alfred.extensions import db
+        from alfred.models import AgentRun, LocalCredential
+
+        u = LocalCredential(username="rerun_user")
+        u.set_password("x")
+        db.session.add(u)
+        db.session.flush()
+        uid = u.ensure_profile().user_id
+        db.session.commit()
+
+        db.session.add(AgentRun(run_id="rerun_src", user_id=uid, goal="do the thing", status="fatal"))
+        db.session.commit()
+
+    client.post("/alfred/auth/login", data={"username": "rerun_user", "password": "x"})
+    resp = client.get("/alfred/ask?rerun=rerun_src")
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert "do the thing" in body
+    assert 'data-relax-bounds="1"' in body
+    # A non-fatal rerun must NOT relax bounds.
+    with app.app_context():
+        from alfred.models import AgentRun
+
+        db.session.add(AgentRun(run_id="rerun_err", user_id=uid, goal="err goal", status="error"))
+        db.session.commit()
+    resp2 = client.get("/alfred/ask?rerun=rerun_err")
+    assert 'data-relax-bounds="1"' not in resp2.get_data(as_text=True)
+
+
+@pytest.mark.integration
+def test_library_generated_card_shows_run_badge(app, client):
+    """N11: a generated asset card renders capability + run-status badges."""
+    with app.app_context():
+        from alfred.extensions import db
+        from alfred.models import AgentRun, Asset, LocalCredential
+
+        u = LocalCredential(username="badge_user")
+        u.set_password("x")
+        db.session.add(u)
+        db.session.flush()
+        uid = u.ensure_profile().user_id
+        db.session.commit()
+
+        run = AgentRun(run_id="badge_run", user_id=uid, goal="g", status="done",
+                       capability="research", capability_version="1.2.3")
+        db.session.add(run)
+        db.session.flush()
+        asset = Asset(
+            content_hash="b" * 64, content_type="report", storage_ref="/x",
+            mime_type="text/markdown", title="Report", user_id=uid, status="ready",
+            metadata_json='{"is_generated_version": true}',
+            lineage_json='{"generated_by_run": "badge_run"}',
+        )
+        db.session.add(asset)
+        db.session.commit()
+
+    client.post("/alfred/auth/login", data={"username": "badge_user", "password": "x"})
+    resp = client.get("/alfred/library")
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert "cap: research v1.2.3" in body
+    assert "status-done" in body

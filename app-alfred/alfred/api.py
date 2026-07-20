@@ -122,6 +122,12 @@ def start_run():
     if cost_budget_usd is None:
         cost_budget_usd = resolve_cost_budget_usd()
 
+    # N13: fatal-recovery affordance. When the UI re-runs a failed run with
+    # "looser limits", force every bound negative (== unbounded) so a prior
+    # policy breach (max runtime / idle / token / cost) does not immediately
+    # re-abort the re-run. Explicit per-field overrides above still win.
+    relax_bounds = bool(data.get("relax_bounds"))
+
     run_id = uuid.uuid4().hex
 
     msg = Message(
@@ -141,10 +147,10 @@ def start_run():
         session_id=session_id,
         goal=goal,
         status="queued",
-        max_runtime_seconds=None if max_runtime_seconds < 0 else max_runtime_seconds,
-        idle_timeout_seconds=None if idle_timeout_seconds < 0 else idle_timeout_seconds,
-        token_budget=None if token_budget < 0 else token_budget,
-        cost_budget_usd=None if cost_budget_usd < 0 else cost_budget_usd,
+        max_runtime_seconds=None if (max_runtime_seconds < 0 or relax_bounds) else max_runtime_seconds,
+        idle_timeout_seconds=None if (idle_timeout_seconds < 0 or relax_bounds) else idle_timeout_seconds,
+        token_budget=None if (token_budget < 0 or relax_bounds) else token_budget,
+        cost_budget_usd=None if (cost_budget_usd < 0 or relax_bounds) else cost_budget_usd,
         capability=cap.get("capability"),
         capability_version=cap.get("capability_version"),
         manifest_hash=cap.get("manifest_hash"),
