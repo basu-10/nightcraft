@@ -395,8 +395,37 @@ Runtime executes  → Wrong input
  - **Binary-edit rule:** DOCX/original ingest is flagged `original_preserved`;
    generated reports are flagged `is_generated_version` and the asset page shows
    "Generated markdown version — the original asset is unchanged."
- - **`workspace_id`:** remains a nullable, unused column (no logic built around
-   it).
+  - **`workspace_id`:** remains a nullable, unused column (no logic built around
+    it).
+
+  ### Follow-up backlog (implemented)
+  The original review follow-ups (F1–F12) are now implemented:
+  - **F1 Runtime policies as admin settings:** keys `alfred_max_runtime_seconds`,
+    `alfred_idle_timeout_seconds`, `alfred_token_budget`, `alfred_cost_budget_usd`
+    in `alfred/settings_keys.py`; `start_run` resolves them when the client omits an
+    override.
+  - **F2 Real token/cost accounting:** executor reads `resp.usage` and feeds
+    `policy.touch(tokens, cost)`; budgets now actually fire.
+  - **F3 Fail-fast startup:** `create_app` runs the health checks when
+    `FAIL_FAST_HEALTHCHECK` is set.
+  - **F4 Interruptible max-runtime:** `_RuntimePolicy.deadline()` threads a request
+    timeout into the LLM call.
+  - **F5 Ownership on relation/delete:** `delete_asset` + `tool_save_report`
+    relation links verify ownership.
+  - **F6 RAG Evidence exempt:** validator stays scoped to derived-artifact writes
+    (covered by a test).
+  - **F7 Replay:** `flask replay <run_id>` refuses if the planner manifest hash
+    drifted.
+  - **F8 Stale-input guard:** `run_workflow` aborts if a referenced asset changed
+    after compile.
+  - **F9 Migration:** `app-alfred/migrations/README.md` documents the
+    `db.create_all()` assumption + idempotent upgrade SQL.
+  - **F10 UI:** admin Runtime Policies form; capability/run-status badges on asset
+    page; "generated" badge on library cards.
+  - **F11 Reindex lock:** per-user in-process flag guards `reindex_library`.
+  - **F12 Multi-tenant `/touch`:** runtime manager accepts a config-gated
+    `X-Manager-Secret` for external callers.
+
 
  ## 5. Capability Runtime: Framework Heterogeneity
 

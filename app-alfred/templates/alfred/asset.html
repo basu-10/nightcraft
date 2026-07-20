@@ -10,6 +10,17 @@
   <p class="notice"><strong>Original source</strong> — preserved as uploaded; transformations create new versions.</p>
 {% endif %}
 
+{% set lineage = asset.lineage %}
+{% if lineage and lineage.get('generated_by_run') %}
+  {% set gen_run = alfred_run(lineage['generated_by_run']) %}
+  {% if gen_run %}
+  <p class="run-badge">
+    <span class="badge capability">capability: {{ gen_run.capability or '—' }} v{{ gen_run.capability_version or '—' }}</span>
+    <span class="badge status status-{{ gen_run.status }}">run {{ gen_run.status }}</span>
+  </p>
+  {% endif %}
+{% endif %}
+
 <h2>Relations</h2>
 {% if graph.outgoing or graph.incoming %}
   <ul>

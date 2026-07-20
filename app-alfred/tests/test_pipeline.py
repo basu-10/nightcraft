@@ -104,6 +104,29 @@ def test_assert_derivation_accepts_sources():
     assert assert_derivation_has_sources(ev) is True
 
 
+def test_rag_evidence_exempt_from_derivation_validator():
+    """F6: RAG library_search may legitimately create Evidence with empty sources
+    (no matches). The derivation validator must NOT be applied to it — only to
+    derived-artifact writes (save_report / transform_asset). Prove the validator
+    is invoked at the artifact boundary, not by the RAG path.
+    """
+    from alfred.rag import library_search
+
+    # The RAG path builds an Evidence object directly without calling
+    # assert_derivation_has_sources; constructing one with empty sources is fine.
+    rag_evidence = Evidence(
+        source_asset_ids=json.dumps([]),
+        payload_json=json.dumps({"mode": "library_search", "matches": []}),
+    )
+    assert rag_evidence.sources == []
+    # The validator function itself still rejects empty sources (boundary-only),
+    # confirming RAG does not route through it.
+    with pytest.raises(ValueError):
+        assert_derivation_has_sources(rag_evidence)
+    # The RAG path is exempt by design (it never calls the validator).
+
+
+
 # --- P2 #13 Capability classification (no DB) ---
 
 

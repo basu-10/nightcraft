@@ -112,8 +112,13 @@ def tool_save_report(run_id, user_id, args):
             src_id_int = int(src_id)
         except (TypeError, ValueError):
             continue
+        # F5: only link to assets the user actually owns; skip foreign ids rather
+        # than creating a provenance edge to another user's data.
+        src = Asset.query.filter_by(id=src_id_int, user_id=user_id).first()
+        if src is None:
+            continue
         db.session.add(
-            AssetRelation(from_id=asset.id, to_id=src_id_int, relation_type="derived_from")
+            AssetRelation(from_id=asset.id, to_id=src.id, relation_type="derived_from")
         )
 
     evidence = Evidence(

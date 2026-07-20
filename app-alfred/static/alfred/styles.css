@@ -103,6 +103,18 @@ hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
 .meta { color: var(--muted); font-size: 13px; }
 .notice { padding: 8px 12px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--border); color: var(--text); font-size: 14px; }
 
+/* F10: capability / run-status badges on the asset page. */
+.run-badge { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+.badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); background: var(--panel-2); color: var(--text); }
+.badge.capability { background: rgba(99, 102, 241, 0.15); border-color: rgba(99, 102, 241, 0.4); }
+.badge.status-done { background: rgba(76, 175, 143, 0.18); border-color: rgba(76, 175, 143, 0.5); color: #4caf8f; }
+.badge.status-running { background: rgba(56, 132, 255, 0.18); border-color: rgba(56, 132, 255, 0.5); color: #3884ff; }
+.badge.status-queued { background: rgba(150, 150, 150, 0.18); border-color: rgba(150, 150, 150, 0.5); color: var(--muted); }
+.badge.status-error { background: rgba(255, 170, 0, 0.18); border-color: rgba(255, 170, 0, 0.5); color: #e0920c; }
+.badge.status-fatal { background: rgba(229, 72, 77, 0.2); border-color: rgba(229, 72, 77, 0.55); color: #e5484d; }
+/* Generated-version badge for library cards. */
+.gen-badge { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); color: #8b8ef5; }
+
 .alfred-app {
   position: fixed;
   inset: 0;

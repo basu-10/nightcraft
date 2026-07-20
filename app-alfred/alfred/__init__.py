@@ -99,6 +99,13 @@ def create_app(test_config=None, instance_path=None):
 
         return {"app_user": get_current_user()}
 
+    @app.template_global()
+    def alfred_run(run_id):
+        """F10: expose an AgentRun lookup to templates (capability badges, status)."""
+        from .models import AgentRun
+
+        return AgentRun.query.filter_by(run_id=run_id).first()
+
     @app.template_filter("relative_time")
     def relative_time(dt):
         if not dt:
@@ -126,6 +133,12 @@ def create_app(test_config=None, instance_path=None):
         return f"{years}y ago"
 
     with app.app_context():
+        # F3: fail-fast startup — when FAIL_FAST_HEALTHCHECK is set, abort before
+        # serving if any health check fails (providers, API key, embeddings,
+        # storage, pgvector). The checks are the same ones behind `flask check`.
+        if app.config.get("FAIL_FAST_HEALTHCHECK"):
+            _fail_fast_healthcheck(app)
+
         _ensure_pgvector(app)
         db.create_all()
         _mark_interrupted_runs()
@@ -178,3 +191,23 @@ def _mark_interrupted_runs():
             db.session.commit()
     except Exception:
         db.session.rollback()
+
+
+def _fail_fast_healthcheck(app):
+    """Fail fast at startup (F3): run the same checks as `flask check`.
+
+    Raises RuntimeError if any check fails so the process exits non-zero before
+    it can serve requests with a broken configuration.
+    """
+    from .cli import _check_embedding_model, _check_pgvector, _check_providers, _check_storage
+
+    errors = []
+    errors += _check_providers()
+    errors += _check_embedding_model()
+    errors += _check_storage()
+    errors += _check_pgvector()
+
+    if errors:
+        for e in errors:
+            app.logger.error(f"Startup health check FAILED: {e}")
+        raise RuntimeError("Startup health check failed: " + "; ".join(errors))

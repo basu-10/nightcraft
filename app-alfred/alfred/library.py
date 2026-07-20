@@ -8,7 +8,7 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from .auth.current_user import get_current_user
 from .extensions import db
-from .guards import auth_required
+from .guards import auth_required, require_owned_asset
 from .ingest import ingest_bytes
 from .models import Asset, ASSET_TYPE_REPORT
 from .providers import web_search as web_provider
@@ -125,7 +125,10 @@ def asset_detail(asset_id):
 @auth_required
 def delete_asset(asset_id):
     user = get_current_user()
-    asset = Asset.query.filter_by(id=asset_id, user_id=user.user_id).first_or_404()
+    # F5: ownership on delete path — require_owned_asset aborts (404/403) if the
+    # asset is missing or belongs to another user, so a client-supplied id can
+    # never delete another user's data.
+    asset = require_owned_asset(asset_id, user)
     # Hard delete: remove backing file + cascade chunks/embeddings/relations.
     import os
 

@@ -18,6 +18,10 @@ from ..providers import EmbeddingProvider
 from ..settings_keys import resolve_chunk_overlap, resolve_chunk_size
 from ..services.settings import get_setting
 
+# F11: per-user reindex concurrency lock (in-process). Maps user_id -> True while
+# a reindex is running. Guarded by the GIL for single-process (workers=1) runtime.
+_reindex_locks: dict = {}
+
 
 def compute_content_hash(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -235,42 +239,53 @@ def reindex_library(user_id: str, model=None):
     and only swapped in (delete old generation, rename temp -> active) inside a
     single transaction. Search always queries one generation, so a mid-reindex
     reader never sees a partial index.
+
+    F11: concurrency lock — a simple in-process flag prevents two reindexes for
+    the same user running at once (which would race on the temp generation and
+    corrupt the index).
     """
     from .models import AssetChunk
     from sqlalchemy import text
 
-    model = model or get_setting("alfred_embedding_model", "") or _default_embedding_model()
-    temp_model = f"{model}#reindex"
+    if _reindex_locks.get(user_id):
+        raise RuntimeError("A reindex for this user is already in progress.")
 
-    chunks = (
-        AssetChunk.query.join(Asset)
-        .filter(Asset.user_id == user_id)
-        .all()
-    )
-    texts = [c.text for c in chunks]
-    if not texts:
-        return 0
+    _reindex_locks[user_id] = True
+    try:
+        model = model or get_setting("alfred_embedding_model", "") or _default_embedding_model()
+        temp_model = f"{model}#reindex"
 
-    vectors = EmbeddingProvider.embed_batch(texts, model=model)
-
-    # Build the new generation under a temp model tag (never read by search yet).
-    for c, vec in zip(chunks, vectors):
-        emb = AssetEmbedding(
-            chunk_id=c.id, asset_id=c.asset_id, model=temp_model, embedding=json.dumps(vec)
+        chunks = (
+            AssetChunk.query.join(Asset)
+            .filter(Asset.user_id == user_id)
+            .all()
         )
-        db.session.add(emb)
-    db.session.flush()
+        texts = [c.text for c in chunks]
+        if not texts:
+            return 0
 
-    # Atomic swap: drop the prior active generation, promote the temp generation.
-    db.session.execute(
-        text("DELETE FROM asset_embedding WHERE model = :model AND chunk_id IN ("
-             "SELECT id FROM asset_chunk WHERE asset_id IN "
-             "(SELECT id FROM asset WHERE user_id = :uid))"),
-        {"model": model, "uid": user_id},
-    )
-    db.session.execute(
-        text("UPDATE asset_embedding SET model = :model WHERE model = :temp"),
-        {"model": model, "temp": temp_model},
-    )
-    db.session.commit()
-    return len(chunks)
+        vectors = EmbeddingProvider.embed_batch(texts, model=model)
+
+        # Build the new generation under a temp model tag (never read by search yet).
+        for c, vec in zip(chunks, vectors):
+            emb = AssetEmbedding(
+                chunk_id=c.id, asset_id=c.asset_id, model=temp_model, embedding=json.dumps(vec)
+            )
+            db.session.add(emb)
+        db.session.flush()
+
+        # Atomic swap: drop the prior active generation, promote the temp generation.
+        db.session.execute(
+            text("DELETE FROM asset_embedding WHERE model = :model AND chunk_id IN ("
+                 "SELECT id FROM asset_chunk WHERE asset_id IN "
+                 "(SELECT id FROM asset WHERE user_id = :uid))"),
+            {"model": model, "uid": user_id},
+        )
+        db.session.execute(
+            text("UPDATE asset_embedding SET model = :model WHERE model = :temp"),
+            {"model": model, "temp": temp_model},
+        )
+        db.session.commit()
+        return len(chunks)
+    finally:
+        _reindex_locks.pop(user_id, None)

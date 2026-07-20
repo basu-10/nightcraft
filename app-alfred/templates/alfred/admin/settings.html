@@ -24,6 +24,23 @@
   <label>Top-K (RAG)
     <input type="number" name="alfred_top_k" value="{{ top_k }}">
   </label>
+
+  <fieldset class="policy-fields">
+    <legend>Runtime Policies (per-run bounds; blank = use default)</legend>
+    <label>Max Runtime (seconds)
+      <input type="number" name="alfred_max_runtime_seconds" value="{{ max_runtime_seconds }}">
+    </label>
+    <label>Idle Timeout (seconds)
+      <input type="number" name="alfred_idle_timeout_seconds" value="{{ idle_timeout_seconds }}">
+    </label>
+    <label>Token Budget
+      <input type="number" name="alfred_token_budget" value="{{ token_budget }}">
+    </label>
+    <label>Cost Budget (USD)
+      <input type="number" step="0.01" name="alfred_cost_budget_usd" value="{{ cost_budget_usd }}">
+    </label>
+  </fieldset>
+
   <button type="submit" class="btn primary">Save Settings</button>
 </form>
 

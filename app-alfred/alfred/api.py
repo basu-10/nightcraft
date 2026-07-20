@@ -18,6 +18,12 @@ from .guards import auth_required, require_owned_asset
 from .ingest import ingest_bytes
 from .keepalive import start_run_keepalive, stop_run_keepalive
 from .models import AgentRun, Asset, ChatSession, Message
+from .settings_keys import (
+    resolve_cost_budget_usd,
+    resolve_idle_timeout_seconds,
+    resolve_max_runtime_seconds,
+    resolve_token_budget,
+)
 
 
 def _parse_int(value):
@@ -97,16 +103,37 @@ def start_run():
         asset = require_owned_asset(rid, user)
         validated_refs.append(asset.id)
 
+    # Runtime policies (P1 #2 / follow-up F1): the client may override an admin
+    # setting for this run, but otherwise the admin-configured global bound is
+    # used. Explicit override is validated as non-negative; a negative/None from
+    # settings means "unbounded".
+    import json as _json
+
+    max_runtime_seconds = _parse_int(data.get("max_runtime_seconds"))
+    if max_runtime_seconds is None:
+        max_runtime_seconds = resolve_max_runtime_seconds()
+    idle_timeout_seconds = _parse_int(data.get("idle_timeout_seconds"))
+    if idle_timeout_seconds is None:
+        idle_timeout_seconds = resolve_idle_timeout_seconds()
+    token_budget = _parse_int(data.get("token_budget"))
+    if token_budget is None:
+        token_budget = resolve_token_budget()
+    cost_budget_usd = _parse_float(data.get("cost_budget_usd"))
+    if cost_budget_usd is None:
+        cost_budget_usd = resolve_cost_budget_usd()
+
+    run_id = uuid.uuid4().hex
+
     msg = Message(
         session_id=session_id,
         user_id=user.user_id,
         role="user",
         content=goal,
-        referenced_asset_ids=__import__("json").dumps(validated_refs),
+        referenced_asset_ids=_json.dumps(validated_refs),
     )
     db.session.add(msg)
 
-    # Runtime policies (P1 #2) + determinism provenance (P2 #13/#14).
+    # Determinism provenance (P2 #13/#14).
     cap = plan_goal_capability(goal, user.user_id)
     run = AgentRun(
         run_id=run_id,
@@ -114,10 +141,10 @@ def start_run():
         session_id=session_id,
         goal=goal,
         status="queued",
-        max_runtime_seconds=_parse_int(data.get("max_runtime_seconds")),
-        idle_timeout_seconds=_parse_int(data.get("idle_timeout_seconds")),
-        token_budget=_parse_int(data.get("token_budget")),
-        cost_budget_usd=_parse_float(data.get("cost_budget_usd")),
+        max_runtime_seconds=None if max_runtime_seconds < 0 else max_runtime_seconds,
+        idle_timeout_seconds=None if idle_timeout_seconds < 0 else idle_timeout_seconds,
+        token_budget=None if token_budget < 0 else token_budget,
+        cost_budget_usd=None if cost_budget_usd < 0 else cost_budget_usd,
         capability=cap.get("capability"),
         capability_version=cap.get("capability_version"),
         manifest_hash=cap.get("manifest_hash"),

@@ -86,3 +86,57 @@ def register_cli(app):
                 click.echo(f"  - {e}")
             raise SystemExit(1)
         click.echo("Health check passed.")
+
+
+def _replay_manifest_hash():
+    """Recompute the planner manifest hash as of now (F7: replay from manifest_hash)."""
+    from .agent.planner import plan_goal_capability
+
+    # plan_goal_capability computes manifest_hash from the live planner contract;
+    # we ask for a throwaway capability record and read its hash.
+    return plan_goal_capability("replay-probe", "__replay_probe__")["manifest_hash"]
+
+
+@app.cli.command("replay")
+@click.argument("run_id")
+def replay(run_id):
+    """F7: Re-run a prior AgentRun only if the planner manifest hash is unchanged.
+
+    Catches silent recompile drift: if the planner contract changed since the run
+    was compiled, refuse to replay (the recorded manifest_hash would no longer
+    match) and exit non-zero.
+    """
+    from .models import AgentRun
+
+    run = AgentRun.query.filter_by(run_id=run_id).first()
+    if run is None:
+        click.echo(f"Run '{run_id}' not found.")
+        raise SystemExit(2)
+
+    current_hash = _replay_manifest_hash()
+    if run.manifest_hash != current_hash:
+        click.echo("Replay REFUSED: planner manifest hash drifted since compile.")
+        click.echo(f"  stored : {run.manifest_hash}")
+        click.echo(f"  current: {current_hash}")
+        raise SystemExit(1)
+
+    click.echo(f"Replay OK: manifest hash matches ({current_hash[:12]}…). Re-running '{run_id}'.")
+    # Delegate to the executor on a background thread, mirroring start_run.
+    import json
+    import threading
+
+    from .agent import executor as executor_module
+
+    plan = run.plan
+    if not plan or not plan.get("phases"):
+        click.echo("Run has no stored plan; cannot replay.")
+        raise SystemExit(1)
+
+    app = current_app._get_current_object()
+
+    def _worker():
+        with app.app_context():
+            executor_module.run_workflow(run.run_id, run.user_id, run.goal, plan)
+
+    threading.Thread(target=_worker, daemon=True).start()
+    click.echo("Replay dispatched.")

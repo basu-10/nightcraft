@@ -221,18 +221,18 @@
             <div class="artifact-icon doc-icon">
               <span class="file-icon doc-file-icon">&#128196;</span>
             </div>
-            <div class="artifact-info">
-              <div class="artifact-title">{{ a.title }}</div>
-              <div class="artifact-meta">
-                {% set meta = a.asset_metadata %}
-                {% if meta and meta.get('text_length') %}
-                  Doc · {{ meta.get('text_length', 0) // 1024 }} KB
-                {% else %}
-                  Doc · {{ a.mime_type | default('application/octet-stream', true) }}
-                {% endif %}
-              </div>
-              <div class="artifact-time">Generated {{ a.created_at | relative_time }}</div>
-            </div>
+             <div class="artifact-info">
+               <div class="artifact-title">{{ a.title }}{% if a.asset_metadata.is_generated_version %}<span class="gen-badge">generated</span>{% endif %}</div>
+               <div class="artifact-meta">
+                 {% set meta = a.asset_metadata %}
+                 {% if meta and meta.get('text_length') %}
+                   Doc · {{ meta.get('text_length', 0) // 1024 }} KB
+                 {% else %}
+                   Doc · {{ a.mime_type | default('application/octet-stream', true) }}
+                 {% endif %}
+               </div>
+               <div class="artifact-time">Generated {{ a.created_at | relative_time }}</div>
+             </div>
           </a>
           {% endfor %}
           {% if not generated %}

@@ -28,3 +28,11 @@ def get_setting_int(key, default):
         return int(raw_value)
     except (TypeError, ValueError):
         return default
+
+
+def get_setting_float(key, default):
+    raw_value = get_setting(key, "")
+    try:
+        return float(raw_value)
+    except (TypeError, ValueError):
+        return default

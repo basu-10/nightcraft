@@ -16,7 +16,7 @@ import time
 from datetime import datetime, timezone
 
 from ..extensions import db
-from ..models import AgentRun
+from ..models import AgentRun, Asset
 from ..providers import LLMProvider, web_search as web_provider
 from ..settings_keys import resolve_agent_model, resolve_react_max_steps
 from .events import (
@@ -174,6 +174,21 @@ class _RuntimePolicy:
         self.tokens_used += tokens
         self.cost_usd += cost
 
+    def deadline(self):
+        """Remaining wall-clock seconds before max_runtime, or None if unbounded (F4).
+
+        Threaded into the OpenAI request timeout so a single long LLM call cannot
+        overrun max_runtime. Returns a small floor (>=1s) so a non-trivial call is
+        still allowed even when near the limit; None never injects a timeout.
+        """
+        if self.max_runtime is None:
+            return None
+        wall = self._clock.now() - self._start_wall
+        remaining = self.max_runtime - wall
+        if remaining <= 0:
+            return 1
+        return max(1.0, min(remaining, 120.0))
+
     def _exceeded(self):
         """Return (exceeded: bool, reason: str)."""
         wall = self._clock.now() - self._start_wall
@@ -200,6 +215,22 @@ def run_workflow(run_id: str, user_id: str, goal: str, plan: dict, attached_asse
     run = AgentRun.query.filter_by(run_id=run_id).first()
     if run is None:
         return
+
+    # F8: stale-input guard — the input was pinned at run-start (Artifact Version
+    # Pinning, P2 #14). If any referenced asset's content changed since the pin,
+    # the executed input would differ from what was compiled. Refuse to run rather
+    # than silently operating on the wrong data.
+    if attached_asset_ids:
+        current_hash = _pin_input_hash(attached_asset_ids)
+        if run.run_input_hash and current_hash and current_hash != run.run_input_hash:
+            emit_event(
+                run_id, user_id, EVT_ERROR,
+                {"message": "Run aborted: referenced assets changed after compile (stale input)."},
+            )
+            run.status = "error"
+            run.error = "Stale input: referenced assets changed after compile."
+            db.session.commit()
+            return
 
     emit_event(run_id, user_id, EVT_PLAN, {"plan": plan})
     emit_event(run_id, user_id, EVT_STATUS, {"status": "running"})
@@ -241,9 +272,20 @@ def run_workflow(run_id: str, user_id: str, goal: str, plan: dict, attached_asse
                     emit_event(run_id, user_id, EVT_ERROR, {"message": f"Run terminated: {reason}"})
                     raise RuntimeError(f"Runtime policy violation: {reason}")
 
+                # F4: interruptible max-runtime — a single long LLM call must not
+                # be able to overrun max_runtime. Compute the wall-clock deadline
+                # remaining and thread it as an OpenAI request timeout.
+                deadline = policy.deadline()
+
                 try:
-                    resp = LLMProvider_openai_chat(model, messages, allowed)
+                    resp = LLMProvider_openai_chat(model, messages, allowed, timeout=deadline)
                 except Exception as exc:
+                    # A timeout (or any error) that lands after max_runtime is a
+                    # policy breach; surface it as such rather than a generic error.
+                    if policy.exceeded()[0]:
+                        reason = policy.exceeded_reason()
+                        emit_event(run_id, user_id, EVT_ERROR, {"message": f"Run terminated: {reason}"})
+                        raise RuntimeError(f"Runtime policy violation: {reason}")
                     emit_event(run_id, user_id, EVT_ERROR, {"message": f"LLM error in {phase_name}: {exc}"})
                     raise
 
@@ -253,6 +295,12 @@ def run_workflow(run_id: str, user_id: str, goal: str, plan: dict, attached_asse
                     messages.append({"role": "assistant", "content": msg.content})
                 else:
                     messages.append({"role": "assistant", "content": "", "tool_calls": msg.tool_calls})
+
+                # F2: real token/cost accounting — OpenAI returns prompt+completion
+                # usage per call; feed it into the policy so token/cost budgets
+                # actually fire (previously only wall-clock + idle were live).
+                tokens_used, cost = _usage_from_response(resp)
+                policy.touch(tokens=tokens_used, cost=cost)
 
                 tool_calls = getattr(msg, "tool_calls", None)
                 if not tool_calls:
@@ -282,9 +330,11 @@ def run_workflow(run_id: str, user_id: str, goal: str, plan: dict, attached_asse
 
                     emit_event(run_id, user_id, EVT_TOOL_RESULT, {"name": fn_name, "result": _truncate(result)})
 
-                    # Refresh activity + accounting for the runtime guard.
+                    # Refresh activity for the idle guard and persist accounting.
                     policy.touch(tokens=0, cost=0.0)
                     run.last_activity_at = _utcnow()
+                    run.tokens_used = policy.tokens_used
+                    run.cost_usd = policy.cost_usd
                     db.session.commit()
 
                     # Collect provenance from any cited sources.
@@ -307,7 +357,9 @@ def run_workflow(run_id: str, user_id: str, goal: str, plan: dict, attached_asse
                 # If a finalizing tool was called, allow one more summary turn then stop.
                 if any(tc.function.name in ("save_report", "transform_asset") for tc in tool_calls):
                     try:
-                        summary_resp = LLMProvider_openai_chat(model, messages, [])
+                        summary_resp = LLMProvider_openai_chat(model, messages, [], timeout=policy.deadline())
+                        tokens_used, cost = _usage_from_response(summary_resp)
+                        policy.touch(tokens=tokens_used, cost=cost)
                         if summary_resp.choices[0].message.content:
                             emit_event(run_id, user_id, EVT_LLM_MESSAGE, {"phase": phase_name, "content": summary_resp.choices[0].message.content})
                             final_summary = summary_resp.choices[0].message.content
@@ -329,21 +381,67 @@ def run_workflow(run_id: str, user_id: str, goal: str, plan: dict, attached_asse
         db.session.commit()
 
 
-def LLMProvider_openai_chat(model, messages, allowed_tools):
+def LLMProvider_openai_chat(model, messages, allowed_tools, timeout=None):
     from openai import OpenAI
 
-    from ..providers import _api_key, _openai_client
+    from ..providers import _openai_client
 
     client = _openai_client()
     kwargs = dict(model=model, messages=messages, temperature=0.2, max_tokens=2500)
     if allowed_tools:
         kwargs["tools"] = [s for s in TOOL_SCHEMAS if s["function"]["name"] in allowed_tools]
         kwargs["tool_choice"] = "auto"
+    # F4: a per-call timeout bounds a single LLM request so it cannot overrun
+    # max_runtime_seconds. None => no explicit timeout.
+    if timeout is not None:
+        kwargs["timeout"] = timeout
     return client.chat.completions.create(**kwargs)
+
+
+def _usage_from_response(resp):
+    """Extract prompt+completion token usage and a rough USD cost (F2).
+
+    Returns (tokens, cost). Cost uses a conservative flat per-1k-token rate so
+    token/cost budgets can actually fire without hard-coding every model's price;
+    a missing usage object yields (0, 0.0).
+    """
+    usage = getattr(resp, "usage", None)
+    if usage is None:
+        return 0, 0.0
+    prompt = getattr(usage, "prompt_tokens", 0) or 0
+    completion = getattr(usage, "completion_tokens", 0) or 0
+    total = getattr(usage, "total_tokens", None)
+    if total is None:
+        total = prompt + completion
+    # Conservative blended rate (~$2 / 1M tokens) good enough for a soft budget.
+    cost = total / 1_000_000.0 * 2.0
+    return int(total), float(cost)
 
 
 def _utcnow():
     return datetime.now(timezone.utc)
+
+
+def _pin_input_hash(asset_ids):
+    """Recompute the run-input hash (F8 / P2 #14). Mirrors alfred.api._pin_input_hash.
+
+    Kept local to avoid a circular import (api imports executor). Hash is over
+    (asset_id, content_hash) pairs so a user edit to a referenced asset is
+    detectable at exec time.
+    """
+    if not asset_ids:
+        return None
+    import hashlib
+
+    parts = []
+    for aid in asset_ids:
+        asset = Asset.query.get(aid)
+        if asset is None:
+            continue
+        parts.append(f"{asset.id}:{asset.content_hash}")
+    if not parts:
+        return None
+    return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()
 
 
 def _truncate(obj, limit=4000):

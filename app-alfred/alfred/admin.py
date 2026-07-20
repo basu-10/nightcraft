@@ -9,20 +9,28 @@ from .extensions import db
 from .guards import admin_required, auth_required
 from .ingest import reindex_library
 from .models import Asset
-from .services.settings import get_setting, get_setting_int, upsert_setting
+from .services.settings import get_setting, get_setting_float, get_setting_int, upsert_setting
 from .settings_keys import (
     DEFAULT_AGENT_MODEL,
     DEFAULT_CHUNK_OVERLAP,
     DEFAULT_CHUNK_SIZE,
+    DEFAULT_COST_BUDGET_USD,
     DEFAULT_EMBEDDING_MODEL,
+    DEFAULT_IDLE_TIMEOUT_SECONDS,
+    DEFAULT_MAX_RUNTIME_SECONDS,
     DEFAULT_REACT_MAX_STEPS,
+    DEFAULT_TOKEN_BUDGET,
     DEFAULT_TOP_K,
     SETTING_AGENT_MODEL,
     SETTING_CHUNK_OVERLAP,
     SETTING_CHUNK_SIZE,
+    SETTING_COST_BUDGET_USD,
     SETTING_EMBEDDING_MODEL,
+    SETTING_IDLE_TIMEOUT_SECONDS,
+    SETTING_MAX_RUNTIME_SECONDS,
     SETTING_OPENROUTER_API_KEY,
     SETTING_REACT_MAX_STEPS,
+    SETTING_TOKEN_BUDGET,
     SETTING_TOP_K,
 )
 
@@ -49,6 +57,10 @@ def settings():
         chunk_size = request.form.get("alfred_chunk_size", "").strip()
         chunk_overlap = request.form.get("alfred_chunk_overlap", "").strip()
         top_k = request.form.get("alfred_top_k", "").strip()
+        max_runtime = request.form.get("alfred_max_runtime_seconds", "").strip()
+        idle_timeout = request.form.get("alfred_idle_timeout_seconds", "").strip()
+        token_budget = request.form.get("alfred_token_budget", "").strip()
+        cost_budget = request.form.get("alfred_cost_budget_usd", "").strip()
 
         if api_key:
             db.session.add(upsert_setting(SETTING_OPENROUTER_API_KEY, api_key, encrypted=True))
@@ -64,6 +76,14 @@ def settings():
             db.session.add(upsert_setting(SETTING_CHUNK_OVERLAP, chunk_overlap, encrypted=False))
         if top_k:
             db.session.add(upsert_setting(SETTING_TOP_K, top_k, encrypted=False))
+        if max_runtime:
+            db.session.add(upsert_setting(SETTING_MAX_RUNTIME_SECONDS, max_runtime, encrypted=False))
+        if idle_timeout:
+            db.session.add(upsert_setting(SETTING_IDLE_TIMEOUT_SECONDS, idle_timeout, encrypted=False))
+        if token_budget:
+            db.session.add(upsert_setting(SETTING_TOKEN_BUDGET, token_budget, encrypted=False))
+        if cost_budget:
+            db.session.add(upsert_setting(SETTING_COST_BUDGET_USD, cost_budget, encrypted=False))
 
         db.session.commit()
         flash("Alfred settings updated.", "success")
@@ -78,6 +98,10 @@ def settings():
         "chunk_size": get_setting_int(SETTING_CHUNK_SIZE, DEFAULT_CHUNK_SIZE),
         "chunk_overlap": get_setting_int(SETTING_CHUNK_OVERLAP, DEFAULT_CHUNK_OVERLAP),
         "top_k": get_setting_int(SETTING_TOP_K, DEFAULT_TOP_K),
+        "max_runtime_seconds": get_setting_int(SETTING_MAX_RUNTIME_SECONDS, DEFAULT_MAX_RUNTIME_SECONDS),
+        "idle_timeout_seconds": get_setting_int(SETTING_IDLE_TIMEOUT_SECONDS, DEFAULT_IDLE_TIMEOUT_SECONDS),
+        "token_budget": get_setting_int(SETTING_TOKEN_BUDGET, DEFAULT_TOKEN_BUDGET),
+        "cost_budget_usd": get_setting_float(SETTING_COST_BUDGET_USD, DEFAULT_COST_BUDGET_USD),
     }
     return render_template("alfred/admin/settings.html", **ctx)
 

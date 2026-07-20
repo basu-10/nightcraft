@@ -11,12 +11,22 @@ SETTING_CHUNK_SIZE = "alfred_chunk_size"
 SETTING_CHUNK_OVERLAP = "alfred_chunk_overlap"
 SETTING_TOP_K = "alfred_top_k"
 
+# Runtime policy bounds (P1 #2 / follow-up F1). Each is optional; unset => unbounded.
+SETTING_MAX_RUNTIME_SECONDS = "alfred_max_runtime_seconds"
+SETTING_IDLE_TIMEOUT_SECONDS = "alfred_idle_timeout_seconds"
+SETTING_TOKEN_BUDGET = "alfred_token_budget"
+SETTING_COST_BUDGET_USD = "alfred_cost_budget_usd"
+
 DEFAULT_EMBEDDING_MODEL = "openai/text-embedding-3-small"
 DEFAULT_AGENT_MODEL = "openai/gpt-4o-mini"
 DEFAULT_REACT_MAX_STEPS = 12
 DEFAULT_CHUNK_SIZE = 1200
 DEFAULT_CHUNK_OVERLAP = 200
 DEFAULT_TOP_K = 6
+DEFAULT_MAX_RUNTIME_SECONDS = 600
+DEFAULT_IDLE_TIMEOUT_SECONDS = 120
+DEFAULT_TOKEN_BUDGET = 200000
+DEFAULT_COST_BUDGET_USD = 2.0
 
 EMBEDDING_DIMENSIONS = {
     "openai/text-embedding-3-small": 1536,
@@ -59,3 +69,27 @@ def resolve_top_k():
     from .services.settings import get_setting_int
 
     return get_setting_int(SETTING_TOP_K, DEFAULT_TOP_K)
+
+
+def resolve_max_runtime_seconds():
+    from .services.settings import get_setting_int
+
+    return get_setting_int(SETTING_MAX_RUNTIME_SECONDS, DEFAULT_MAX_RUNTIME_SECONDS)
+
+
+def resolve_idle_timeout_seconds():
+    from .services.settings import get_setting_int
+
+    return get_setting_int(SETTING_IDLE_TIMEOUT_SECONDS, DEFAULT_IDLE_TIMEOUT_SECONDS)
+
+
+def resolve_token_budget():
+    from .services.settings import get_setting_int
+
+    return get_setting_int(SETTING_TOKEN_BUDGET, DEFAULT_TOKEN_BUDGET)
+
+
+def resolve_cost_budget_usd():
+    from .services.settings import get_setting_float
+
+    return get_setting_float(SETTING_COST_BUDGET_USD, DEFAULT_COST_BUDGET_USD)

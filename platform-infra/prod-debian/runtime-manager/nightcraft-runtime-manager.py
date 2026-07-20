@@ -235,6 +235,24 @@ class Handler(BaseHTTPRequestHandler):
         host = (self.client_address or ("",))[0]
         return host in ("127.0.0.1", "::1", "localhost")
 
+    def _client_is_authorized(self):
+        """Authorize a /touch caller (P3 #3 + F12 multi-tenant readiness).
+
+        v1: loopback only is sufficient (personal VPS). When the manager is
+        configured with NC_MANAGER_SECRET, an external (non-loopback) caller may
+        authenticate with a matching ``X-Manager-Secret`` header. This is the
+        config-gated stub for the multi-tenant future (Manager Secret / UDS /
+        mTLS); only the env-gated secret variant is implemented here so the
+        on-demand product is ready if Alfred becomes multi-tenant.
+        """
+        if self._client_is_loopback():
+            return True
+        secret = os.environ.get("NC_MANAGER_SECRET")
+        if not secret:
+            return False
+        presented = self.headers.get("X-Manager-Secret", "")
+        return presented == secret
+
     def _send(self, code, body=""):
         self.send_response(code)
         if body:
@@ -263,12 +281,13 @@ class Handler(BaseHTTPRequestHandler):
             if not slug:
                 self._send(400, "missing slug\n")
                 return
-            # Operational security (P3 #3): /touch may only be called by the
-            # service itself (loopback). External callers are rejected.
-            # Multi-tenant future: require a Manager Secret / UDS / mTLS here.
-            if not self._client_is_loopback():
-                log("Rejected /touch from non-loopback client %s" % (self.client_address,))
-                self._send(403, "forbidden: /touch requires loopback origin\n")
+            # Operational security (P3 #3): /touch may only be called by an
+            # authorized caller. v1 allows loopback only (personal VPS). If
+            # NC_MANAGER_SECRET is set, a matching X-Manager-Secret header authorizes
+            # external callers (F12 multi-tenant readiness: Manager Secret stub).
+            if not self._client_is_authorized():
+                log("Rejected /touch from unauthorized client %s" % (self.client_address,))
+                self._send(403, "forbidden: /touch requires loopback origin or manager secret\n")
                 return
             if self.server.manager.touch(slug):  # noqa: E501
                 self._send(202, "touched %s\n" % slug)
