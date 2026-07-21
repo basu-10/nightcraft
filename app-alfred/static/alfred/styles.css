@@ -1048,3 +1048,18 @@ hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
     grid-template-columns: 1fr;
   }
 }
+
+/* Asset relation list + delete control (N4 UI) */
+.relation-list { list-style: none; padding: 0; margin: 8px 0; }
+.relation-item {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 6px 10px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--panel-2); margin-bottom: 6px;
+}
+.relation-label { font-size: 14px; color: var(--text); }
+.relation-delete {
+  background: none; border: none; color: var(--danger); cursor: pointer;
+  font-size: 18px; line-height: 1; padding: 0 6px; border-radius: 4px;
+}
+.relation-delete:hover { background: rgba(229, 72, 77, 0.15); }
+.relation-delete:disabled { opacity: 0.5; cursor: default; }

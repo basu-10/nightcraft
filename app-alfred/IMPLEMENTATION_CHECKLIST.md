@@ -50,7 +50,10 @@
     the window with no tool calls and that `touch()` resets the idle clock.
   - **N4** — `DELETE /alfred/api/assets/<id>/relations/<to_id>` verifies the user
     owns *both* endpoints via `require_owned_asset` (204 / 404). Closes last F5
-    ownership gap. (`alfred/api.py`, `tests/test_pipeline.py`)
+    ownership gap. Backend (`alfred/api.py`) + integration tests
+    (`tests/test_pipeline.py`); **UI added** — `asset.html` lists each relation
+    with a delete (×) control that `fetch`-es `DELETE` and removes the row
+    (handles 204/404), styled in `static/alfred/styles.css`.
 
 ### Still open (not started in code)
 | Item | Gap (verified) |
@@ -66,6 +69,10 @@
 | **N16** | `NC_MANAGER_SECRET` read from `os.environ` only; not sourced from a secrets store / `EnvironmentFile`. |
 
 **Completion:** 14 review items + 12 F-items + 8 N-items (N1,N2,N3,N4,N11,N12,N13,N17) = **34 of 43 tracked items done (~79%)**. Open: N5, N6, N7, N8, N9, N10, N14, N15, N16 (9 items).
+
+> **UI parity:** all built features have UI except N4, whose backend was done in
+> Session B but only gained a UI control on the asset page this cycle (delete ×
+> on each relation → `DELETE /alfred/api/assets/<id>/relations/<to_id>`).
 
 ---
 

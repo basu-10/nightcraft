@@ -23,17 +23,57 @@
 
 <h2>Relations</h2>
 {% if graph.outgoing or graph.incoming %}
-  <ul>
+  <ul class="relation-list">
     {% for r in graph.outgoing %}
-      <li><strong>{{ r.relation_type }}</strong> → Asset #{{ r.to_id }}</li>
+      <li class="relation-item" data-from="{{ asset.id }}" data-to="{{ r.to_id }}" data-type="{{ r.relation_type }}">
+        <span class="relation-label"><strong>{{ r.relation_type }}</strong> → Asset #{{ r.to_id }}</span>
+        <button type="button" class="relation-delete" title="Remove relation">×</button>
+      </li>
     {% endfor %}
     {% for r in graph.incoming %}
-      <li>Asset #{{ r.from_id }} <strong>{{ r.relation_type }}</strong> this</li>
+      <li class="relation-item" data-from="{{ r.from_id }}" data-to="{{ asset.id }}" data-type="{{ r.relation_type }}">
+        <span class="relation-label">Asset #{{ r.from_id }} <strong>{{ r.relation_type }}</strong> this</span>
+        <button type="button" class="relation-delete" title="Remove relation">×</button>
+      </li>
     {% endfor %}
   </ul>
 {% else %}
   <p>No relations yet.</p>
 {% endif %}
+
+<script>
+(function () {
+  document.querySelectorAll(".relation-delete").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      const li = btn.closest(".relation-item");
+      if (!li) return;
+      const fromId = li.dataset.from;
+      const toId = li.dataset.to;
+      if (!confirm("Remove this relation?")) return;
+      btn.disabled = true;
+      fetch("/alfred/api/assets/" + fromId + "/relations/" + toId, { method: "DELETE" })
+        .then(function (r) {
+          if (r.status === 204) {
+            li.remove();
+            const list = document.querySelector(".relation-list");
+            if (list && !list.children.length) {
+              const p = document.createElement("p");
+              p.textContent = "No relations yet.";
+              list.replaceWith(p);
+            }
+          } else if (r.status === 404) {
+            alert("Relation not found (may already be removed).");
+            btn.disabled = false;
+          } else {
+            alert("Could not remove relation.");
+            btn.disabled = false;
+          }
+        })
+        .catch(function () { alert("Network error removing relation."); btn.disabled = false; });
+    });
+  });
+})();
+</script>
 
 <p><a href="{{ url_for('library.index') }}">← Back to Library</a></p>
 {% endblock %}
