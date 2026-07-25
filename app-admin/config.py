@@ -34,6 +34,7 @@ class Config:
     AUTH_URL: str = os.environ.get("ADMIN_AUTH_URL", "/auth/login")
     AUTH_RETURN_PARAM: str = os.environ.get("ADMIN_AUTH_RETURN_PARAM", "next")
     ADMIN_RETURN_PATH: str = os.environ.get("ADMIN_RETURN_PATH", "/admin")
+    TELEMETRY_DATABASE_URL: str = os.environ.get("TELEMETRY_DATABASE_URL", "")
 
 
 class DevelopmentConfig(Config):

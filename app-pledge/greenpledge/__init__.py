@@ -44,6 +44,8 @@ def create_app(test_config=None, instance_path=None):
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         SQLALCHEMY_ENGINE_OPTIONS={"pool_pre_ping": True},
         DEFAULT_TIMEZONE="Asia/Kolkata",
+        TELEMETRY_ENDPOINT=os.getenv("TELEMETRY_ENDPOINT", "/api/telemetry/v1/events"),
+        TELEMETRY_DISABLED=os.getenv("TELEMETRY_DISABLED", "0") == "1",
     )
 
     if test_config:

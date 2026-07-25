@@ -8,6 +8,7 @@ from flask import Blueprint, abort, current_app, flash, jsonify, redirect, rende
 
 from .extensions import db
 from .models import AuthorizationCode, OauthClient, RefreshToken, Session, User
+from .telemetry import emit_login, emit_logout, emit_oauth_login, emit_oauth_register, emit_register, emit_token_issued
 
 try:
     from authlib.integrations.base_client import OAuthError
@@ -384,6 +385,7 @@ def register():
     db.session.add(user)
     db.session.commit()
     _create_session_for_user(user)
+    emit_register(user.id, session.get("session_token", ""))
 
     return redirect(_normalize_post_login_redirect(next_url, url_for("core.login")))
 
@@ -404,6 +406,7 @@ def login():
         return _render_login_page(next_url=next_url, username_value=username), 401
 
     _create_session_for_user(user)
+    emit_login(user.id, session.get("session_token", ""))
     return redirect(_normalize_post_login_redirect(next_url, url_for("core.healthz")))
 
 
@@ -465,18 +468,24 @@ def google_callback():
     timezone_name = _normalize_timezone(user_info.get("timezone_name", ""))
 
     user = User.query.filter_by(email=email).first()
+    is_new_user = False
     if user is None:
         if User.query.filter_by(username=username).first():
             username = _unique_username(username)
         user = User(username=username, email=email, timezone_name=timezone_name, is_admin=False)
         user.set_password(secrets.token_urlsafe(32))
         db.session.add(user)
+        is_new_user = True
     else:
         user.username = _unique_username(username, ignore_user_id=user.id)
         user.timezone_name = timezone_name or user.timezone_name
 
     db.session.commit()
     _create_session_for_user(user)
+    if is_new_user:
+        emit_oauth_register(user.id, session.get("session_token", ""))
+    else:
+        emit_oauth_login(user.id, session.get("session_token", ""))
     return redirect(_normalize_post_login_redirect(_consume_post_login_redirect(""), url_for("core.healthz")))
 
 
@@ -488,9 +497,10 @@ def logout():
         Session.query.filter_by(session_token=session_token).delete()
         db.session.commit()
 
-    session.pop("user_id", None)
+    user_id = session.pop("user_id", None)
     session.pop("session_token", None)
     session.pop("post_login_redirect", None)
+    emit_logout(int(user_id) if user_id else None, session_token or "")
     return redirect(next_url)
 
 
@@ -608,6 +618,7 @@ def token():
         )
     )
     db.session.commit()
+    emit_token_issued(user.id, client.client_id)
 
     return jsonify(
         {

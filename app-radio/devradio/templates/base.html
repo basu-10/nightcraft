@@ -69,5 +69,14 @@
       </div>
     </footer>
     {% endblock %}
+    {% if not config.get('TELEMETRY_DISABLED') %}
+    <script>
+      window.__TELEMETRY__ = {
+        endpoint: {{ config.TELEMETRY_ENDPOINT | tojson }},
+        userId: {{ app_user.user_id if app_user.is_authenticated and app_user.user_id is not none else 'null' }}
+      };
+    </script>
+    <script defer src="{{ url_for('static', filename='js/telemetry-sdk.js') }}"></script>
+    {% endif %}
   </body>
 </html>

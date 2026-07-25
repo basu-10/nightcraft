@@ -237,6 +237,10 @@ SCRATCHPAD_DB_USER="${SCRATCHPAD_DB_USER:-scratchpad_app}"
 SCRATCHPAD_DB_NAME="${SCRATCHPAD_DB_NAME:-scratchpad_db}"
 SCRATCHPAD_DB_PASSWORD="${SCRATCHPAD_DB_PASSWORD:-scratchpad_app_db_2026_prod_secret}"
 
+TELEMETRY_DB_NAME="${TELEMETRY_DB_NAME:-telemetry_db}"
+TELEMETRY_DB_USER="${TELEMETRY_DB_USER:-telemetry_app}"
+TELEMETRY_DB_PASSWORD="${TELEMETRY_DB_PASSWORD:-telemetry_app_db_2026_prod_secret}"
+
 NOTESTACK_DB_NAME="${NOTESTACK_DB_NAME:-notestack_db}"
 NOTESTACK_DB_USER="${NOTESTACK_DB_USER:-notestack_app}"
 NOTESTACK_DB_PASSWORD="${NOTESTACK_DB_PASSWORD:-notestack_app_db_2026_prod_secret}"
@@ -302,6 +306,8 @@ sudo -u postgres psql \
   -v noteflow_db_password="${NOTEFLOW_DB_PASSWORD}" \
   -v scratchpad_db_user="${SCRATCHPAD_DB_USER}" \
   -v scratchpad_db_password="${SCRATCHPAD_DB_PASSWORD}" \
+  -v telemetry_db_user="${TELEMETRY_DB_USER}" \
+  -v telemetry_db_password="${TELEMETRY_DB_PASSWORD}" \
   < "${USERS_SQL}"
 
 sudo -u postgres psql \
@@ -323,6 +329,19 @@ sudo -u postgres psql \
   -v noteflow_db_user="${NOTEFLOW_DB_USER}" \
   -v scratchpad_db_name="${SCRATCHPAD_DB_NAME}" \
   -v scratchpad_db_user="${SCRATCHPAD_DB_USER}" \
+  -v telemetry_db_name="${TELEMETRY_DB_NAME}" \
+  -v telemetry_db_user="${TELEMETRY_DB_USER}" \
   < "${DBS_SQL}"
+
+TELEMETRY_SCHEMA_SQL="${PROD_DEBIAN_DIR}/postgres/telemetry-schema.sql"
+if [[ -f "${TELEMETRY_SCHEMA_SQL}" ]]; then
+  echo "[setup-postgres] Applying telemetry schema to ${TELEMETRY_DB_NAME}."
+  sudo -u postgres psql \
+    -v telemetry_db_name="${TELEMETRY_DB_NAME}" \
+    -d "${TELEMETRY_DB_NAME}" \
+    -f "${TELEMETRY_SCHEMA_SQL}"
+else
+  echo "[setup-postgres] Warning: ${TELEMETRY_SCHEMA_SQL} not found, skipping telemetry schema." >&2
+fi
 
 echo "PostgreSQL roles and databases are ready."

@@ -38,6 +38,8 @@ def create_app(test_config=None, instance_path=None):
         OPENROUTER_API_BASE="https://openrouter.ai/api/v1",
         RUNTIME_MANAGER_URL="http://127.0.0.1:5700",
         APP_SLUG="alfred",
+        TELEMETRY_ENDPOINT=os.getenv("TELEMETRY_ENDPOINT", "/api/telemetry/v1/events"),
+        TELEMETRY_DISABLED=os.getenv("TELEMETRY_DISABLED", "0") == "1",
     )
 
     if test_config:

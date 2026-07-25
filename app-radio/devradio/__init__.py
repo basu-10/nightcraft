@@ -147,6 +147,8 @@ def create_app(test_config=None, instance_path=None):
         AUTOMATED_LOG_MAX_RUN_FILES=500,
         AUTOMATED_LOG_MAX_JSONL_LINES=5000,
         BREAKING_LOG_MAX_JSONL_LINES=5000,
+        TELEMETRY_ENDPOINT=os.getenv("TELEMETRY_ENDPOINT", "/api/telemetry/v1/events"),
+        TELEMETRY_DISABLED=os.getenv("TELEMETRY_DISABLED", "0") == "1",
     )
 
     if test_config:

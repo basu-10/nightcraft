@@ -19,6 +19,9 @@ class BaseConfig:
         "GOOGLE_DISCOVERY_URL",
         "https://accounts.google.com/.well-known/openid-configuration",
     )
+    TELEMETRY_ENDPOINT = os.getenv("TELEMETRY_ENDPOINT", "/api/telemetry/v1/events")
+    TELEMETRY_DATABASE_URL = os.getenv("TELEMETRY_DATABASE_URL", "")
+    TELEMETRY_DISABLED = os.getenv("TELEMETRY_DISABLED", "0") == "1"
 
 
 class DevelopmentConfig(BaseConfig):

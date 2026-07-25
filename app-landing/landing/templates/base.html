@@ -36,6 +36,15 @@
         {% block content %}{% endblock %}
     </main>
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    {% if not config.get('TELEMETRY_DISABLED') %}
+    <script>
+      window.__TELEMETRY__ = {
+        endpoint: {{ config.TELEMETRY_ENDPOINT | tojson }},
+        userId: {{ shared_user.id if shared_user and shared_user.id is not none else 'null' }}
+      };
+    </script>
+    <script defer src="{{ url_for('static', filename='js/telemetry-sdk.js') }}"></script>
+    {% endif %}
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

@@ -2,6 +2,7 @@
 from flask import Flask
 
 from config import get_config
+from .telemetry import telemetry_bp
 
 
 def create_app() -> Flask:
@@ -11,4 +12,5 @@ def create_app() -> Flask:
     from .routes import main_bp
 
     app.register_blueprint(main_bp)
+    app.register_blueprint(telemetry_bp)
     return app

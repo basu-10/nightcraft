@@ -15,6 +15,15 @@
     })();
   </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  {% if not config.get('TELEMETRY_DISABLED') %}
+  <script>
+    window.__TELEMETRY__ = {
+      endpoint: {{ config.TELEMETRY_ENDPOINT | tojson }},
+      userId: {{ user.id if user else 'null' }}
+    };
+  </script>
+  <script defer src="{{ url_for('static', filename='telemetry-sdk.js') }}"></script>
+  {% endif %}
   {% block head %}{% endblock %}
 </head>
 <body>

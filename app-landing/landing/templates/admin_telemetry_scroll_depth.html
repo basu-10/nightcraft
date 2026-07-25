@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Scroll Depth</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+
+    <header class="site-header container">
+        <div class="brand">ADMIN HUB</div>
+        <nav class="header-actions">
+            <a class="btn btn-outline" href="{{ home_url }}">Back Home</a>
+            {% if shared_user %}
+            <a class="btn btn-outline" href="{{ logout_url }}">Sign Out</a>
+            {% else %}
+            <a class="btn btn-outline" href="{{ auth_url }}">Unified Login</a>
+            {% endif %}
+            {% if not is_admin %}
+            <a class="btn btn-solid" href="{{ auth_admin_url }}">Admin Login</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="container">
+        <nav class="admin-tabs" aria-label="Admin sections">
+            <a class="admin-tab" href="{{ admin_url }}">Overview</a>
+            <a class="admin-tab" href="{{ admin_url }}/users">Users</a>
+            <a class="admin-tab" href="{{ admin_url }}/logs">Logs</a>
+            <a class="admin-tab" href="{{ admin_url }}/telemetry">Telemetry</a>
+            <a class="admin-tab is-active" href="{{ admin_url }}/telemetry/scroll-depth">Scroll Depth</a>
+        </nav>
+
+        <section class="hero">
+            <p class="eyebrow">Engagement</p>
+            <h1>Scroll Depth</h1>
+            <p class="hero-copy">
+                Distribution of scroll depth milestones per URL.
+            </p>
+            <form class="user-search" method="get" action="{{ admin_url }}/telemetry/scroll-depth">
+                <label for="days">Range (days)</label>
+                <input type="number" id="days" name="days" value="{{ days }}" min="1" max="365">
+                <button class="btn btn-solid" type="submit">Apply</button>
+            </form>
+        </section>
+
+        {% if not is_admin %}
+        <div class="admin-notice admin-notice-warn">Sign in with an admin account to view telemetry.</div>
+        {% else %}
+        {% if pages %}
+        <div class="table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr><th>URL</th><th>Events</th><th>25%</th><th>50%</th><th>75%</th><th>100%</th></tr>
+                </thead>
+                <tbody>
+                    {% for p in pages %}
+                    <tr>
+                        <td>{{ p.url }}</td>
+                        <td>{{ p.events }}</td>
+                        <td>{{ p.pct_25 }}%</td>
+                        <td>{{ p.pct_50 }}%</td>
+                        <td>{{ p.pct_75 }}%</td>
+                        <td>{{ p.pct_100 }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="admin-notice">No scroll depth events in this range.</div>
+        {% endif %}
+        {% endif %}
+    </main>
+</body>
+</html>

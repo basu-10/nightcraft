@@ -44,6 +44,8 @@ class Config:
     # In production (HTTPS) set this to True via env or subclass
     SESSION_COOKIE_SECURE: bool = os.environ.get("FLASK_SESSION_SECURE", "0") == "1"
     MAX_CONTENT_LENGTH: int = 16 * 1024 * 1024  # 16 MB max upload
+    TELEMETRY_ENDPOINT: str = os.environ.get("TELEMETRY_ENDPOINT", "/api/telemetry/v1/events")
+    TELEMETRY_DISABLED: bool = os.environ.get("TELEMETRY_DISABLED", "0") == "1"
 
 
 class DevelopmentConfig(Config):

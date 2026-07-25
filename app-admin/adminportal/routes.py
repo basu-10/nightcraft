@@ -1,7 +1,7 @@
 """Admin handoff routes."""
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from flask import Blueprint, current_app, render_template
+from flask import Blueprint, current_app, g, render_template
 from flask import redirect
 
 main_bp = Blueprint("main", __name__)
@@ -22,7 +22,12 @@ def admin_handoff():
         current_app.config["ADMIN_RETURN_PATH"],
         current_app.config["AUTH_RETURN_PARAM"],
     )
-    return render_template("login_handoff.html", auth_handoff_url=auth_handoff_url)
+    return render_template(
+        "login_handoff.html",
+        auth_handoff_url=auth_handoff_url,
+        shared_user=g.get("shared_user"),
+        is_admin=g.get("is_admin", False),
+    )
 
 
 @main_bp.get("/login")

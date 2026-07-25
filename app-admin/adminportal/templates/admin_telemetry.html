@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Telemetry Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <style>
+      .telemetry-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 24px; }
+      .telemetry-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; }
+      .telemetry-card h3 { margin: 0 0 8px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; }
+      .telemetry-card .value { font-size: 28px; font-weight: 700; color: #f8fafc; }
+      .telemetry-section { margin-top: 32px; }
+      .telemetry-section h2 { font-size: 18px; margin-bottom: 12px; }
+      .telemetry-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+      .telemetry-table th, .telemetry-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #1e293b; }
+      .telemetry-table th { color: #94a3b8; font-weight: 500; text-transform: uppercase; font-size: 12px; letter-spacing: 0.08em; }
+      .telemetry-table td { color: #e2e8f0; }
+      .telemetry-table tr:hover td { background: #0b1220; }
+      .telemetry-bar { height: 8px; border-radius: 4px; background: #1e293b; overflow: hidden; }
+      .telemetry-bar > span { display: block; height: 100%; background: #38bdf8; }
+      .filters { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+      .filters input, .filters select { background: #0f172a; border: 1px solid #1e293b; color: #f8fafc; padding: 8px 12px; border-radius: 8px; font-size: 14px; }
+      .filters button { background: #38bdf8; color: #0f172a; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+
+    <header class="site-header container">
+        <div class="brand">TELEMETRY</div>
+        <nav class="header-actions">
+            <a class="btn btn-outline" href="{{ url_for('main.admin_handoff', _external=False) or '/' }}">Back to Admin Hub</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        {% if not is_admin %}
+        <div class="admin-notice">Sign in with an admin account to view telemetry.</div>
+        {% else %}
+        <section class="telemetry-section">
+            <h2>Overview</h2>
+            <div class="telemetry-grid" id="summary">
+                <div class="telemetry-card"><h3>Total Events (30d)</h3><div class="value" id="total-events">—</div></div>
+                <div class="telemetry-card"><h3>Today Events</h3><div class="value" id="today-events">—</div></div>
+                <div class="telemetry-card"><h3>Active Users</h3><div class="value" id="active-users">—</div></div>
+                <div class="telemetry-card"><h3>New Users</h3><div class="value" id="new-users">—</div></div>
+                <div class="telemetry-card"><h3>Avg Session Duration</h3><div class="value" id="avg-session">—</div></div>
+            </div>
+        </section>
+
+        <section class="telemetry-section">
+            <h2>Top Pages</h2>
+            <div id="top-pages">Loading...</div>
+        </section>
+
+        <section class="telemetry-section">
+            <h2>Feature Clicks</h2>
+            <div id="top-features">Loading...</div>
+        </section>
+
+        <section class="telemetry-section">
+            <h2>Daily Events</h2>
+            <div id="daily-chart">Loading...</div>
+        </section>
+
+        <section class="telemetry-section">
+            <h2>Raw Events</h2>
+            <div class="filters">
+                <input type="date" id="date-from" value="">
+                <input type="date" id="date-to" value="">
+                <select id="event-type">
+                    <option value="">All types</option>
+                    <option value="page_view">page_view</option>
+                    <option value="page_exit">page_exit</option>
+                    <option value="feature_click">feature_click</option>
+                    <option value="session_start">session_start</option>
+                    <option value="scroll_depth">scroll_depth</option>
+                    <option value="heartbeat">heartbeat</option>
+                    <option value="api_call">api_call</option>
+                </select>
+                <button id="apply-filters">Apply</button>
+                <button id="export-csv">Export CSV</button>
+            </div>
+            <table class="telemetry-table">
+                <thead>
+                    <tr><th>Time</th><th>Type</th><th>User</th><th>Session</th><th>URL</th><th>Properties</th><th></th></tr>
+                </thead>
+                <tbody id="events-table"><tr><td colspan="7">Loading...</td></tr></tbody>
+            </table>
+        </section>
+        {% endif %}
+    </main>
+
+    {% if is_admin %}
+    <script>
+    (function () {
+      var summaryEls = {
+        total_events: document.getElementById('total-events'),
+        today_events: document.getElementById('today-events'),
+        active_users: document.getElementById('active-users'),
+        new_users: document.getElementById('new-users'),
+        avg_session: document.getElementById('avg-session'),
+      };
+
+      function loadSummary() {
+        fetch('/admin/telemetry/api/summary').then(function (r) { return r.json(); }).then(function (data) {
+          if (summaryEls.total_events) summaryEls.total_events.textContent = (data.total_events || 0).toLocaleString();
+          if (summaryEls.today_events) summaryEls.today_events.textContent = (data.today_events || 0).toLocaleString();
+          if (summaryEls.active_users) summaryEls.active_users.textContent = (data.active_users || 0).toLocaleString();
+          if (summaryEls.new_users) summaryEls.new_users.textContent = (data.new_users_7d || 0).toLocaleString();
+          if (summaryEls.avg_session) {
+            var ms = data.avg_session_duration_ms || 0;
+            summaryEls.avg_session.textContent = Math.floor(ms / 1000) + 's';
+          }
+          renderTopPages(data.top_pages || []);
+          renderTopFeatures(data.top_features || []);
+          renderDaily(data.daily || []);
+        }).catch(function () {});
+      }
+
+      function renderTopPages(rows) {
+        var el = document.getElementById('top-pages');
+        if (!el) return;
+        if (!rows.length) { el.innerHTML = '<p>No page views yet.</p>'; return; }
+        var max = rows[0].views || 1;
+        el.innerHTML = rows.map(function (r) {
+          var pct = Math.round((r.views / max) * 100);
+          return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:14px;color:#e2e8f0"><span>' + escapeHtml(r.url) + '</span><span>' + r.views + '</span></div><div class="telemetry-bar"><span style="width:' + pct + '%"></span></div></div>';
+        }).join('');
+      }
+
+      function renderTopFeatures(rows) {
+        var el = document.getElementById('top-features');
+        if (!el) return;
+        if (!rows.length) { el.innerHTML = '<p>No feature clicks yet.</p>'; return; }
+        var max = rows[0].cnt || 1;
+        el.innerHTML = rows.map(function (r) {
+          var pct = Math.round((r.feature_name ? r.cnt : 0) / max * 100);
+          return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:14px;color:#e2e8f0"><span>' + escapeHtml(r.feature_name) + '</span><span>' + r.cnt + '</span></div><div class="telemetry-bar"><span style="width:' + pct + '%"></span></div></div>';
+        }).join('');
+      }
+
+      function renderDaily(rows) {
+        var el = document.getElementById('daily-chart');
+        if (!el) return;
+        if (!rows.length) { el.innerHTML = '<p>No events yet.</p>'; return; }
+        var max = rows[0].events || 1;
+        el.innerHTML = '<div class="telemetry-table"><table><thead><tr><th>Date</th><th>Events</th><th></th></tr></thead><tbody>' + rows.map(function (r) {
+          var pct = Math.round((r.events / max) * 100);
+          return '<tr><td>' + escapeHtml(r.day) + '</td><td>' + r.events + '</td><td style="width:40%"><div class="telemetry-bar"><span style="width:' + pct + '%"></span></div></td></tr>';
+        }).join('') + '</tbody></table></div>';
+      }
+
+      function loadEvents() {
+        var params = new URLSearchParams();
+        var ev = document.getElementById('event-type');
+        if (ev && ev.value) params.set('event_type', ev.value);
+        var df = document.getElementById('date-from');
+        if (df && df.value) params.set('date_from', df.value);
+        var dt = document.getElementById('date-to');
+        if (dt && dt.value) params.set('date_to', dt.value);
+        fetch('/admin/telemetry/api/events?' + params.toString()).then(function (r) { return r.json(); }).then(function (data) {
+          var tbody = document.getElementById('events-table');
+          if (!tbody) return;
+          if (!data.events.length) { tbody.innerHTML = '<tr><td colspan="7">No events.</td></tr>'; return; }
+          tbody.innerHTML = data.events.map(function (evt) {
+            var props = {};
+            try { props = JSON.parse(evt.properties || '{}'); } catch (e) {}
+            return '<tr>' +
+              '<td>' + escapeHtml((evt.created_at || '').slice(0, 19)) + '</td>' +
+              '<td>' + escapeHtml(evt.event_type || '') + '</td>' +
+              '<td>' + (evt.user_id || '—') + '</td>' +
+              '<td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(evt.session_id || '') + '</td>' +
+              '<td style="font-size:12px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(evt.url || '') + '</td>' +
+              '<td style="font-size:12px"><pre style="margin:0;font-family:inherit">' + escapeHtml(JSON.stringify(props, null, 0)) + '</pre></td>' +
+              '<td><button class="btn btn-outline" style="padding:4px 8px;font-size:12px" onclick="deleteEvent(' + evt.id + ')">Delete</button></td>' +
+            '</tr>';
+          }).join('');
+        }).catch(function () {});
+      }
+
+      window.deleteEvent = function (id) {
+        if (!confirm('Delete event ' + id + '?')) return;
+        fetch('/admin/telemetry/api/events/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event_id: id })
+        }).then(function (r) { return r.json(); }).then(function () { loadEvents(); loadSummary(); });
+      };
+
+      function escapeHtml(str) {
+        return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      document.getElementById('apply-filters').addEventListener('click', loadEvents);
+      document.getElementById('export-csv').addEventListener('click', function () {
+        var params = new URLSearchParams();
+        var ev = document.getElementById('event-type');
+        if (ev && ev.value) params.set('event_type', ev.value);
+        var df = document.getElementById('date-from');
+        if (df && df.value) params.set('date_from', df.value);
+        var dt = document.getElementById('date-to');
+        if (dt && dt.value) params.set('date_to', dt.value);
+        window.location.href = '/admin/telemetry/api/events/export?' + params.toString();
+      });
+
+      loadSummary();
+      loadEvents();
+    })();
+    </script>
+    {% endif %}
+</body>
+</html>

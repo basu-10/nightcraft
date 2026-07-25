@@ -34,6 +34,7 @@
             <a class="admin-tab is-active" href="{{ admin_url }}">Overview</a>
             <a class="admin-tab" href="{{ admin_url }}/users">Users</a>
             <a class="admin-tab" href="{{ admin_url }}/logs">Logs</a>
+            <a class="admin-tab" href="{{ admin_url }}/telemetry">Telemetry</a>
         </nav>
 
         <section class="hero">
@@ -70,6 +71,14 @@
                 <a class="card-link" href="{{ card.url }}">Open {{ card.name }}</a>
             </article>
             {% endfor %}
+            <article class="product-card" style="--stagger: {{ cards|length }}">
+                <div class="card-top">
+                    <h2>Telemetry</h2>
+                    <span class="status">MVP</span>
+                </div>
+                <p class="description">Unified analytics across all Nightcraft apps: new users, page performance, feature usage, scroll depth, and API health.</p>
+                <a class="card-link" href="{{ admin_url }}/telemetry">Open Telemetry</a>
+            </article>
         </section>
         {% endif %}
     </main>

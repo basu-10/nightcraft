@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Telemetry Events</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+
+    <header class="site-header container">
+        <div class="brand">ADMIN HUB</div>
+        <nav class="header-actions">
+            <a class="btn btn-outline" href="{{ home_url }}">Back Home</a>
+            {% if shared_user %}
+            <a class="btn btn-outline" href="{{ logout_url }}">Sign Out</a>
+            {% else %}
+            <a class="btn btn-outline" href="{{ auth_url }}">Unified Login</a>
+            {% endif %}
+            {% if not is_admin %}
+            <a class="btn btn-solid" href="{{ auth_admin_url }}">Admin Login</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="container">
+        <nav class="admin-tabs" aria-label="Admin sections">
+            <a class="admin-tab" href="{{ admin_url }}">Overview</a>
+            <a class="admin-tab" href="{{ admin_url }}/users">Users</a>
+            <a class="admin-tab" href="{{ admin_url }}/logs">Logs</a>
+            <a class="admin-tab" href="{{ admin_url }}/telemetry">Telemetry</a>
+            <a class="admin-tab is-active" href="{{ admin_url }}/telemetry/events">Events</a>
+        </nav>
+
+        <section class="hero">
+            <p class="eyebrow">Raw Data</p>
+            <h1>Telemetry Events</h1>
+            <p class="hero-copy">
+                Filter and inspect individual events. Use delete for GDPR compliance.
+            </p>
+        </section>
+
+        {% if not is_admin %}
+        <div class="admin-notice admin-notice-warn">Sign in with an admin account to view telemetry.</div>
+        {% else %}
+        <form class="user-search" method="get" action="{{ admin_url }}/telemetry/events">
+            <input type="text" name="event_type" value="{{ filters.event_type or '' }}" placeholder="event_type">
+            <input type="text" name="user_id" value="{{ filters.user_id or '' }}" placeholder="user_id">
+            <input type="text" name="session_id" value="{{ filters.session_id or '' }}" placeholder="session_id">
+            <input type="date" name="date_from" value="{{ filters.date_from or '' }}">
+            <input type="date" name="date_to" value="{{ filters.date_to or '' }}">
+            <button class="btn btn-solid" type="submit">Filter</button>
+            <a class="btn btn-outline" href="{{ admin_url }}/telemetry/events">Clear</a>
+        </form>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-stack">
+                {% for category, message in messages %}
+                <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+
+        {% if events %}
+        <div class="table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>When</th>
+                        <th>Type</th>
+                        <th>User</th>
+                        <th>Session</th>
+                        <th>URL</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in events %}
+                    <tr>
+                        <td>{{ e.created_at }}</td>
+                        <td>{{ e.event_type }}</td>
+                        <td>{{ e.user_id if e.user_id is not none else '—' }}</td>
+                        <td>{{ e.session_id }}</td>
+                        <td>{{ e.url }}</td>
+                        <td class="cell-actions">
+                            <form method="post" action="{{ admin_url }}/telemetry/events/{{ e.event_id }}/delete" onsubmit="return confirm('Delete this event?');">
+                                <button class="btn btn-outline btn-sm" type="submit">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if pages > 1 %}
+        <nav class="pager" aria-label="Pages">
+            {% if page > 1 %}
+            <a class="btn btn-outline btn-sm" href="{{ admin_url }}/telemetry/events?page={{ page - 1 }}&event_type={{ filters.event_type or '' }}&user_id={{ filters.user_id or '' }}&session_id={{ filters.session_id or '' }}&date_from={{ filters.date_from or '' }}&date_to={{ filters.date_to or '' }}">Previous</a>
+            {% endif %}
+            <span class="pager-info">Page {{ page }} of {{ pages }}</span>
+            {% if page < pages %}
+            <a class="btn btn-outline btn-sm" href="{{ admin_url }}/telemetry/events?page={{ page + 1 }}&event_type={{ filters.event_type or '' }}&user_id={{ filters.user_id or '' }}&session_id={{ filters.session_id or '' }}&date_from={{ filters.date_from or '' }}&date_to={{ filters.date_to or '' }}">Next</a>
+            {% endif %}
+        </nav>
+        {% endif %}
+
+        <p class="result-count">{{ total }} event{{ '' if total == 1 else 's' }} total</p>
+        {% else %}
+        <div class="admin-notice">No events match the current filters.</div>
+        {% endif %}
+        {% endif %}
+    </main>
+</body>
+</html>

@@ -55,6 +55,10 @@ class Config:
     SCRATCHPAD_URL: str = os.environ.get("LANDING_SCRATCHPAD_URL", "/scratchpad")
     FOSSIL_URL: str = os.environ.get("LANDING_FOSSIL_URL", "/fossil")
 
+    TELEMETRY_ENDPOINT: str = os.environ.get("TELEMETRY_ENDPOINT", "/api/telemetry/v1/events")
+    TELEMETRY_DATABASE_URL: str = os.environ.get("TELEMETRY_DATABASE_URL", "")
+    TELEMETRY_RATE_LIMIT: int = int(os.environ.get("TELEMETRY_RATE_LIMIT", "1000"))
+
 
 class DevelopmentConfig(Config):
     DEBUG: bool = True

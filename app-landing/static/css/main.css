@@ -1293,3 +1293,44 @@ body.landing-shell {
     color: #9a5a16;
 }
 
+.telemetry-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    padding: 1.5rem 0;
+}
+
+.telemetry-metric {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 1rem;
+    text-align: center;
+    backdrop-filter: blur(6px);
+}
+
+.telemetry-metric .metric-value {
+    display: block;
+    font-family: "Archivo Black", sans-serif;
+    font-size: 1.8rem;
+    color: var(--accent);
+}
+
+.telemetry-metric .metric-label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+}
+
+.admin-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    padding: 1rem 0;
+}
+
+.admin-section h2 {
+    margin: 0.6rem 0 0.2rem;
+}
+

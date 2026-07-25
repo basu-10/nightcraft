@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>API Health</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+
+    <header class="site-header container">
+        <div class="brand">ADMIN HUB</div>
+        <nav class="header-actions">
+            <a class="btn btn-outline" href="{{ home_url }}">Back Home</a>
+            {% if shared_user %}
+            <a class="btn btn-outline" href="{{ logout_url }}">Sign Out</a>
+            {% else %}
+            <a class="btn btn-outline" href="{{ auth_url }}">Unified Login</a>
+            {% endif %}
+            {% if not is_admin %}
+            <a class="btn btn-solid" href="{{ auth_admin_url }}">Admin Login</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="container">
+        <nav class="admin-tabs" aria-label="Admin sections">
+            <a class="admin-tab" href="{{ admin_url }}">Overview</a>
+            <a class="admin-tab" href="{{ admin_url }}/users">Users</a>
+            <a class="admin-tab" href="{{ admin_url }}/logs">Logs</a>
+            <a class="admin-tab" href="{{ admin_url }}/telemetry">Telemetry</a>
+            <a class="admin-tab is-active" href="{{ admin_url }}/telemetry/api-health">API Health</a>
+        </nav>
+
+        <section class="hero">
+            <p class="eyebrow">Observability</p>
+            <h1>API Health</h1>
+            <p class="hero-copy">
+                Success rate and latency percentiles for tracked API calls.
+            </p>
+            <form class="user-search" method="get" action="{{ admin_url }}/telemetry/api-health">
+                <label for="days">Range (days)</label>
+                <input type="number" id="days" name="days" value="{{ days }}" min="1" max="365">
+                <button class="btn btn-solid" type="submit">Apply</button>
+            </form>
+        </section>
+
+        {% if not is_admin %}
+        <div class="admin-notice admin-notice-warn">Sign in with an admin account to view telemetry.</div>
+        {% else %}
+        {% if health %}
+        <div class="telemetry-cards">
+            <div class="telemetry-metric">
+                <span class="metric-value">{{ health.success_rate if health.success_rate is not none else '—' }}%</span>
+                <span class="metric-label">success rate</span>
+            </div>
+            <div class="telemetry-metric">
+                <span class="metric-value">{{ health.p95_ms if health.p95_ms is not none else '—' }}ms</span>
+                <span class="metric-label">p95 latency</span>
+            </div>
+        </div>
+        {% if health.calls %}
+        <div class="table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr><th>URL</th><th>Calls</th><th>Avg (ms)</th><th>p95 (ms)</th></tr>
+                </thead>
+                <tbody>
+                    {% for c in health.calls %}
+                    <tr>
+                        <td>{{ c.url }}</td>
+                        <td>{{ c.count }}</td>
+                        <td>{{ c.avg_ms }}</td>
+                        <td>{{ c.p95_ms }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="admin-notice">No API call events in this range.</div>
+        {% endif %}
+        {% endif %}
+    </main>
+</body>
+</html>

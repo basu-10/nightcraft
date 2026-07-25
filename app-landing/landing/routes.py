@@ -8,6 +8,16 @@ from datetime import date
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 
+from .telemetry_queries import (
+    api_health,
+    events_list,
+    feature_usage,
+    new_users_timeline,
+    overview,
+    page_performance,
+    scroll_depth_distribution,
+)
+
 main_bp = Blueprint("main", __name__)
 
 
@@ -74,6 +84,7 @@ def _fetch_shared_auth_user():
         normalized_roles = set()
 
     return {
+        "id": user.get("sub"),
         "username": username,
         "is_admin": "admin" in normalized_roles or bool(user.get("is_admin", False)),
     }
@@ -710,6 +721,137 @@ def admin_logs():
     ctx = _admin_context(shared_user, is_admin)
     ctx.update(activity=activity, clients=clients, stats=stats, error=error)
     return render_template("admin_logs.html", **ctx)
+
+
+@main_bp.get("/platform-admin/telemetry")
+def admin_telemetry():
+    shared_user = _fetch_shared_auth_user()
+    is_admin = bool(shared_user and shared_user.get("is_admin"))
+    ctx = _admin_context(shared_user, is_admin)
+    if is_admin:
+        ctx["stats"] = overview()
+    else:
+        ctx["stats"] = {}
+    return render_template("admin_telemetry.html", **ctx)
+
+
+@main_bp.get("/platform-admin/telemetry/new-users")
+def admin_telemetry_new_users():
+    shared_user = _fetch_shared_auth_user()
+    is_admin = bool(shared_user and shared_user.get("is_admin"))
+    ctx = _admin_context(shared_user, is_admin)
+    days = int(request.args.get("days", 30))
+    if is_admin:
+        ctx["timeline"] = new_users_timeline(days=days)
+        ctx["days"] = days
+    else:
+        ctx["timeline"] = []
+        ctx["days"] = days
+    return render_template("admin_telemetry_new_users.html", **ctx)
+
+
+@main_bp.get("/platform-admin/telemetry/page-performance")
+def admin_telemetry_page_performance():
+    shared_user = _fetch_shared_auth_user()
+    is_admin = bool(shared_user and shared_user.get("is_admin"))
+    ctx = _admin_context(shared_user, is_admin)
+    days = int(request.args.get("days", 7))
+    if is_admin:
+        ctx["report"] = page_performance(days=days)
+        ctx["days"] = days
+    else:
+        ctx["report"] = {}
+        ctx["days"] = days
+    return render_template("admin_telemetry_page_performance.html", **ctx)
+
+
+@main_bp.get("/platform-admin/telemetry/feature-usage")
+def admin_telemetry_feature_usage():
+    shared_user = _fetch_shared_auth_user()
+    is_admin = bool(shared_user and shared_user.get("is_admin"))
+    ctx = _admin_context(shared_user, is_admin)
+    days = int(request.args.get("days", 7))
+    if is_admin:
+        ctx["features"] = feature_usage(days=days)
+        ctx["days"] = days
+    else:
+        ctx["features"] = []
+        ctx["days"] = days
+    return render_template("admin_telemetry_feature_usage.html", **ctx)
+
+
+@main_bp.get("/platform-admin/telemetry/scroll-depth")
+def admin_telemetry_scroll_depth():
+    shared_user = _fetch_shared_auth_user()
+    is_admin = bool(shared_user and shared_user.get("is_admin"))
+    ctx = _admin_context(shared_user, is_admin)
+    days = int(request.args.get("days", 7))
+    if is_admin:
+        ctx["pages"] = scroll_depth_distribution(days=days)
+        ctx["days"] = days
+    else:
+        ctx["pages"] = []
+        ctx["days"] = days
+    return render_template("admin_telemetry_scroll_depth.html", **ctx)
+
+
+@main_bp.get("/platform-admin/telemetry/api-health")
+def admin_telemetry_api_health():
+    shared_user = _fetch_shared_auth_user()
+    is_admin = bool(shared_user and shared_user.get("is_admin"))
+    ctx = _admin_context(shared_user, is_admin)
+    days = int(request.args.get("days", 7))
+    if is_admin:
+        ctx["health"] = api_health(days=days)
+        ctx["days"] = days
+    else:
+        ctx["health"] = {}
+        ctx["days"] = days
+    return render_template("admin_telemetry_api_health.html", **ctx)
+
+
+@main_bp.get("/platform-admin/telemetry/events")
+def admin_telemetry_events():
+    shared_user = _fetch_shared_auth_user()
+    is_admin = bool(shared_user and shared_user.get("is_admin"))
+    ctx = _admin_context(shared_user, is_admin)
+    if not is_admin:
+        ctx["events"] = []
+        ctx["total"] = 0
+        ctx["filters"] = {}
+        return render_template("admin_telemetry_events.html", **ctx)
+
+    filters = {
+        "event_type": (request.args.get("event_type") or "").strip() or None,
+        "user_id": (request.args.get("user_id") or "").strip() or None,
+        "session_id": (request.args.get("session_id") or "").strip() or None,
+        "date_from": (request.args.get("date_from") or "").strip() or None,
+        "date_to": (request.args.get("date_to") or "").strip() or None,
+    }
+    page = max(1, int(request.args.get("page", 1)))
+    per_page = 50
+    offset = (page - 1) * per_page
+
+    result = events_list(filters=filters, limit=per_page, offset=offset)
+    ctx["events"] = result.get("events", [])
+    ctx["total"] = result.get("total", 0)
+    ctx["pages"] = max(1, (ctx["total"] + per_page - 1) // per_page)
+    ctx["page"] = page
+    ctx["filters"] = {k: v for k, v in filters.items() if v}
+    return render_template("admin_telemetry_events.html", **ctx)
+
+
+@main_bp.post("/platform-admin/telemetry/events/<event_id>/delete")
+def admin_telemetry_delete_event(event_id):
+    shared_user = _fetch_shared_auth_user()
+    if not (shared_user and shared_user.get("is_admin")):
+        return redirect(url_for("main.admin_telemetry_events"))
+
+    if delete_event(event_id):
+        flash("Event deleted.", "success")
+    else:
+        flash("Could not delete event.", "error")
+    return redirect(url_for("main.admin_telemetry_events"))
 
 
 @main_bp.get("/login")
