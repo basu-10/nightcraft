@@ -61,7 +61,6 @@ uploads/
 Thumbs.db
 desktop.ini
 *~
-*.sql
 
 # Nested Git repositories
 **/.git/
@@ -98,3 +97,4 @@ server-scripts/
 .playwright-mcp/
 main-page-snapshot.yml
 .gitignore
+*.sql
