@@ -9,7 +9,23 @@
 --   alfred_db_name, alfred_db_user,
 --   quickposts_db_name, quickposts_db_user,
 --   noteflow_db_name, noteflow_db_user,
---   scratchpad_db_name, scratchpad_db_user
+--   scratchpad_db_name, scratchpad_db_user,
+--   telemetry_db_name, telemetry_db_user
+SELECT format(
+        'CREATE DATABASE %I OWNER %I ENCODING ''UTF8''',
+        :'telemetry_db_name',
+        :'telemetry_db_user'
+    )
+WHERE NOT EXISTS (
+        SELECT 1
+        FROM pg_database
+        WHERE datname = :'telemetry_db_name'
+    ) \gexec
+SELECT format(
+        'GRANT ALL PRIVILEGES ON DATABASE %I TO %I',
+        :'telemetry_db_name',
+        :'telemetry_db_user'
+    ) \gexec
 SELECT format(
         'CREATE DATABASE %I OWNER %I ENCODING ''UTF8''',
         :'auth_db_name',

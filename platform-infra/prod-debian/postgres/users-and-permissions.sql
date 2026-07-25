@@ -9,7 +9,23 @@
 --   alfred_db_user, alfred_db_password,
 --   quickposts_db_user, quickposts_db_password,
 --   noteflow_db_user, noteflow_db_password,
---   scratchpad_db_user, scratchpad_db_password
+--   scratchpad_db_user, scratchpad_db_password,
+--   telemetry_db_user, telemetry_db_password
+SELECT format(
+        'CREATE ROLE %I LOGIN PASSWORD %L',
+        :'telemetry_db_user',
+        :'telemetry_db_password'
+    )
+WHERE NOT EXISTS (
+        SELECT 1
+        FROM pg_roles
+        WHERE rolname = :'telemetry_db_user'
+    ) \gexec
+SELECT format(
+        'ALTER ROLE %I WITH LOGIN PASSWORD %L',
+        :'telemetry_db_user',
+        :'telemetry_db_password'
+    ) \gexec
 SELECT format(
         'CREATE ROLE %I LOGIN PASSWORD %L',
         :'auth_db_user',
