@@ -390,3 +390,14 @@ def test_fossil_logout_clears_session_and_returns_to_landing():
     assert "Login as demo-user-ALEX" in html
     assert "At a glance" not in html
     assert "Network status" not in html
+
+
+def test_telemetry_status_route_returns_expected_payload():
+    client = _client()
+
+    response = client.get("/telemetry")
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["service"] == "telemetry"
+    assert payload["ingest_endpoint"] == "/api/telemetry/v1/events"
+    assert payload["admin_dashboard"] == "/platform-admin/telemetry"

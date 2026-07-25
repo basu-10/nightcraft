@@ -932,3 +932,12 @@ def next_updates():
 @main_bp.get("/healthz")
 def healthz():
     return {"status": "ok", "service": "landing"}, 200
+
+
+@main_bp.get("/telemetry")
+def telemetry_status():
+    return {
+        "service": "telemetry",
+        "ingest_endpoint": "/api/telemetry/v1/events",
+        "admin_dashboard": "/platform-admin/telemetry",
+    }, 200
