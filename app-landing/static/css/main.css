@@ -1334,3 +1334,48 @@ body.landing-shell {
     margin: 0.6rem 0 0.2rem;
 }
 
+.telemetry-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    margin-top: 0.6rem;
+}
+
+.telemetry-table th,
+.telemetry-table td {
+    text-align: left;
+    padding: 0.65rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.telemetry-table th {
+    color: var(--muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.07em;
+}
+
+.telemetry-table td {
+    color: var(--ink);
+}
+
+.cell-url {
+    max-width: 36ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.muted {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin: 0.4rem 0;
+}
+
+.section-heading {
+    margin: 2rem 0 0.6rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+

@@ -929,15 +929,33 @@ def next_updates():
     )
 
 
+@main_bp.get("/telemetry")
+def telemetry_status():
+    from .telemetry_queries import (
+        api_health,
+        feature_usage,
+        new_users_timeline,
+        overview,
+        page_performance,
+        scroll_depth_distribution,
+    )
+    stats = overview()
+    new_users = new_users_timeline(days=30)
+    page_perf = page_performance(days=7)
+    features = feature_usage(days=7)
+    scroll = scroll_depth_distribution(days=7)
+    health = api_health(days=7)
+    return render_template(
+        "telemetry.html",
+        stats=stats,
+        new_users=new_users,
+        page_perf=page_perf,
+        features=features,
+        scroll=scroll,
+        health=health,
+    )
+
+
 @main_bp.get("/healthz")
 def healthz():
     return {"status": "ok", "service": "landing"}, 200
-
-
-@main_bp.get("/telemetry")
-def telemetry_status():
-    return {
-        "service": "telemetry",
-        "ingest_endpoint": "/api/telemetry/v1/events",
-        "admin_dashboard": "/platform-admin/telemetry",
-    }, 200

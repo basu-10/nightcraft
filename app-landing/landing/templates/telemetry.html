@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Telemetry Dashboard</title>
+    <meta name="description" content="Unified telemetry across all Nightcraft apps.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+
+    <header class="site-header container">
+        <div class="brand">Telemetry Dashboard</div>
+        <nav class="header-actions">
+            <a class="btn btn-outline" href="/">Back Home</a>
+            <a class="btn btn-solid" href="/platform-admin/telemetry">Admin View</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <p class="eyebrow">Analytics</p>
+            <h1>Unified Telemetry</h1>
+            <p class="hero-copy">
+                Lightweight, centralized telemetry across all Nightcraft apps.
+            </p>
+        </section>
+
+        {% if stats.get('error') %}
+        <div class="admin-notice admin-notice-warn">{{ stats.error }}</div>
+        {% else %}
+        <section aria-label="Overview">
+            <h2 class="section-heading">Overview</h2>
+            <div class="telemetry-cards">
+                {% for label, data in stats.get('ranges', {}).items() %}
+                <article class="product-card" style="--stagger: {{ loop.index0 }}">
+                    <div class="card-top">
+                        <h2>{{ label }}</h2>
+                    </div>
+                    <div class="telemetry-metric">
+                        <span class="metric-value">{{ data.events }}</span>
+                        <span class="metric-label">events</span>
+                    </div>
+                    <div class="telemetry-metric">
+                        <span class="metric-value">{{ data.active_users }}</span>
+                        <span class="metric-label">active users</span>
+                    </div>
+                    <div class="telemetry-metric">
+                        <span class="metric-value">{{ data.new_users }}</span>
+                        <span class="metric-label">new users</span>
+                    </div>
+                    <div class="telemetry-metric">
+                        <span class="metric-value">{{ data.avg_session_seconds if data.avg_session_seconds is not none else '—' }}</span>
+                        <span class="metric-label">avg session (sec)</span>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <section aria-label="New Users" class="admin-section">
+            <h2>New Users</h2>
+            {% if not new_users %}
+            <p class="muted">No new users recorded yet.</p>
+            {% else %}
+            <div class="telemetry-cards">
+                {% for row in new_users %}
+                <div class="telemetry-metric">
+                    <span class="metric-value">{{ row.count }}</span>
+                    <span class="metric-label">{{ row.day }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </section>
+
+        <section aria-label="Page Performance" class="admin-section">
+            <h2>Page Performance</h2>
+            {% if not page_perf.pages %}
+            <p class="muted">No page views recorded yet.</p>
+            {% else %}
+            <table class="telemetry-table">
+                <thead>
+                    <tr>
+                        <th>URL</th>
+                        <th>Sessions</th>
+                        <th>Bounce %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for page in page_perf.pages %}
+                    <tr>
+                        <td class="cell-url">{{ page.url }}</td>
+                        <td>{{ page.sessions }}</td>
+                        <td>{{ page.bounce_pct if page.bounce_pct is not none else '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </section>
+
+        <section aria-label="Feature Usage" class="admin-section">
+            <h2>Feature Usage</h2>
+            {% if not features %}
+            <p class="muted">No feature clicks recorded yet.</p>
+            {% else %}
+            <table class="telemetry-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Clicks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for feature in features %}
+                    <tr>
+                        <td>{{ feature.feature_name }}</td>
+                        <td>{{ feature.clicks }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </section>
+
+        <section aria-label="Scroll Depth" class="admin-section">
+            <h2>Scroll Depth</h2>
+            {% if not scroll %}
+            <p class="muted">No scroll events recorded yet.</p>
+            {% else %}
+            <table class="telemetry-table">
+                <thead>
+                    <tr>
+                        <th>URL</th>
+                        <th>Events</th>
+                        <th>25%</th>
+                        <th>50%</th>
+                        <th>75%</th>
+                        <th>100%</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in scroll %}
+                    <tr>
+                        <td class="cell-url">{{ row.url }}</td>
+                        <td>{{ row.events }}</td>
+                        <td>{{ row.pct_25}}</td>
+                        <td>{{ row.pct_50 }}</td>
+                        <td>{{ row.pct_75 }}</td>
+                        <td>{{ row.pct_100 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </section>
+
+        <section aria-label="API Health" class="admin-section">
+            <h2>API Health</h2>
+            {% if not health.calls %}
+            <p class="muted">No API calls recorded yet.</p>
+            {% else %}
+            <div class="telemetry-cards">
+                <div class="telemetry-metric">
+                    <span class="metric-value">{{ health.success_rate if health.success_rate is not none else '—' }}%</span>
+                    <span class="metric-label">success rate</span>
+                </div>
+                <div class="telemetry-metric">
+                    <span class="metric-value">{{ health.p95_ms if health.p95_ms is not none else '—' }}</span>
+                    <span class="metric-label">p95 (ms)</span>
+                </div>
+            </div>
+            <table class="telemetry-table">
+                <thead>
+                    <tr>
+                        <th>URL</th>
+                        <th>Calls</th>
+                        <th>Avg (ms)</th>
+                        <th>p95 (ms)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for call in health.calls %}
+                    <tr>
+                        <td class="cell-url">{{ call.url }}</td>
+                        <td>{{ call.count }}</td>
+                        <td>{{ call.avg_ms }}</td>
+                        <td>{{ call.p95_ms }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>

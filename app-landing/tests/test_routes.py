@@ -397,7 +397,7 @@ def test_telemetry_status_route_returns_expected_payload():
 
     response = client.get("/telemetry")
     assert response.status_code == 200
-    payload = response.get_json()
-    assert payload["service"] == "telemetry"
-    assert payload["ingest_endpoint"] == "/api/telemetry/v1/events"
-    assert payload["admin_dashboard"] == "/platform-admin/telemetry"
+    html = response.get_data(as_text=True)
+    assert "Telemetry Dashboard" in html
+    assert "Unified Telemetry" in html
+    assert "api/telemetry/v1/events" not in html
