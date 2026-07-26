@@ -9,13 +9,17 @@ from datetime import date
 from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 
 from .telemetry_queries import (
+    anomaly_check,
     api_health,
+    device_breakdown,
     events_list,
+    events_time_series,
     feature_usage,
     new_users_timeline,
     overview,
     page_performance,
     scroll_depth_distribution,
+    top_referrers,
 )
 
 main_bp = Blueprint("main", __name__)
@@ -954,6 +958,44 @@ def telemetry_status():
         scroll=scroll,
         health=health,
     )
+
+
+@main_bp.get("/telemetry/trends")
+def telemetry_trends():
+    days = min(int(request.args.get("days", 30)), 365)
+    series = events_time_series(days=days)
+    return render_template(
+        "telemetry_trends.html",
+        series=series,
+        days=days,
+    )
+
+
+@main_bp.get("/telemetry/devices")
+def telemetry_devices():
+    days = min(int(request.args.get("days", 7)), 365)
+    devices = device_breakdown(days=days)
+    return render_template(
+        "telemetry_devices.html",
+        devices=devices,
+        days=days,
+    )
+
+
+@main_bp.get("/telemetry/referrers")
+def telemetry_referrers():
+    days = min(int(request.args.get("days", 7)), 365)
+    referrers = top_referrers(days=days)
+    return render_template(
+        "telemetry_referrers.html",
+        referrers=referrers,
+        days=days,
+    )
+
+
+@main_bp.get("/telemetry/health-check")
+def telemetry_health_check():
+    return anomaly_check()
 
 
 @main_bp.get("/healthz")

@@ -401,3 +401,43 @@ def test_telemetry_status_route_returns_expected_payload():
     assert "Telemetry Dashboard" in html
     assert "Unified Telemetry" in html
     assert "api/telemetry/v1/events" not in html
+
+
+def test_telemetry_trends_route_renders_header_and_empty_state():
+    client = _client()
+
+    response = client.get("/telemetry/trends")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Event Trends" in html
+    assert "No events recorded yet." in html
+
+
+def test_telemetry_devices_route_renders_header_and_empty_state():
+    client = _client()
+
+    response = client.get("/telemetry/devices")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Device Breakdown" in html
+    assert "No device data recorded yet." in html
+
+
+def test_telemetry_referrers_route_renders_header_and_empty_state():
+    client = _client()
+
+    response = client.get("/telemetry/referrers")
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Referrers & Entry Pages" in html
+
+
+def test_telemetry_health_check_returns_json_shape():
+    client = _client()
+
+    response = client.get("/telemetry/health-check")
+    assert response.status_code == 200
+    body = response.get_json()
+    assert "anomalies" in body
+    assert isinstance(body["anomalies"], list)
+    assert "checked_at" in body

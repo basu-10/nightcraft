@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Telemetry Referrers</title>
+    <meta name="description" content="Top referrers and entry pages.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+
+    <header class="site-header container">
+        <div class="brand">Telemetry Referrers</div>
+        <nav class="header-actions">
+            <a class="btn btn-outline" href="/telemetry">Back Home</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <p class="eyebrow">Analytics</p>
+            <h1>Referrers & Entry Pages</h1>
+            <p class="hero-copy">
+                Top traffic sources and landing pages for direct or unknown referrers.
+            </p>
+        </section>
+
+        <section aria-label="Controls" class="trend-header">
+            <form method="get" style="display:inline-flex;gap:0.6rem;align-items:center;">
+                <label style="font-weight:700;font-size:0.9rem;">Days</label>
+                <input type="number" name="days" value="{{ days }}" min="1" max="365" style="width:90px;padding:0.55rem 0.8rem;border-radius:999px;border:1px solid var(--line);background:#ffffffb8;font-family:inherit;font-size:0.95rem;">
+                <button type="submit" class="btn btn-solid">Apply</button>
+            </form>
+        </section>
+
+        {% if referrers.top_referrers %}
+        <section aria-label="Top Referrers" class="admin-section">
+            <h2>Top Referrers</h2>
+            <table class="telemetry-table">
+                <thead>
+                    <tr>
+                        <th>Referrer</th>
+                        <th class="cell-url">Landing Page</th>
+                        <th>Sessions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in referrers.top_referrers %}
+                    <tr>
+                        <td>{{ row.referrer }}</td>
+                        <td class="cell-url">{{ row.url }}</td>
+                        <td>{{ row.sessions }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        {% else %}
+        <p class="muted">No referrer data recorded yet.</p>
+        {% endif %}
+
+        {% if referrers.entry_pages %}
+        <section aria-label="Entry Pages" class="admin-section">
+            <h2>Entry Pages (no referrer)</h2>
+            <table class="telemetry-table">
+                <thead>
+                    <tr>
+                        <th class="cell-url">URL</th>
+                        <th>Sessions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in referrers.entry_pages %}
+                    <tr>
+                        <td class="cell-url">{{ row.url }}</td>
+                        <td>{{ row.sessions }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        {% endif %}
+    </main>
+</body>
+</html>

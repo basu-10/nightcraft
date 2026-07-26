@@ -31,6 +31,16 @@
             </p>
         </section>
 
+        <section aria-label="Reports" class="admin-section">
+            <h2>Reports</h2>
+            <nav class="admin-links">
+                <a class="btn btn-outline" href="/telemetry/trends">Trends</a>
+                <a class="btn btn-outline" href="/telemetry/devices">Devices</a>
+                <a class="btn btn-outline" href="/telemetry/referrers">Referrers</a>
+                <a class="btn btn-outline" href="/telemetry/health-check">Health Check</a>
+            </nav>
+        </section>
+
         {% if stats.get('error') %}
         <div class="admin-notice admin-notice-warn">{{ stats.error }}</div>
         {% else %}

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Telemetry Trends</title>
+    <meta name="description" content="Time-series telemetry trends across Nightcraft apps.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+
+    <header class="site-header container">
+        <div class="brand">Telemetry Trends</div>
+        <nav class="header-actions">
+            <a class="btn btn-outline" href="/telemetry">Back Home</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <p class="eyebrow">Analytics</p>
+            <h1>Event Trends</h1>
+            <p class="hero-copy">
+                Time-series view of events, sessions, and unique users.
+            </p>
+        </section>
+
+        <section aria-label="Controls" class="trend-header">
+            <a class="btn btn-outline" href="/telemetry">All Reports</a>
+            <form method="get" style="display:inline-flex;gap:0.6rem;align-items:center;">
+                <label style="font-weight:700;font-size:0.9rem;">Days</label>
+                <input type="number" name="days" value="{{ days }}" min="1" max="365" style="width:90px;padding:0.55rem 0.8rem;border-radius:999px;border:1px solid var(--line);background:#ffffffb8;font-family:inherit;font-size:0.95rem;">
+                <button type="submit" class="btn btn-solid">Apply</button>
+            </form>
+        </section>
+
+        {% if series %}
+        <section aria-label="Trends">
+            <h2 class="section-heading">Events per day</h2>
+            <div class="trend-chart">
+                {% set max_events = 0 %}
+                {% for point in series %}
+                    {% if point.events > max_events %}
+                        {% set max_events = point.events %}
+                    {% endif %}
+                {% endfor %}
+                {% if max_events == 0 %}
+                    {% set max_events = 1 %}
+                {% endif %}
+                <svg viewBox="0 0 {{ series|length * 70 }} 260" preserveAspectRatio="none" style="width:100%;height:100%;">
+                    {% set chart_w = series|length * 70 %}
+                    {% set chart_h = 260 %}
+                    {% set pad_y = 20 %}
+                    {% set pts = [] %}
+                    {% for point in series %}
+                        {% set x = loop.index0 * 70 + 35 %}
+                        {% set y = chart_h - pad_y - ((point.events / max_events|float) * (chart_h - 2 * pad_y)) %}
+                        {% if pts.append({'x': x, 'y': y}) %}{% endif %}
+                        {% if loop.first %}
+                        <circle cx="{{ x }}" cy="{{ y }}" r="4" fill="var(--accent)" />
+                        {% endif %}
+                    {% endfor %}
+                    {% for point in series %}
+                        {% set x = loop.index0 * 70 + 35 %}
+                        {% set y = chart_h - pad_y - ((point.events / max_events|float) * (chart_h - 2 * pad_y)) %}
+                        <text x="{{ x }}" y="{{ y - 8 }}" text-anchor="middle" font-size="10" fill="var(--muted)">{{ point.events }}</text>
+                    {% endfor %}
+                    {% set path_d = '' %}
+                    {% for pt in pts %}
+                        {% if loop.first %}
+                            {% set _ = path_d + 'M ' + pt.x|string + ' ' + pt.y|string %}
+                        {% else %}
+                            {% set _ = path_d + ' L ' + pt.x|string + ' ' + pt.y|string %}
+                        {% endif %}
+                    {% endfor %}
+                    {% set area_d = path_d + ' L ' + pts[-1].x|string + ' ' + (chart_h - pad_y)|string + ' L ' + pts[0].x|string + ' ' + (chart_h - pad_y)|string + ' Z' %}
+                    <path d="{{ area_d }}" class="trend-area" />
+                    <path d="{{ path_d }}" class="trend-line" />
+                    {% for pt in pts %}
+                        <circle cx="{{ pt.x }}" cy="{{ pt.y }}" r="4" fill="var(--accent)" />
+                    {% endfor %}
+                    <line x1="0" y1="{{ chart_h - pad_y }}" x2="{{ chart_w }}" y2="{{ chart_h - pad_y }}" class="trend-axis" />
+                </svg>
+            </div>
+        </section>
+
+        <section aria-label="Summary" class="admin-section">
+            <h2>Summary</h2>
+            <div class="telemetry-cards">
+                <div class="telemetry-metric">
+                    <span class="metric-value">{{ series | sum(attribute='events') }}</span>
+                    <span class="metric-label">total events</span>
+                </div>
+                <div class="telemetry-metric">
+                    <span class="metric-value">{{ series | sum(attribute='sessions') }}</span>
+                    <span class="metric-label">total sessions</span>
+                </div>
+                <div class="telemetry-metric">
+                    <span class="metric-value">{{ series | sum(attribute='users') }}</span>
+                    <span class="metric-label">unique users</span>
+                </div>
+            </div>
+        </section>
+        {% else %}
+        <p class="muted">No events recorded yet.</p>
+        {% endif %}
+    </main>
+</body>
+</html>

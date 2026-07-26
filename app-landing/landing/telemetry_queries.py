@@ -315,6 +315,224 @@ def api_health(days: int = 7) -> dict[str, Any]:
     }
 
 
+def anomaly_check() -> dict[str, Any]:
+    conn = _get_pg_conn()
+    if conn is None:
+        return {"anomalies": [], "checked_at": _now().isoformat()}
+
+    now = _now()
+    start_7d = now - timedelta(days=7)
+    start_24h = now - timedelta(hours=24)
+    anomalies: list[dict[str, Any]] = []
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) AS new_today FROM events WHERE event_type = 'user_first_seen' AND created_at >= %s",
+                (start_24h,),
+            )
+            new_today = cur.fetchone()["new_today"]
+
+            cur.execute(
+                "SELECT COUNT(*) AS total_24h FROM events WHERE created_at >= %s",
+                (start_24h,),
+            )
+            total_24h = cur.fetchone()["total_24h"]
+
+            cur.execute(
+                "SELECT COUNT(*) AS new_7d FROM events WHERE event_type = 'user_first_seen' AND created_at >= %s",
+                (start_7d,),
+            )
+            new_7d = cur.fetchone()["new_7d"]
+
+            if new_today == 0 and total_24h > 0:
+                anomalies.append({
+                    "rule": "no_new_users_active_traffic",
+                    "detail": "Zero new users in the last 24h while events are present",
+                })
+
+            if new_7d > 0:
+                daily_avg = new_7d / 7.0
+                if new_today < daily_avg * 0.5:
+                    anomalies.append({
+                        "rule": "new_users_below_half_avg",
+                        "detail": f"New users today ({new_today}) is below 50% of the 7d daily average ({daily_avg:.1f})",
+                    })
+
+            cur.execute(
+                "SELECT COUNT(*) AS api_5xx FROM events WHERE event_type = 'api_call' AND created_at >= %s AND (properties->>'status')::int >= 500",
+                (start_24h,),
+            )
+            api_5xx = cur.fetchone()["api_5xx"]
+
+            cur.execute(
+                "SELECT COUNT(*) AS api_total FROM events WHERE event_type = 'api_call' AND created_at >= %s",
+                (start_24h,),
+            )
+            api_total = cur.fetchone()["api_total"]
+
+            if api_total > 0 and (api_5xx / api_total) * 100 > 10:
+                anomalies.append({
+                    "rule": "api_5xx_high",
+                    "detail": f"API 5xx rate is {(api_5xx / api_total) * 100:.1f}% over the last 24h",
+                })
+    except Exception:
+        pass
+    finally:
+        conn.close()
+
+    return {"anomalies": anomalies, "checked_at": now.isoformat()}
+
+
+def events_time_series(days: int = 30) -> list[dict[str, Any]]:
+    conn = _get_pg_conn()
+    if conn is None:
+        return []
+
+    start = _now() - timedelta(days=days)
+    rows: list[dict[str, Any]] = []
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT DATE(created_at) AS day, COUNT(*) AS events,
+                       COUNT(DISTINCT session_id) AS sessions,
+                       COUNT(DISTINCT CASE WHEN user_id IS NOT NULL THEN user_id END) AS users
+                FROM events
+                WHERE created_at >= %s
+                GROUP BY day ORDER BY day ASC
+                """,
+                (start,),
+            )
+            rows = [dict(r) for r in cur.fetchall()]
+    except Exception:
+        pass
+    finally:
+        conn.close()
+    return rows
+
+
+def device_breakdown(days: int = 7) -> dict[str, Any]:
+    conn = _get_pg_conn()
+    if conn is None:
+        return {"browsers": [], "os": [], "screen_sizes": []}
+
+    start = _now() - timedelta(days=days)
+    result: dict[str, Any] = {"browsers": [], "os": [], "screen_sizes": []}
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT device_info
+                FROM events
+                WHERE created_at >= %s AND device_info IS NOT NULL AND device_info <> '{}'::jsonb
+                """,
+                (start,),
+            )
+            raw_rows = [r.get("device_info") for r in cur.fetchall()]
+
+            browsers: dict[str, int] = {}
+            oses: dict[str, int] = {}
+            screens: dict[str, int] = {"Mobile": 0, "Tablet": 0, "Desktop": 0}
+
+            for info in raw_rows:
+                if not isinstance(info, dict):
+                    continue
+
+                ua = str(info.get("user_agent", "") or "")
+                width = info.get("screen_width") or 0
+                height = info.get("screen_height") or 0
+                try:
+                    width = int(width)
+                except (TypeError, ValueError):
+                    width = 0
+
+                ua_lower = ua.lower()
+                if "chrome" in ua_lower and "edg" not in ua_lower:
+                    family = "Chrome"
+                elif "safari" in ua_lower and "chrome" not in ua_lower:
+                    family = "Safari"
+                elif "firefox" in ua_lower:
+                    family = "Firefox"
+                elif "edg" in ua_lower:
+                    family = "Edge"
+                else:
+                    family = "Other"
+                browsers[family] = browsers.get(family, 0) + 1
+
+                os_name = "Other"
+                for token, label in (("win", "Windows"), ("mac", "Mac"), ("linux", "Linux"), ("android", "Android"), ("ios", "iOS")):
+                    if token in ua_lower:
+                        os_name = label
+                        break
+                oses[os_name] = oses.get(os_name, 0) + 1
+
+                bucket = "Desktop"
+                if width < 768:
+                    bucket = "Mobile"
+                elif width <= 1024:
+                    bucket = "Tablet"
+                screens[bucket] = screens.get(bucket, 0) + 1
+
+            def _top_items(counts: dict[str, int], limit: int = 10) -> list[dict[str, Any]]:
+                items = [{"name": k, "count": v} for k, v in counts.items()]
+                items.sort(key=lambda x: x["count"], reverse=True)
+                return items[:limit]
+
+            result["browsers"] = _top_items(browsers)
+            result["os"] = _top_items(oses)
+            result["screen_sizes"] = [
+                {"name": k, "count": screens[k]} for k in ("Mobile", "Tablet", "Desktop")
+            ]
+    except Exception:
+        pass
+    finally:
+        conn.close()
+    return result
+
+
+def top_referrers(days: int = 7) -> dict[str, Any]:
+    conn = _get_pg_conn()
+    if conn is None:
+        return {"top_referrers": [], "entry_pages": []}
+
+    start = _now() - timedelta(days=days)
+    top_referrers: list[dict[str, Any]] = []
+    entry_pages: list[dict[str, Any]] = []
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT referrer, url, COUNT(*) AS sessions
+                FROM events
+                WHERE referrer IS NOT NULL AND referrer <> '' AND created_at >= %s AND referrer NOT LIKE %s
+                GROUP BY referrer, url ORDER BY sessions DESC LIMIT 50
+                """,
+                (start, "%31.70.85.89%"),
+            )
+            top_referrers = [
+                {"referrer": r["referrer"], "url": r["url"], "sessions": r["sessions"]}
+                for r in cur.fetchall()
+            ]
+
+            cur.execute(
+                """
+                SELECT url, COUNT(*) AS sessions
+                FROM events
+                WHERE (referrer IS NULL OR referrer = '') AND created_at >= %s
+                GROUP BY url ORDER BY sessions DESC LIMIT 20
+                """,
+                (start,),
+            )
+            entry_pages = [
+                {"url": r["url"], "sessions": r["sessions"]} for r in cur.fetchall()
+            ]
+    except Exception:
+        pass
+    finally:
+        conn.close()
+    return {"top_referrers": top_referrers, "entry_pages": entry_pages}
+
+
 def events_list(filters: dict[str, Any] | None = None, limit: int = 100, offset: int = 0) -> dict[str, Any]:
     conn = _get_pg_conn()
     if conn is None:

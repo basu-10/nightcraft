@@ -1379,3 +1379,84 @@ body.landing-shell {
     font-weight: 700;
 }
 
+.trend-header {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    margin: 1.2rem 0 0.6rem;
+}
+
+.trend-header input[type="date"] {
+    padding: 0.55rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: #ffffffb8;
+    font-family: inherit;
+    font-size: 0.95rem;
+}
+
+.trend-chart {
+    position: relative;
+    width: 100%;
+    height: 280px;
+    margin: 1.2rem 0;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.trend-axis {
+    stroke: var(--line);
+    stroke-width: 1;
+}
+
+.trend-line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 3;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.trend-area {
+    fill: var(--accent);
+    opacity: 0.08;
+}
+
+.trend-tooltip {
+    position: absolute;
+    background: var(--ink);
+    color: var(--bg);
+    padding: 0.4rem 0.6rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    pointer-events: none;
+    transform: translate(-50%, -140%);
+    white-space: nowrap;
+}
+
+.device-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
+.device-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 1rem;
+}
+
+.device-card h3 {
+    margin: 0 0 0.6rem;
+    font-size: 1rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+}
+

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Telemetry Devices</title>
+    <meta name="description" content="Browser, OS, and screen breakdown.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+
+    <header class="site-header container">
+        <div class="brand">Telemetry Devices</div>
+        <nav class="header-actions">
+            <a class="btn btn-outline" href="/telemetry">Back Home</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <p class="eyebrow">Analytics</p>
+            <h1>Device Breakdown</h1>
+            <p class="hero-copy">
+                Browsers, operating systems, and screen-size buckets.
+            </p>
+        </section>
+
+        <section aria-label="Controls" class="trend-header">
+            <form method="get" style="display:inline-flex;gap:0.6rem;align-items:center;">
+                <label style="font-weight:700;font-size:0.9rem;">Days</label>
+                <input type="number" name="days" value="{{ days }}" min="1" max="365" style="width:90px;padding:0.55rem 0.8rem;border-radius:999px;border:1px solid var(--line);background:#ffffffb8;font-family:inherit;font-size:0.95rem;">
+                <button type="submit" class="btn btn-solid">Apply</button>
+            </form>
+        </section>
+
+        {% if devices.browsers or devices.os %}
+        <div class="device-grid">
+            <article class="device-card">
+                <h3>Browsers</h3>
+                <table class="telemetry-table">
+                    <thead>
+                        <tr>
+                            <th>Browser</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in devices.browsers %}
+                        <tr>
+                            <td>{{ row.name }}</td>
+                            <td>{{ row.count }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not devices.browsers %}
+                        <tr><td colspan="2"><p class="muted">No browser data yet.</p></td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </article>
+
+            <article class="device-card">
+                <h3>Operating Systems</h3>
+                <table class="telemetry-table">
+                    <thead>
+                        <tr>
+                            <th>OS</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in devices.os %}
+                        <tr>
+                            <td>{{ row.name }}</td>
+                            <td>{{ row.count }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not devices.os %}
+                        <tr><td colspan="2"><p class="muted">No OS data yet.</p></td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </article>
+        </div>
+
+        <section aria-label="Screen Size" class="admin-section">
+            <h2>Screen Sizes</h2>
+            <table class="telemetry-table">
+                <thead>
+                    <tr>
+                        <th>Bucket</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in devices.screen_sizes %}
+                    <tr>
+                        <td>{{ row.name }}</td>
+                        <td>{{ row.count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        {% else %}
+        <p class="muted">No device data recorded yet.</p>
+        {% endif %}
+    </main>
+</body>
+</html>

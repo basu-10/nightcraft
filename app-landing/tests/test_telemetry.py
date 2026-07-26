@@ -1,6 +1,8 @@
 """Integration tests for telemetry API."""
 from unittest.mock import patch
 
+from landing.telemetry_queries import anomaly_check, events_time_series, device_breakdown, top_referrers
+
 from landing import create_app
 
 
@@ -11,6 +13,23 @@ def _client():
         TELEMETRY_DATABASE_URL="",
     )
     return app.test_client()
+
+
+def test_anomaly_check_returns_empty_on_missing_db():
+    result = anomaly_check()
+    assert result == {"anomalies": [], "checked_at": result["checked_at"]}
+
+
+def test_events_time_series_returns_empty_on_missing_db():
+    assert events_time_series() == []
+
+
+def test_device_breakdown_returns_empty_on_missing_db():
+    assert device_breakdown() == {"browsers": [], "os": [], "screen_sizes": []}
+
+
+def test_top_referrers_returns_empty_on_missing_db():
+    assert top_referrers() == {"top_referrers": [], "entry_pages": []}
 
 
 def test_telemetry_endpoint_accepts_batched_events():
